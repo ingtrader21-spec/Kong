@@ -5,7 +5,7 @@ umask 077
 test "$(id -u)" -eq 0
 source_path="$1"
 wal_name="$2"
-[[ "$wal_name" =~ ^[0-9A-F]{24}(\.[0-9A-F]{8}\.backup)?$ ]]
+[[ "$wal_name" =~ ^([0-9A-F]{24}(\.[0-9A-F]{8}\.backup)?|[0-9A-F]{8}\.history)$ ]]
 [[ "$source_path" != *..* && -f "$source_path" ]]
 
 spool=/opt/codestra/backups/kong-database/wal

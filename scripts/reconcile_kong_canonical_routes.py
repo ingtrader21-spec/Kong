@@ -7,6 +7,7 @@ import argparse
 import importlib
 import json
 import sys
+import yaml
 from pathlib import Path
 from urllib.parse import urlencode, urljoin, urlsplit
 from urllib.request import Request, urlopen
@@ -338,14 +339,21 @@ def main() -> int:
     }
     managed_names = {route["name"] for route in manifest["routes"]}
     contract_names = {route["name"] for route in manifest["contractRoutes"]}
-    approved_names = managed_names | contract_names
+    control_plane = yaml.safe_load((root / "deploy/kong/control-plane.yml").read_text())
+    control_plane_names = {
+        route["name"]
+        for service in control_plane.get("services", [])
+        for route in service.get("routes", [])
+    }
+    approved_names = managed_names | contract_names | control_plane_names
     unverified_names = set(manifest.get("unverifiedExistingRouteNames", []))
     if approved_names & unverified_names:
         raise RuntimeError("a route cannot be both approved and unverified")
 
     public_hosts = {manifest["canonicalHost"], manifest["legacyHost"]}
     public_routes = [
-        route for route in routes if public_hosts.intersection(route.get("hosts") or [])
+        route for route in routes
+        if not route.get("hosts") or public_hosts.intersection(route.get("hosts") or [])
     ]
     unverified_public = sorted(
         route.get("name") or route["id"]

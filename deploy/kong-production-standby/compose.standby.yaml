@@ -8,7 +8,7 @@ services:
       DATABASE_URL_FILE: /run/secrets/identity_registry_database_url
       WEBHOOK_HMAC_FILE: /run/secrets/kong_standby_webhook_hmac
       STATE_DB: /data/state.sqlite3
-      AUTH_MIDDLEWARE_MAX_BODY_BYTES: "65536"
+      AUTH_MIDDLEWARE_MAX_BODY_BYTES: "131072"
       LIVE_SMS_DELIVERY: "false"
       LIVE_EMAIL_DELIVERY: "false"
       LIVE_PSTN_DIALING: "false"
