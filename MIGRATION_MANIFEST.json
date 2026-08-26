@@ -32,8 +32,8 @@
     },
     {
       "path": "config/kong-canonical-middleware-routes.json",
-      "sha256": "4aae1c37c1505df8a8fe9d3f6638ac39a5d266b7fdb2fc7f228a54ec250004eb",
-      "size": 3271
+      "sha256": "787280a5bc02d1636c96ee9ae5684e339b97a7fcc979a068ff7c9942a70f6b6f",
+      "size": 3269
     },
     {
       "path": "deploy/kong/control-plane.yml",
@@ -62,8 +62,8 @@
     },
     {
       "path": "deploy/kong-production-standby/auth-middleware/body_limit.py",
-      "sha256": "174177c902029c72fc1eddfbee65ff50c5f9b7db5ac1713f9ae414d2f40b3b1b",
-      "size": 3916
+      "sha256": "d5a95c1fac2312a4ab0d76e0d54937321222bdd53aee03fdea922ac9a7e1d906",
+      "size": 3917
     },
     {
       "path": "deploy/kong-production-standby/auth-middleware/test_body_limit.py",
@@ -312,8 +312,8 @@
     },
     {
       "path": "scripts/reconcile_kong_canonical_routes.py",
-      "sha256": "35b3823d257d26f41d0e1bff63136b8d8876f70c397da3d9edbe16f4e23fb326",
-      "size": 15545
+      "sha256": "ab49994c1e9f9d13c3e0f78ad140607ce4fbf09771c7a44b8139de9ef3356330",
+      "size": 18016
     },
     {
       "path": "scripts/rollback_kong_standby.py",

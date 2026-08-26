@@ -9,7 +9,7 @@ from typing import Any
 DEFAULT_MAX_BODY_BYTES = 65_536
 # The strictest approved Kong route limit is the largest value an operator may
 # configure here.  This prevents a typo from silently widening direct access.
-MAX_CONFIGURABLE_BODY_BYTES = 65_536
+MAX_CONFIGURABLE_BODY_BYTES = 131_072
 
 
 def configured_max_body_bytes() -> int:

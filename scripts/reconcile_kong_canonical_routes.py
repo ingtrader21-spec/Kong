@@ -82,6 +82,46 @@ def enabled_plugins(base: str, route_id: str) -> dict[str, dict]:
     return {name: values[0] for name, values in grouped.items()}
 
 
+def enabled_service_plugins(base: str, service_id: str) -> dict[str, dict]:
+    plugins = all_rows(base, f"/services/{service_id}/plugins?size=1000")
+    return {plugin["name"]: plugin for plugin in plugins if plugin.get("enabled")}
+
+
+def require_config_subset(actual, expected, label: str) -> None:
+    if isinstance(expected, dict):
+        for key, value in expected.items():
+            if key not in actual:
+                raise RuntimeError(f"{label}: missing config key {key}")
+            require_config_subset(actual[key], value, f"{label}.{key}")
+    else:
+        require_equal(actual, expected, label)
+
+
+def verify_control_plane(admin: str, declared: dict, routes: list[dict], services: dict[str, dict]) -> set[str]:
+    verified: set[str] = set()
+    for expected_service in declared.get("services", []):
+        service = one([item for item in services.values() if item.get("name") == expected_service["name"]], "control-plane service")
+        require_equal(service.get("host"), "codestra-control-plane", "control-plane.service.host")
+        require_equal(service.get("port"), 8096, "control-plane.service.port")
+        service_plugins = enabled_service_plugins(admin, service["id"])
+        for plugin in expected_service.get("plugins", []):
+            if plugin["name"] not in service_plugins:
+                raise RuntimeError(f"control-plane missing service plugin: {plugin['name']}")
+            require_config_subset(service_plugins[plugin["name"]].get("config", {}), plugin.get("config", {}), f"control-plane.{plugin['name']}")
+        for expected in expected_service.get("routes", []):
+            route = one([item for item in routes if item.get("name") == expected["name"]], f"control-plane route {expected['name']}")
+            for field in ("hosts", "paths", "methods"):
+                require_equal(sorted(route.get(field) or []), sorted(expected.get(field) or []), f"{expected['name']}.{field}")
+            require_equal(route.get("service", {}).get("id"), service["id"], f"{expected['name']}.service")
+            route_plugins = enabled_plugins(admin, route["id"])
+            for plugin in expected.get("plugins", []):
+                if plugin["name"] not in route_plugins:
+                    raise RuntimeError(f"{expected['name']} missing route plugin: {plugin['name']}")
+                require_config_subset(route_plugins[plugin["name"]].get("config", {}), plugin.get("config", {}), f"{expected['name']}.{plugin['name']}")
+            verified.add(expected["name"])
+    return verified
+
+
 def security_authority(root: Path, expected: dict) -> tuple[Path, dict, dict]:
     path = root / expected["securityAuthority"]
     manifest = json.loads(path.read_text())
@@ -340,11 +380,7 @@ def main() -> int:
     managed_names = {route["name"] for route in manifest["routes"]}
     contract_names = {route["name"] for route in manifest["contractRoutes"]}
     control_plane = yaml.safe_load((root / "deploy/kong/control-plane.yml").read_text())
-    control_plane_names = {
-        route["name"]
-        for service in control_plane.get("services", [])
-        for route in service.get("routes", [])
-    }
+    control_plane_names = verify_control_plane(args.admin_url, control_plane, routes, services)
     approved_names = managed_names | contract_names | control_plane_names
     unverified_names = set(manifest.get("unverifiedExistingRouteNames", []))
     if approved_names & unverified_names:
