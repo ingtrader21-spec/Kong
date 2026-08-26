@@ -55,12 +55,13 @@ FORMAT=pg_dump_custom_gpg
 SOURCE_CONTAINER=$db_container
 EOF
 
-export RESTIC_REPOSITORY="$(cat "$restic_repository_file")"
+RESTIC_REPOSITORY="$(cat "$restic_repository_file")"
+AWS_ACCESS_KEY_ID="$(cat /etc/codestra/backup/b2-access-key-id)"
+AWS_SECRET_ACCESS_KEY="$(cat /etc/codestra/backup/b2-secret-access-key)"
+AWS_DEFAULT_REGION="$(cat /etc/codestra/backup/b2-region)"
+export RESTIC_REPOSITORY AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION
 export RESTIC_PASSWORD_FILE="$restic_password_file"
 export RESTIC_CACHE_DIR="$backup_root/.restic-cache"
-export AWS_ACCESS_KEY_ID="$(cat /etc/codestra/backup/b2-access-key-id)"
-export AWS_SECRET_ACCESS_KEY="$(cat /etc/codestra/backup/b2-secret-access-key)"
-export AWS_DEFAULT_REGION="$(cat /etc/codestra/backup/b2-region)"
 restic_retry() {
   local attempt
   for attempt in 1 2 3; do
