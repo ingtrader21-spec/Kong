@@ -1,0 +1,92 @@
+name: Import verified standalone Kong source tree
+
+on:
+  push:
+    branches:
+      - migration/import-kong-authority-20260826
+    paths:
+      - .github/workflows/import-kong-artifact.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-kong-authority
+  cancel-in-progress: false
+
+jobs:
+  import:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    env:
+      ARTIFACT_URL: "https://sdmntprcentralus.oaiusercontent.com/files/00000000-6480-81f5-b859-87d6356028c3/raw?se=2026-08-26T21%3A36%3A17Z&sp=r&sv=2026-02-06&sr=b&scid=4a6fa1e5-e9d5-5ecf-99f2-1db065e93b29&skoid=a1be202a-6464-476c-a496-723317c4a4db&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-26T20%3A00%3A58Z&ske=2026-08-27T20%3A00%3A58Z&sks=b&skv=2026-02-06&sig=0Rp6aNZ7foX6WspeA1r3WxIiGZ9vIgfi1NczuDvbTp4%3D"
+      ARTIFACT_ZIP_SHA256: 417617a2d670b4e399867d3954055d068e2504fa3ecc8d7f34f7dc0ef1ca2609
+      SOURCE_BUNDLE_SHA256: dee088353e2e09da03f3792f1ea801c0db96f576b72e7ee993ab8bf520da5fe0
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Download and verify exported source artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          work=$(mktemp -d)
+          printf '%s\n' "$work" > "$RUNNER_TEMP/kong-import-work"
+          curl --fail --silent --show-error --location "$ARTIFACT_URL" \
+            --output "$work/artifact.zip"
+          printf '%s  %s\n' "$ARTIFACT_ZIP_SHA256" "$work/artifact.zip" \
+            | sha256sum -c -
+          unzip -q "$work/artifact.zip" -d "$work/artifact"
+          printf '%s  %s\n' "$SOURCE_BUNDLE_SHA256" \
+            "$work/artifact/KONG_SOURCE_BUNDLE.tar.gz" | sha256sum -c -
+          mkdir "$work/tree"
+          tar -xzf "$work/artifact/KONG_SOURCE_BUNDLE.tar.gz" -C "$work/tree"
+          python3 "$work/tree/tools/verify_migration_manifest.py"
+          rm -rf "$work/tree/.pytest_cache" \
+                 "$work/tree/scripts/__pycache__" \
+                 "$work/tree/tests/__pycache__"
+
+      - name: Run target-repository validation before commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          work=$(cat "$RUNNER_TEMP/kong-import-work")
+          python3 -m pip install --disable-pip-version-check --quiet pytest PyYAML
+          (
+            cd "$work/tree"
+            python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import yaml
+          for path in Path('.').rglob('*.json'):
+              json.loads(path.read_text())
+          for path in list(Path('.').rglob('*.yml')) + list(Path('.').rglob('*.yaml')):
+              yaml.safe_load(path.read_text())
+          PY
+            python3 -m compileall -q scripts tests tools
+            pytest -q \
+              tests/test_kong_canonical_route_contract.py \
+              tests/test_kong_route_authority_hardening.py \
+              tests/test_kong_database_operations.py \
+              tests/test_kong_change_authority.py
+            python3 tools/verify_migration_manifest.py
+            ! grep -RIlE --exclude-dir=tests --exclude-dir=reports --exclude-dir=docs \
+              --exclude='MIGRATION_MANIFEST.json' \
+              '(BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|Authorization:[[:space:]]*Bearer[[:space:]]+[^[:space:]]+|client_secret[[:space:]]*=[[:space:]]*[^[:space:]]+)' \
+              .
+          )
+
+      - name: Replace migration branch with clean Kong authority tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          work=$(cat "$RUNNER_TEMP/kong-import-work")
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf -- {} +
+          cp -a "$work/tree/." .
+          git add --all
+          git diff --cached --check
+          git commit -m 'feat: establish standalone Kong source authority'
+          git push origin HEAD:migration/import-kong-authority-20260826
