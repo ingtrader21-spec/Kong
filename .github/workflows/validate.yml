@@ -1,0 +1,51 @@
+name: Validate Kong source authority
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install validation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends shellcheck lua5.4
+          python3 -m pip install --disable-pip-version-check pytest PyYAML
+      - name: Validate structured source
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import yaml
+          for path in Path('.').rglob('*.json'):
+              json.loads(path.read_text())
+          for path in list(Path('.').rglob('*.yml')) + list(Path('.').rglob('*.yaml')):
+              yaml.safe_load(path.read_text())
+          PY
+          python3 -m compileall -q scripts tests tools
+          luac -p deploy/kong/scope-policy.lua
+      - name: Validate shell and source policies
+        run: |
+          find operations deploy scripts -type f -name '*.sh' -print0 \
+            | xargs -0 -r -n1 bash -n
+          find operations deploy scripts -type f -name '*.sh' -print0 \
+            | xargs -0 -r shellcheck -x
+          ! grep -RIlE --exclude-dir=tests --exclude-dir=reports --exclude-dir=docs \
+            --exclude='MIGRATION_MANIFEST.json' \
+            '(BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|Authorization:[[:space:]]*Bearer[[:space:]]+[^[:space:]]+|client_secret[[:space:]]*=[[:space:]]*[^[:space:]]+)' \
+            .
+      - name: Run Kong authority tests
+        run: |
+          pytest -q \
+            tests/test_kong_canonical_route_contract.py \
+            tests/test_kong_route_authority_hardening.py \
+            tests/test_kong_database_operations.py \
+            tests/test_kong_change_authority.py
+          python3 tools/verify_migration_manifest.py

@@ -1,0 +1,11 @@
+[Unit]
+Description=Monthly isolated Kong PostgreSQL PITR rehearsal
+
+[Timer]
+OnCalendar=monthly
+RandomizedDelaySec=8h
+Persistent=true
+Unit=codestra-kong-database-pitr-rehearsal.service
+
+[Install]
+WantedBy=timers.target

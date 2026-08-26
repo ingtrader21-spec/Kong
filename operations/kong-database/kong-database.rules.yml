@@ -1,0 +1,105 @@
+groups:
+  - name: kong-database
+    rules:
+      - alert: KongDatabaseUnavailable
+        expr: codestra_kong_db_up != 1 or up{job="kong"} == 0 or kong_datastore_reachable == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: Kong PostgreSQL is unavailable
+      - alert: KongDatabaseConnectionsWarning
+        expr: codestra_kong_db_connections / codestra_kong_db_max_connections >= 0.70
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: Kong PostgreSQL connections exceed 70 percent
+      - alert: KongDatabaseConnectionsCritical
+        expr: codestra_kong_db_connections / codestra_kong_db_max_connections >= 0.85
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: Kong PostgreSQL connections exceed 85 percent
+      - alert: KongDatabaseDiskWarning
+        expr: codestra_kong_db_disk_used_percent >= 80
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: Kong database host disk exceeds 80 percent
+      - alert: KongDatabaseDiskCritical
+        expr: codestra_kong_db_disk_used_percent >= 90
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: Kong database host disk exceeds 90 percent
+      - alert: KongDatabaseBackupStale
+        expr: codestra_kong_db_backup_age_seconds > 86400
+        for: 15m
+        labels: {severity: critical}
+        annotations:
+          summary: Kong database off-host backup is older than 24 hours
+      - alert: KongDatabaseBackupJobFailed
+        expr: node_systemd_unit_state{name="codestra-kong-database-backup.service",state="failed"} == 1
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: Kong database backup job failed
+      - alert: KongDatabaseRestoreRehearsalOverdue
+        expr: time() - codestra_kong_db_restore_last_success_timestamp_seconds > 2592000
+        for: 1h
+        labels: {severity: warning}
+        annotations:
+          summary: Kong database restore rehearsal is older than 30 days
+      - alert: KongDatabaseLockWait
+        expr: codestra_kong_db_lock_waits > 0
+        for: 2m
+        labels: {severity: warning}
+        annotations:
+          summary: Kong PostgreSQL has an ungranted lock
+      - alert: KongDatabaseDeadlockDetected
+        expr: increase(codestra_kong_db_deadlocks_total[10m]) > 0
+        for: 1m
+        labels: {severity: warning}
+        annotations:
+          summary: Kong PostgreSQL recorded a deadlock
+      - alert: KongDatabaseMigrationMismatch
+        expr: codestra_kong_db_migration_up_to_date != 1
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: Kong database migration status is invalid
+      - alert: KongDatabaseReplicationDisconnected
+        expr: codestra_kong_db_replication_expected == 1 and codestra_kong_db_replication_lag_seconds < 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: Expected Kong PostgreSQL replica is disconnected
+      - alert: KongDatabaseReplicationLagHigh
+        expr: codestra_kong_db_replication_expected == 1 and codestra_kong_db_replication_lag_seconds > 30
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: Kong PostgreSQL replication lag exceeds 30 seconds
+      - alert: KongDatabaseUnexpectedWritableStandby
+        expr: codestra_kong_db_replication_expected == 1 and codestra_kong_db_standby_read_only != 1
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: Kong PostgreSQL standby is unexpectedly writable
+      - alert: KongDatabaseReplicationSlotInactive
+        expr: codestra_kong_db_replication_expected == 1 and codestra_kong_db_replication_slots_active < 1
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: Kong PostgreSQL replication slot is inactive
+      - alert: KongDatabaseWalReceiverDown
+        expr: codestra_kong_db_replication_expected == 1 and codestra_kong_db_wal_receiver_up != 1
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: Kong PostgreSQL standby WAL receiver is down
+      - alert: KongDatabaseWALArchiveFailure
+        expr: increase(codestra_kong_db_wal_archive_failures_total[10m]) > 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: Kong PostgreSQL WAL archive command failed

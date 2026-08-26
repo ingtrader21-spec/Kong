@@ -1,0 +1,40 @@
+services:
+  kong-standby-auth:
+    build:
+      context: ./auth-middleware
+    image: codestra/kong-standby-auth:20260820
+    restart: unless-stopped
+    environment:
+      DATABASE_URL_FILE: /run/secrets/identity_registry_database_url
+      WEBHOOK_HMAC_FILE: /run/secrets/kong_standby_webhook_hmac
+      STATE_DB: /data/state.sqlite3
+      AUTH_MIDDLEWARE_MAX_BODY_BYTES: "65536"
+      LIVE_SMS_DELIVERY: "false"
+      LIVE_EMAIL_DELIVERY: "false"
+      LIVE_PSTN_DIALING: "false"
+    volumes:
+      - /etc/codestra/secrets/identity-registry/database-url:/run/secrets/identity_registry_database_url:ro
+      - /etc/codestra/secrets/kong-standby/webhook-hmac:/run/secrets/kong_standby_webhook_hmac:ro
+      - standby_state:/data
+    networks:
+      kong_frontend:
+        aliases: [codestra-kong-standby-auth]
+      codestra_backend: {}
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 8
+networks:
+  kong_frontend:
+    external: true
+    name: codestra_edge
+  codestra_backend:
+    external: true
+    name: codestra_backend
+volumes:
+  standby_state:

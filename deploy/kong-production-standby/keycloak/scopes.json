@@ -1,0 +1,14 @@
+{
+  "audience": "codestra-api",
+  "tenantClaim": "tenant_id",
+  "scopes": [
+    "sms.send", "sms.read", "sms.bulk",
+    "email.send", "email.read", "email.bulk",
+    "scraper.submit", "scraper.read",
+    "telephony.read", "telephony.control",
+    "webhooks.sms.ingest", "webhooks.email.ingest"
+  ],
+  "administrativeScopesSeparated": true,
+  "defaultClientScopes": [],
+  "optionalClientScopes": []
+}

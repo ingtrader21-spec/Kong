@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily encrypted Kong PostgreSQL backup
+
+[Timer]
+OnCalendar=*-*-* 04:10:00 UTC
+Persistent=true
+RandomizedDelaySec=10m
+Unit=codestra-kong-database-backup.service
+
+[Install]
+WantedBy=timers.target
