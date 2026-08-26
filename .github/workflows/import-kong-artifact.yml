@@ -19,7 +19,7 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     env:
-      ARTIFACT_URL: "https://sdmntprcentralus.oaiusercontent.com/files/00000000-6480-81f5-b859-87d6356028c3/raw?se=2026-08-26T21%3A36%3A17Z&sp=r&sv=2026-02-06&sr=b&scid=4a6fa1e5-e9d5-5ecf-99f2-1db065e93b29&skoid=a1be202a-6464-476c-a496-723317c4a4db&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-26T20%3A00%3A58Z&ske=2026-08-27T20%3A00%3A58Z&sks=b&skv=2026-02-06&sig=0Rp6aNZ7foX6WspeA1r3WxIiGZ9vIgfi1NczuDvbTp4%3D"
+      ARTIFACT_URL: "https://sdmntprcentralus.oaiusercontent.com/files/00000000-ddf8-81f5-ab7c-a34529a19bf2/raw?se=2026-08-26T21%3A37%3A22Z&sp=r&sv=2026-02-06&sr=b&scid=716c5efd-661d-558c-9618-713872917b2a&skoid=a1be202a-6464-476c-a496-723317c4a4db&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-26T19%3A02%3A51Z&ske=2026-08-27T19%3A02%3A51Z&sks=b&skv=2026-02-06&sig=qvdJ3NWM%2BGgaA1VMq/H94XjtUcSiTNbvWwedn%2BZ9sIQ%3D"
       ARTIFACT_ZIP_SHA256: 417617a2d670b4e399867d3954055d068e2504fa3ecc8d7f34f7dc0ef1ca2609
       SOURCE_BUNDLE_SHA256: dee088353e2e09da03f3792f1ea801c0db96f576b72e7ee993ab8bf520da5fe0
     steps:
@@ -82,6 +82,9 @@ jobs:
         run: |
           set -euo pipefail
           work=$(cat "$RUNNER_TEMP/kong-import-work")
+          # The repository API installs the validated workflow in a separate commit because
+          # GitHub App tokens cannot create workflow files from inside Actions.
+          rm -f "$work/tree/.github/workflows/validate.yml"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf -- {} +
