@@ -1,0 +1,85 @@
+name: Refresh Kong target migration manifest
+
+on:
+  push:
+    branches:
+      - migration/import-kong-authority-20260826
+    paths:
+      - .github/workflows/refresh-migration-manifest.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Preserve source hashes and generate current target hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          root = Path('.')
+          manifest_path = root / 'MIGRATION_MANIFEST.json'
+          data = json.loads(manifest_path.read_text())
+          source_files = data.get('source_files', data['files'])
+          source_index = {row['path']: row for row in source_files}
+          excluded = {
+              'MIGRATION_MANIFEST.json',
+              '.github/workflows/refresh-migration-manifest.yml',
+          }
+          files = []
+          for path in sorted(p for p in root.rglob('*') if p.is_file()):
+              relative = path.as_posix()
+              if relative.startswith('.git/') or relative in excluded:
+                  continue
+              files.append({
+                  'path': relative,
+                  'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+                  'size': path.stat().st_size,
+              })
+          hardened = []
+          for relative, reason in {
+              'operations/kong-database/codestra-kong-wal-archive.sh':
+                  'Split credential reads from export so read failures cannot be masked (ShellCheck SC2155).',
+              'operations/kong-database/kong-database-backup.sh':
+                  'Split credential reads from export so read failures cannot be masked (ShellCheck SC2155).',
+          }.items():
+              current = next(row for row in files if row['path'] == relative)
+              source = source_index[relative]
+              hardened.append({
+                  'path': relative,
+                  'reason': reason,
+                  'source_sha256': source['sha256'],
+                  'source_size': source['size'],
+                  'target_sha256': current['sha256'],
+                  'target_size': current['size'],
+              })
+          data['source_files'] = source_files
+          data['files'] = files
+          data['target_hardening'] = hardened
+          data['target_manifest_updated_at'] = datetime.now(timezone.utc).isoformat()
+          data['target_head_before_manifest'] = os.environ['GITHUB_SHA']
+          manifest_path.write_text(json.dumps(data, indent=2, sort_keys=True) + '\n')
+          PY
+          python3 tools/verify_migration_manifest.py
+      - name: Commit refreshed manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add MIGRATION_MANIFEST.json
+          git diff --cached --check
+          git commit -m 'docs: preserve Kong import and target hardening hashes'
+          git push origin HEAD:migration/import-kong-authority-20260826
