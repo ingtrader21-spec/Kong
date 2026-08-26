@@ -1,0 +1,11 @@
+[Unit]
+Description=Monthly isolated Kong PostgreSQL restore rehearsal
+
+[Timer]
+OnCalendar=monthly
+RandomizedDelaySec=6h
+Persistent=true
+Unit=codestra-kong-database-restore.service
+
+[Install]
+WantedBy=timers.target

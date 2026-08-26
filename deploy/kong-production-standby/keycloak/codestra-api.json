@@ -1,0 +1,20 @@
+{
+  "clientId": "codestra-api",
+  "name": "Codestra API resource audience",
+  "description": "Bearer-only resource server for Kong and middleware; no browser or machine credential",
+  "enabled": true,
+  "protocol": "openid-connect",
+  "bearerOnly": true,
+  "publicClient": false,
+  "standardFlowEnabled": false,
+  "implicitFlowEnabled": false,
+  "directAccessGrantsEnabled": false,
+  "serviceAccountsEnabled": false,
+  "frontchannelLogout": false,
+  "redirectUris": [],
+  "webOrigins": [],
+  "attributes": {
+    "access.token.signed.response.alg": "RS256",
+    "exclude.session.state.from.auth.response": "true"
+  }
+}

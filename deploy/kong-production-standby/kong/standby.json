@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "codestra.kong.standby.v1",
+  "releaseMode": "detached-private-staging",
+  "publicHostname": "api.codestra.co",
+  "publicRoutesEnabled": false,
+  "stagingHostname": "kong-standby.internal.codestra.agency",
+  "issuer": "https://auth.codestra.co/realms/codestra",
+  "audience": "codestra-api",
+  "algorithms": ["RS256"],
+  "trustedHeadersToStrip": [
+    "x-codestra-subject", "x-codestra-tenant", "x-codestra-roles",
+    "x-codestra-scopes", "x-authenticated-user"
+  ],
+  "services": [
+    {
+      "name": "codestra-sms-standby",
+      "upstream": "no-delivery-middleware-fixture:8080",
+      "path": "/v1/sms",
+      "requiredScope": "sms.send",
+      "methods": ["POST"],
+      "connectTimeoutMs": 3000, "writeTimeoutMs": 5000,
+      "readTimeoutMs": 5000, "retries": 0,
+      "bodyLimitBytes": 65536, "ratePerMinute": 10
+    },
+    {
+      "name": "codestra-email-standby",
+      "upstream": "no-delivery-middleware-fixture:8080",
+      "path": "/v1/email",
+      "requiredScope": "email.send",
+      "methods": ["POST"],
+      "connectTimeoutMs": 3000, "writeTimeoutMs": 5000,
+      "readTimeoutMs": 5000, "retries": 0,
+      "bodyLimitBytes": 131072, "ratePerMinute": 5
+    },
+    {
+      "name": "codestra-sms-webhook-standby",
+      "upstream": "no-delivery-middleware-fixture:8080",
+      "path": "/v1/webhooks/sms",
+      "requiredScope": "webhooks.sms.ingest",
+      "methods": ["POST"],
+      "connectTimeoutMs": 3000, "writeTimeoutMs": 5000,
+      "readTimeoutMs": 5000, "retries": 0,
+      "bodyLimitBytes": 65536, "ratePerMinute": 60
+    },
+    {
+      "name": "codestra-email-webhook-standby",
+      "upstream": "no-delivery-middleware-fixture:8080",
+      "path": "/v1/webhooks/email",
+      "requiredScope": "webhooks.email.ingest",
+      "methods": ["POST"],
+      "connectTimeoutMs": 3000, "writeTimeoutMs": 5000,
+      "readTimeoutMs": 5000, "retries": 0,
+      "bodyLimitBytes": 131072, "ratePerMinute": 60
+    }
+  ],
+  "gatedRouteFamilies": {
+    "scraper": {"state": "BLOCKED", "routeCreated": false},
+    "telephony": {"state": "BLOCKED", "routeCreated": false}
+  },
+  "nativeProtocolPortsExcluded": [25, 2525, 2775, 8990, 5060, 5061, 4569, 5038, 8088, 4573, 5672, 6379, 5432, 3306, 9100],
+  "idempotency": {
+    "requiredForCommands": true,
+    "tenantScoped": true,
+    "changedBodyConflict": true,
+    "retentionSeconds": 2592000,
+    "failClosed": true
+  },
+  "webhookSecurity": {
+    "versionedHmac": true,
+    "keyIdentifier": true,
+    "rawBodyDigest": true,
+    "constantTimeComparison": true,
+    "replayWindowSeconds": 300,
+    "uniqueEventId": true
+  }
+}

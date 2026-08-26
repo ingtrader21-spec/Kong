@@ -1,0 +1,75 @@
+{
+  "schema": "codestra.kong.canonical-routes.v2",
+  "canonicalHost": "api.codestra.co",
+  "legacyHost": "api.codestra.agency",
+  "legacyHostEnabled": false,
+  "unverifiedExistingRouteNames": [
+    "codestra-token-validation-certification",
+    "cod-web-out-email-production",
+    "codestra-communication-canonical-read",
+    "codestra-communication-canonical-write",
+    "codestra-communication-oauth-shadow-create",
+    "codestra-mail-api"
+  ],
+  "contractRoutes": [
+    {
+      "name": "codestra-callback-read",
+      "hosts": ["api.codestra.co"],
+      "paths": ["/api/v1/callbacks"],
+      "methods": ["GET"],
+      "protocols": ["http"],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "codestra-middleware-integration-api-1",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-callback-routes.json",
+      "requiredPlugins": ["jwt", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+    },
+    {
+      "name": "codestra-callback-control",
+      "hosts": ["api.codestra.co"],
+      "paths": ["/api/v1/control/callbacks"],
+      "methods": ["POST"],
+      "protocols": ["http"],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "codestra-middleware-integration-api-1",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-callback-routes.json",
+      "requiredPlugins": ["jwt", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+    },
+    {
+      "name": "codestra-campaign-policy-check",
+      "hosts": ["api.codestra.co"],
+      "paths": ["/api/v1/automation/policy-check"],
+      "methods": ["POST"],
+      "protocols": ["https"],
+      "stripPath": false,
+      "preserveHost": false,
+      "serviceHost": "codestra-middleware-integration-api-1",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-campaign-automation-routes.json",
+      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+    },
+    {
+      "name": "codestra-campaign-result-submit",
+      "hosts": ["api.codestra.co"],
+      "paths": ["/api/v1/integrations/n8n/results"],
+      "methods": ["POST"],
+      "protocols": ["https"],
+      "stripPath": false,
+      "preserveHost": false,
+      "serviceHost": "codestra-middleware-integration-api-1",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-campaign-automation-routes.json",
+      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+    }
+  ],
+  "routes": [
+    {"name": "crm-route", "path": "/v1/crm", "methods": ["GET", "POST", "PATCH", "OPTIONS"], "auth": "key-auth", "maxBodyMb": 2, "ratePerMinute": 120},
+    {"name": "email-route", "path": "/v1/email", "methods": ["GET", "POST"], "auth": "key-auth", "maxBodyMb": 10, "ratePerMinute": 60},
+    {"name": "sms-route", "path": "/v1/sms", "methods": ["GET", "POST"], "auth": "key-auth", "maxBodyMb": 1, "ratePerMinute": 60},
+    {"name": "webhooks-route", "path": "/v1/webhooks", "methods": ["POST"], "auth": "key-auth", "maxBodyMb": 2, "ratePerMinute": 120},
+    {"name": "sms-dlr-telnexa-route", "path": "/v1/sms/dlr/telnexa", "methods": ["POST"], "auth": "key-auth", "maxBodyMb": 1, "ratePerMinute": 240}
+  ]
+}

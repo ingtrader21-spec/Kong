@@ -1,0 +1,32 @@
+{
+  "service": {
+    "name": "codestra-campaign-automation-api",
+    "host": "codestra-middleware-integration-api-1",
+    "port": 8095,
+    "protocol": "http"
+  },
+  "consumer": {
+    "username": "codestra-n8n-campaign-crm-production",
+    "custom_id": "codestra-n8n-campaign-crm-production"
+  },
+  "issuer": "https://auth.codestra.co/realms/codestra",
+  "audience": "codestra-middleware",
+  "environment": "production",
+  "host": "api.codestra.co",
+  "routes": [
+    {
+      "name": "codestra-campaign-policy-check",
+      "path": "/api/v1/automation/policy-check",
+      "scope": "n8n.policy.check",
+      "rate_per_minute": 120,
+      "max_body_mb": 1
+    },
+    {
+      "name": "codestra-campaign-result-submit",
+      "path": "/api/v1/integrations/n8n/results",
+      "scope": "n8n.results.submit",
+      "rate_per_minute": 120,
+      "max_body_mb": 1
+    }
+  ]
+}
