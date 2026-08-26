@@ -1,0 +1,278 @@
+name: Bootstrap Kong repository migration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/bootstrap-kong-migration.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bootstrap-kong-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    env:
+      SOURCE_REPOSITORY: appolon1908-hue/codestra-production-platform
+      SOURCE_PROTECTED_SHA: f3a16308194378a7b1580e04943dc98d64619077
+      SOURCE_ROUTE_PR: '130'
+      SOURCE_ROUTE_SHA: b340023f5e74e1f9154fc97590c9b6a48caa8b99
+      MIGRATION_BRANCH: migration/import-kong-authority-20260826
+    steps:
+      - name: Check out target repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out pinned source authorities
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --no-checkout \
+            "https://github.com/${SOURCE_REPOSITORY}.git" source-platform
+          git -C source-platform fetch --depth=1 origin "${SOURCE_PROTECTED_SHA}"
+          git -C source-platform checkout --detach "${SOURCE_PROTECTED_SHA}"
+          git clone --filter=blob:none --no-checkout \
+            "https://github.com/${SOURCE_REPOSITORY}.git" source-route
+          git -C source-route fetch --depth=1 origin "${SOURCE_ROUTE_SHA}"
+          git -C source-route checkout --detach "${SOURCE_ROUTE_SHA}"
+          test "$(git -C source-platform rev-parse HEAD)" = "${SOURCE_PROTECTED_SHA}"
+          test "$(git -C source-route rev-parse HEAD)" = "${SOURCE_ROUTE_SHA}"
+
+      - name: Build canonical Kong source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf migration-tree
+          mkdir -p migration-tree
+
+          copy_tree() {
+            local source_root=$1 relative=$2
+            if [[ -d "${source_root}/${relative}" ]]; then
+              mkdir -p "migration-tree/${relative}"
+              cp -a "${source_root}/${relative}/." "migration-tree/${relative}/"
+            fi
+          }
+
+          copy_file() {
+            local source_root=$1 relative=$2
+            if [[ -f "${source_root}/${relative}" ]]; then
+              mkdir -p "migration-tree/$(dirname "${relative}")"
+              cp -a "${source_root}/${relative}" "migration-tree/${relative}"
+            fi
+          }
+
+          # Current protected runtime, database, standby, policy and runbook authority.
+          copy_tree source-platform deploy/kong
+          copy_tree source-platform deploy/kong-production-standby
+          copy_tree source-platform operations/kong-database
+
+          while IFS= read -r path; do
+            copy_file source-platform "${path#source-platform/}"
+          done < <(
+            find source-platform/config -maxdepth 1 -type f -name 'kong-*' -print | sort
+            find source-platform/scripts -maxdepth 1 -type f \( -iname '*kong*.py' -o -iname '*kong*.sh' \) -print | sort
+            find source-platform/operations/runbooks -maxdepth 1 -type f -iname 'kong-*' -print | sort
+            find source-platform/reports -type f -iname '*kong*' -print | sort
+            find source-platform -maxdepth 1 -type f -iname '*kong*' -print | sort
+          )
+
+          # Standalone tests owned by the moved Kong packages.
+          for path in \
+            tests/test_kong_database_operations.py \
+            tests/test_kong_change_authority.py; do
+            copy_file source-platform "$path"
+          done
+
+          # Overlay the reviewed current-base route authority from PR #130.
+          for path in \
+            config/kong-canonical-middleware-routes.json \
+            deploy/kong/control-plane.yml \
+            deploy/kong/scope-policy.lua \
+            scripts/export_kong_public_route_contracts.py \
+            scripts/reconcile_kong_canonical_routes.py \
+            tests/test_kong_canonical_route_contract.py \
+            tests/test_kong_route_authority_hardening.py; do
+            copy_file source-route "$path"
+          done
+
+          # Keep the target repository focused on Kong-owned authority.
+          find migration-tree -type d -empty -delete
+
+          cat > migration-tree/README.md <<'EOF'
+          # Codestra Kong Gateway
+
+          This repository is the source authority for Codestra's Kong Gateway configuration,
+          route and plugin contracts, private standby design, PostgreSQL operations, recovery,
+          monitoring, reconciliation tooling, and Kong-specific tests.
+
+          ## Architecture boundary
+
+          ```text
+          Public client
+            -> host Caddy (public TLS edge)
+            -> Docker upstream-gateway
+            -> private Kong proxy
+            -> private application services
+          ```
+
+          Kong proxy, Kong Admin API, middleware ports, Redis, and PostgreSQL must not be
+          published to the public Internet. Host Caddy remains outside Docker.
+
+          ## Repository layout
+
+          - `deploy/kong/` — declarative route/service/plugin authority and scope policy.
+          - `deploy/kong-production-standby/` — private standby and authentication middleware.
+          - `config/` — canonical route and security manifests.
+          - `scripts/` — dry-run reconciliation, export, standby, validation, and rollback tools.
+          - `operations/kong-database/` — Kong PostgreSQL security, backup, PITR, HA, metrics,
+            systemd units, approvals, and runbooks.
+          - `operations/runbooks/` — Kong activation and rollback procedures.
+          - `tests/` — standalone Kong route and database authority tests.
+          - `docs/history/` — migrated historical Kong evidence retained for traceability.
+
+          ## Safety defaults
+
+          Reconciliation tools are dry-run by default. Live Admin API mutation, database
+          cutover, DNS promotion, fencing, traffic activation, or deployment requires a
+          separate reviewed change record, current exact-head approval, recovery evidence,
+          and an active maintenance window.
+          EOF
+
+          cat > migration-tree/SECURITY.md <<'EOF'
+          # Security policy
+
+          Never commit Kong Admin credentials, database passwords, object-storage keys,
+          private keys, live certificates, consumer credentials, API keys, bearer tokens,
+          cookies, database data, backup archives, or runtime logs.
+
+          Public route authority must bind exact hosts, methods, paths, protocols, services,
+          upstreams, plugin names, and plugin configurations. Name-only allowlists and
+          credential-bearing exports are prohibited.
+          EOF
+
+          cat > migration-tree/.gitignore <<'EOF'
+          __pycache__/
+          .pytest_cache/
+          .venv/
+          *.py[cod]
+          *.log
+          *.pem
+          *.key
+          *.crt
+          *.p12
+          *.pfx
+          *.dump
+          *.sql.gz
+          *.tar
+          *.tar.gz
+          *.gpg
+          *.age
+          .env
+          .env.*
+          secrets/
+          runtime/
+          spool/
+          backups/
+          evidence/private/
+          EOF
+
+          cat > migration-tree/pytest.ini <<'EOF'
+          [pytest]
+          testpaths = tests
+          addopts = -ra
+          EOF
+
+          mkdir -p migration-tree/docs/migration
+          cat > migration-tree/docs/migration/from-codestra-production-platform.md <<EOF
+          # Repository extraction provenance
+
+          Kong-owned source was extracted from:
+
+          - source repository: \`${SOURCE_REPOSITORY}\`
+          - protected source SHA: \`${SOURCE_PROTECTED_SHA}\`
+          - route hardening PR: \`#${SOURCE_ROUTE_PR}\`
+          - route authority SHA: \`${SOURCE_ROUTE_SHA}\`
+          - target repository: \`${GITHUB_REPOSITORY}\`
+
+          The extraction copies source authority only. It does not mutate the live Kong Admin
+          API, PostgreSQL, Caddy, DNS, firewall, containers, or public traffic. Historical Git
+          commits remain available in the original platform repository and are referenced here
+          rather than rewritten or falsely represented as native target history.
+          EOF
+
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          root = Path('migration-tree')
+          files = []
+          for path in sorted(p for p in root.rglob('*') if p.is_file()):
+              files.append({
+                  'path': path.relative_to(root).as_posix(),
+                  'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+                  'size': path.stat().st_size,
+              })
+          manifest = {
+              'schema': 'codestra.kong.repository-migration.v1',
+              'generated_at': datetime.now(timezone.utc).isoformat(),
+              'source_repository': os.environ['SOURCE_REPOSITORY'],
+              'source_protected_sha': os.environ['SOURCE_PROTECTED_SHA'],
+              'source_route_pr': int(os.environ['SOURCE_ROUTE_PR']),
+              'source_route_sha': os.environ['SOURCE_ROUTE_SHA'],
+              'target_repository': os.environ['GITHUB_REPOSITORY'],
+              'production_state_changed': False,
+              'files': files,
+          }
+          (root / 'MIGRATION_MANIFEST.json').write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + '\n'
+          )
+          PY
+
+      - name: Validate migration tree before push
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f migration-tree/deploy/kong/control-plane.yml
+          test -f migration-tree/deploy/kong/scope-policy.lua
+          test -f migration-tree/config/kong-canonical-middleware-routes.json
+          test -f migration-tree/operations/kong-database/README.md
+          test -f migration-tree/scripts/reconcile_kong_canonical_routes.py
+          test -f migration-tree/tests/test_kong_route_authority_hardening.py
+          ! grep -RIlE --exclude='*.md' --exclude='MIGRATION_MANIFEST.json' \
+            '(BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|Authorization:[[:space:]]*Bearer[[:space:]]+[^[:space:]]+|client_secret[[:space:]]*=[[:space:]]*[^[:space:]]+)' \
+            migration-tree
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import yaml
+          for path in Path('migration-tree').rglob('*.json'):
+              json.loads(path.read_text())
+          for path in list(Path('migration-tree').rglob('*.yml')) + list(Path('migration-tree').rglob('*.yaml')):
+              yaml.safe_load(path.read_text())
+          print('MIGRATION_SOURCE_VALIDATION=PASS')
+          PY
+
+      - name: Commit migration branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -B "${MIGRATION_BRANCH}"
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name .git ! -name migration-tree -exec rm -rf -- {} +
+          cp -a migration-tree/. .
+          rm -rf migration-tree source-platform source-route
+          git add --all
+          git diff --cached --check
+          git commit -m 'feat: import authoritative Kong gateway source'
+          git push --force-with-lease origin "HEAD:${MIGRATION_BRANCH}"
