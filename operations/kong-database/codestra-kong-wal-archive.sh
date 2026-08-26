@@ -22,11 +22,12 @@ if [[ ! -s "$artifact" ]]; then
   sha256sum "$artifact" >"$artifact.sha256"
 fi
 
-export RESTIC_REPOSITORY="$(cat /etc/codestra/backup/restic-repository)"
+RESTIC_REPOSITORY="$(cat /etc/codestra/backup/restic-repository)"
+AWS_ACCESS_KEY_ID="$(cat /etc/codestra/backup/b2-access-key-id)"
+AWS_SECRET_ACCESS_KEY="$(cat /etc/codestra/backup/b2-secret-access-key)"
+AWS_DEFAULT_REGION="$(cat /etc/codestra/backup/b2-region)"
+export RESTIC_REPOSITORY AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION
 export RESTIC_PASSWORD_FILE=/etc/codestra/backup/restic-password
 export RESTIC_CACHE_DIR=/opt/codestra/backups/kong-database/.restic-cache
-export AWS_ACCESS_KEY_ID="$(cat /etc/codestra/backup/b2-access-key-id)"
-export AWS_SECRET_ACCESS_KEY="$(cat /etc/codestra/backup/b2-secret-access-key)"
-export AWS_DEFAULT_REGION="$(cat /etc/codestra/backup/b2-region)"
 restic backup --quiet --tag kong-database-wal "$artifact" "$artifact.sha256"
 touch "$spool/LAST_OFFHOST_SUCCESS"
