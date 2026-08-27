@@ -23,6 +23,23 @@ def test_moneybee_identity_edge_is_fail_closed():
     assert route["backendMustRevalidateJwt"] is True
     assert route["rateLimitPerMinute"] <= 10
     assert route["maxBodyBytes"] <= 65536
+    assert "openid-connect" in route["requiredPlugins"]
+    assert "pre-function" in route["requiredPlugins"]
+    assert route["openidConnect"] == {
+        "authMethods": ["bearer"],
+        "issuerDiscovery": "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration",
+        "audience": ["moneybee-api"],
+        "consumerClaim": ["azp"],
+    }
+    assert route["claimEnforcement"] == {
+        "hook": "pre-function",
+        "failClosed": True,
+        "requireExactIssuer": True,
+        "requireAudience": "moneybee-api",
+        "requireAuthorizedParty": "moneybee-borrower",
+        "requireEmailVerified": True,
+        "denyMissingRequiredClaims": True,
+    }
 
     security = CONTRACT["security"]
     assert security["tlsRequired"] is True
