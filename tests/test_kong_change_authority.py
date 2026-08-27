@@ -14,9 +14,10 @@ VALIDATOR = ROOT / "operations" / "kong-database" / "validate-change-authority.s
 def approved_values(tmp_path: Path) -> dict[str, str]:
     now = datetime.now(timezone.utc)
     evidence = {}
+    markers = {"restore": "RESTORE_TEST", "pitr": "PITR_REHEARSAL"}
     for name in ("backup", "offhost", "restore", "pitr", "rollback", "telephony"):
         path = tmp_path / f"{name}.evidence"
-        path.write_text(f"{name.upper()}=PASS\n")
+        path.write_text(f"{markers.get(name, name.upper())}=PASS\n")
         evidence[name] = str(path)
     return {
         "KONG_CHANGE_ID": "CHG-SYNTHETIC-001",

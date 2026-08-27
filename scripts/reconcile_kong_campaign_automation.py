@@ -234,7 +234,7 @@ def main() -> int:
         route_payload = {
             "name": expected["name"], "service.id": service["id"],
             "hosts[]": [manifest["host"]], "paths[]": [expected["path"]],
-            "methods[]": ["POST"], "protocols[]": ["https"],
+            "methods[]": ["POST"], "protocols[]": ["http"],
             "strip_path": "false", "https_redirect_status_code": 426,
         }
         if route and args.apply:
@@ -247,7 +247,7 @@ def main() -> int:
         require_exact_fields(route, {
             "name": expected["name"], "hosts": [manifest["host"]],
             "paths": [expected["path"]], "methods": ["POST"],
-            "protocols": ["https"], "strip_path": False,
+            "protocols": ["http"], "strip_path": False,
             "https_redirect_status_code": 426,
         }, expected["name"])
         if route.get("service", {}).get("id") != service["id"]:

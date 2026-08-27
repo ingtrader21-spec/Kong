@@ -32,8 +32,8 @@
     },
     {
       "path": "config/kong-canonical-middleware-routes.json",
-      "sha256": "4aae1c37c1505df8a8fe9d3f6638ac39a5d266b7fdb2fc7f228a54ec250004eb",
-      "size": 3271
+      "sha256": "787280a5bc02d1636c96ee9ae5684e339b97a7fcc979a068ff7c9942a70f6b6f",
+      "size": 3269
     },
     {
       "path": "deploy/kong/control-plane.yml",
@@ -62,8 +62,8 @@
     },
     {
       "path": "deploy/kong-production-standby/auth-middleware/body_limit.py",
-      "sha256": "174177c902029c72fc1eddfbee65ff50c5f9b7db5ac1713f9ae414d2f40b3b1b",
-      "size": 3916
+      "sha256": "d5a95c1fac2312a4ab0d76e0d54937321222bdd53aee03fdea922ac9a7e1d906",
+      "size": 3917
     },
     {
       "path": "deploy/kong-production-standby/auth-middleware/test_body_limit.py",
@@ -77,8 +77,8 @@
     },
     {
       "path": "deploy/kong-production-standby/compose.standby.yaml",
-      "sha256": "7311a030cabde527d86d0c27ac662911d300e966226136e6da1e178dbe25cb07",
-      "size": 1284
+      "sha256": "9b085f0bc91819cd524008f76e0c802a9e56b644d1d80c1b9b19a63ff2614597",
+      "size": 1285
     },
     {
       "path": "deploy/kong-production-standby/identity-registry/001_certifier_scopes.sql",
@@ -217,8 +217,8 @@
     },
     {
       "path": "operations/kong-database/codestra-kong-wal-archive.sh",
-      "sha256": "0187cc123763880020a13ed96ec311f1548d946c7c812b3379a31f57bb09bee3",
-      "size": 1316
+      "sha256": "554e87a3d83757dfda606398df57bc709e74c2e72f08f65ab1ba9c65c7055090",
+      "size": 1339
     },
     {
       "path": "operations/kong-database/ha-inventory.env.example",
@@ -272,8 +272,8 @@
     },
     {
       "path": "operations/kong-database/validate-change-authority.sh",
-      "sha256": "28a3036dc0bfcd50b4b4c5088fef9170a63381dac698758fe9332195c0e5dfec",
-      "size": 6957
+      "sha256": "9ade0b191ff345001e86b60dcaf36b6343c011ea19e17ba33b12c9754dd176b9",
+      "size": 6972
     },
     {
       "path": "operations/runbooks/kong-production-activation.md",
@@ -307,13 +307,13 @@
     },
     {
       "path": "scripts/reconcile_kong_campaign_automation.py",
-      "sha256": "11af4dd0b567e1889e4a747d214180490895a48bba58e4bc54897d2e6cf7269c",
-      "size": 12690
+      "sha256": "b139515821a97eb6ab113c94ac09638f1bd4ae0fc9cd14da12dfdf1c7c4eb08c",
+      "size": 12688
     },
     {
       "path": "scripts/reconcile_kong_canonical_routes.py",
-      "sha256": "3e752f014e536b8b9b87ea433728e82d568265c3826a5aafc843fe93ac7a81bc",
-      "size": 15228
+      "sha256": "cf7b1950a5e9d80574258e74230c0d26e8ac39c349891063bb8b69854116f9ab",
+      "size": 18749
     },
     {
       "path": "scripts/rollback_kong_standby.py",
@@ -337,8 +337,8 @@
     },
     {
       "path": "tests/test_kong_change_authority.py",
-      "sha256": "edf02dead9216a1333924def1fe7b7a02666b0a981450f39c6979da013676786",
-      "size": 6899
+      "sha256": "df3ab12329b5365c0ea7fe1135f152066e4e552f69b7b4883a6a434b8f0712f2",
+      "size": 6986
     },
     {
       "path": "tests/test_kong_database_operations.py",
@@ -347,13 +347,13 @@
     },
     {
       "path": "tests/test_kong_route_authority_hardening.py",
-      "sha256": "8df251a94cacfdc256149b6bf61622e92c1c0c4c4d624154aedadfc377419d8a",
-      "size": 10177
+      "sha256": "0b2e013195c9d7ebf36ed81a6ed5617e7b0b4858451add86952cb2657035c62b",
+      "size": 14485
     },
     {
       "path": "tools/verify_migration_manifest.py",
-      "sha256": "94677658d586dac4d91ec3a9c86b1aab19e670f5eae3ad3d1f24e3cce237c5ba",
-      "size": 702
+      "sha256": "b79f77bd837128985bd10adfecfce9c2de1ceac06fe05ff550e10f8f6380bba9",
+      "size": 1171
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
