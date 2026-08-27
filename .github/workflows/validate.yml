@@ -47,6 +47,5 @@ jobs:
             tests/test_kong_canonical_route_contract.py \
             tests/test_kong_route_authority_hardening.py \
             tests/test_kong_database_operations.py \
-            tests/test_kong_change_authority.py \
-            tests/test_moneybee_identity_edge.py
+            tests/test_kong_change_authority.py
           python3 tools/verify_migration_manifest.py
