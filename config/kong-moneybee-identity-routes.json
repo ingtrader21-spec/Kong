@@ -1,0 +1,52 @@
+{
+  "schema": "codestra.kong.moneybee.identity-edge.v1",
+  "state": "desired-not-activated",
+  "canonicalHost": "api.moneybeeloan.com",
+  "upstream": {
+    "serviceName": "moneybee-api",
+    "host": "moneybee-api",
+    "port": 8000,
+    "protocol": "http"
+  },
+  "identity": {
+    "issuer": "https://auth.codestra.co/realms/codestra",
+    "jwksUri": "https://auth.codestra.co/realms/codestra/protocol/openid-connect/certs",
+    "requiredAudience": "moneybee-api",
+    "registrationClient": "moneybee-borrower"
+  },
+  "routes": [
+    {
+      "name": "moneybee-account-bootstrap",
+      "path": "/api/v2/account/bootstrap",
+      "methods": ["POST"],
+      "allowedAuthorizedParties": ["moneybee-borrower"],
+      "requiredClaims": ["iss", "sub", "aud", "azp", "exp", "iat", "nbf", "email", "email_verified"],
+      "emailVerifiedRequired": true,
+      "rateLimitPerMinute": 10,
+      "maxBodyBytes": 65536,
+      "requiredPlugins": [
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting",
+        "response-transformer"
+      ],
+      "backendMustRevalidateJwt": true
+    }
+  ],
+  "prohibitedPublicPaths": [
+    "/admin/realms",
+    "/realms/codestra/users",
+    "/keycloak/users",
+    "/identity/otp",
+    "/identity/password",
+    "/identity/reset-token"
+  ],
+  "security": {
+    "tlsRequired": true,
+    "wildcardHostsAllowed": false,
+    "browserPasswordTransit": false,
+    "otpTransit": false,
+    "keycloakAdminApiExposure": false,
+    "activationRequiresReviewedRuntimeChange": true
+  }
+}
