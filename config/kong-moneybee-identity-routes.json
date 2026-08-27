@@ -25,11 +25,28 @@
       "rateLimitPerMinute": 10,
       "maxBodyBytes": 65536,
       "requiredPlugins": [
+        "openid-connect",
+        "pre-function",
         "correlation-id",
         "rate-limiting",
         "request-size-limiting",
         "response-transformer"
       ],
+      "openidConnect": {
+        "authMethods": ["bearer"],
+        "issuerDiscovery": "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration",
+        "audience": ["moneybee-api"],
+        "consumerClaim": ["azp"]
+      },
+      "claimEnforcement": {
+        "hook": "pre-function",
+        "failClosed": true,
+        "requireExactIssuer": true,
+        "requireAudience": "moneybee-api",
+        "requireAuthorizedParty": "moneybee-borrower",
+        "requireEmailVerified": true,
+        "denyMissingRequiredClaims": true
+      },
       "backendMustRevalidateJwt": true
     }
   ],
