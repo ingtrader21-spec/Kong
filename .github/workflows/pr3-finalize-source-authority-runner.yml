@@ -46,6 +46,14 @@ jobs:
               'stat.S_ISLNK(kinked.st_mode)',
               'stat.S_ISLNK(linked.st_mode)',
           )
+
+          fragile_start = 'replace_once(\n    "tests/test_kong_change_authority.py",'
+          fragile_end = '\n\nchange_tests = root / "tests/test_kong_change_authority.py"'
+          start = script.index(fragile_start)
+          end = script.index(fragile_end, start)
+          bounded_edit = '''change_test_path = root / "tests/test_kong_change_authority.py"\nchange_test_source = change_test_path.read_text()\nfunction_start = change_test_source.index("def transaction_residue(root: Path) -> list[Path]:")\nfunction_end = change_test_source.index("\\n\\n\\n@pytest.mark.parametrize", function_start)\nreplacement_function = """def transaction_residue(root: Path) -> list[Path]:\n    paths = sorted(root.glob(\".MIGRATION_MANIFEST.*\")) + sorted(root.glob(\".migration-manifests.*\"))\n    return [path for path in paths if path.name != manifest_generator.LOCK_NAME]\n"""\nchange_test_path.write_text(change_test_source[:function_start] + replacement_function + change_test_source[function_end:])\n'''
+          script = script[:start] + bounded_edit + script[end:]
+
           compile(script, '<pr3-repair>', 'exec')
           runner_workflow.unlink()
           exec(compile(script, '<pr3-repair>', 'exec'))
