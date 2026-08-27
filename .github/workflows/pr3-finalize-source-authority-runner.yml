@@ -1,0 +1,89 @@
+name: Execute PR 3 source-authority repair bundle
+
+on:
+  push:
+    branches:
+      - fix/kong-source-authority-signed-replacement-20260827
+    paths:
+      - .github/workflows/pr3-finalize-source-authority-runner.yml
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Install validation dependencies
+        run: python3 -m pip install --disable-pip-version-check pytest PyYAML
+
+      - name: Execute reviewed source-only correction payload
+        run: |
+          python3 - <<'PY'
+          import base64
+          from pathlib import Path
+          import yaml
+
+          payload_workflow = Path('.github/workflows/pr3-finalize-source-authority.yml')
+          runner_workflow = Path('.github/workflows/pr3-finalize-source-authority-runner.yml')
+          document = yaml.safe_load(payload_workflow.read_text())
+          step = next(
+              item
+              for item in document['jobs']['prepare']['steps']
+              if item.get('name') == 'Apply reviewed source-only corrections'
+          )
+          script = base64.b64decode(step['env']['REPAIR_PAYLOAD']).decode()
+          script = script.replace(
+              r'\"update(preserve_host=True)\"',
+              '"update(preserve_host=True)"',
+          )
+          script = script.replace(
+              'stat.S_ISLNK(kinked.st_mode)',
+              'stat.S_ISLNK(linked.st_mode)',
+          )
+          compile(script, '<pr3-repair>', 'exec')
+          runner_workflow.unlink()
+          exec(compile(script, '<pr3-repair>', 'exec'))
+          PY
+
+      - name: Regenerate exact deterministic manifests
+        run: |
+          python3 tools/generate_migration_manifests.py
+          python3 tools/generate_migration_manifests.py --check
+          python3 tools/verify_migration_manifest.py
+
+      - name: Run focused and complete tests
+        run: |
+          python3 -m pytest -q tests/test_kong_change_authority.py tests/test_kong_route_authority_hardening.py
+          python3 -m pytest -q
+          python3 -m compileall -q deploy operations scripts tests tools
+          git diff --check
+
+      - name: Build exact repair bundle
+        run: |
+          mkdir -p pr3-source-authority-repair
+          cp --parents \
+            .gitignore \
+            MIGRATION_MANIFEST.json \
+            MIGRATION_MANIFEST.yaml \
+            tools/generate_migration_manifests.py \
+            tools/verify_migration_manifest.py \
+            scripts/reconcile_kong_canonical_routes.py \
+            deploy/kong/control-plane.yml \
+            tests/test_kong_change_authority.py \
+            tests/test_kong_route_authority_hardening.py \
+            pr3-source-authority-repair/
+          (cd pr3-source-authority-repair && sha256sum $(find . -type f | sort) > SHA256SUMS)
+
+      - name: Upload exact repair bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: kong-pr3-source-authority-repair-${{ github.sha }}
+          path: pr3-source-authority-repair
+          if-no-files-found: error
+          retention-days: 1
