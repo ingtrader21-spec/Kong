@@ -18,6 +18,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends shellcheck lua5.4
           python3 -m pip install --disable-pip-version-check pytest PyYAML
+          DECK_VERSION=1.55.0
+          DECK_SHA256=22958ee3a34fc91a41fb215c0f8f81c08e29d363bd5c41dc8287ce9bcd89bc11
+          curl --fail --location --silent --show-error \
+            --output /tmp/deck.tar.gz \
+            "https://github.com/Kong/deck/releases/download/v${DECK_VERSION}/deck_${DECK_VERSION}_linux_amd64.tar.gz"
+          echo "${DECK_SHA256}  /tmp/deck.tar.gz" | sha256sum --check
+          tar -xzf /tmp/deck.tar.gz -C /tmp deck
       - name: Validate structured source
         run: |
           python3 - <<'PY'
@@ -29,8 +36,9 @@ jobs:
           for path in list(Path('.').rglob('*.yml')) + list(Path('.').rglob('*.yaml')):
               yaml.safe_load(path.read_text())
           PY
-          python3 -m compileall -q scripts tests tools
+          python3 -m compileall -q deploy operations scripts tests tools
           luac -p deploy/kong/scope-policy.lua
+          /tmp/deck file validate deploy/kong/control-plane.yml
       - name: Validate shell and source policies
         run: |
           find operations deploy scripts -type f -name '*.sh' -print0 \
@@ -48,4 +56,7 @@ jobs:
             tests/test_kong_route_authority_hardening.py \
             tests/test_kong_database_operations.py \
             tests/test_kong_change_authority.py
+          python3 tools/generate_migration_manifests.py --check
           python3 tools/verify_migration_manifest.py
+          git diff --exit-code
+          test -z "$(git status --porcelain)"

@@ -7,7 +7,16 @@ from pathlib import Path
 
 import yaml
 
-from generate_migration_manifests import JSON_MANIFEST, YAML_MANIFEST, approved_paths
+from generate_migration_manifests import (
+    JSON_MANIFEST,
+    YAML_MANIFEST,
+    approved_paths,
+    current_outputs,
+    generation_id,
+    generator_lock,
+    recover_transaction,
+    validate_pair,
+)
 
 EXPECTED_SCHEMA = "codestra.kong.repository-migration.v1"
 PROVENANCE_FIELDS = (
@@ -49,6 +58,9 @@ def indexed_files(document: dict[str, object], label: str) -> tuple[list[dict[st
 
 
 def verify(root: Path) -> int:
+    with generator_lock(root):
+        recover_transaction(root)
+    validate_pair(current_outputs(root), root)
     yaml_document = load_document(root / YAML_MANIFEST, yaml_format=True)
     json_document = load_document(root / JSON_MANIFEST, yaml_format=False)
     require(yaml_document.get("schema") == EXPECTED_SCHEMA, "unexpected YAML schema")
@@ -57,6 +69,14 @@ def verify(root: Path) -> int:
     require(json_document.get("production_state_changed") is False, "JSON records a production change")
     require(set(yaml_document) == set(json_document), "manifest top-level field sets differ")
     require(yaml_document == json_document, "manifest documents are not semantically equivalent")
+    identifier = yaml_document.get("manifest_generation_id")
+    require(
+        isinstance(identifier, str)
+        and len(identifier) == 64
+        and all(character in "0123456789abcdef" for character in identifier),
+        "invalid manifest generation ID",
+    )
+    require(generation_id(yaml_document) == identifier, "manifest generation ID does not match document")
     for field in PROVENANCE_FIELDS:
         require(field in yaml_document, f"missing required provenance field: {field}")
         require(yaml_document[field] == json_document[field], f"manifest provenance differs: {field}")

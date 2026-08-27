@@ -2,8 +2,8 @@
   "files": [
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "4838e2986745ce1784189ba3fb64b7a8e394e17c11fe989e05cd98dba25c9649",
-      "size": 1942
+      "sha256": "846943a074181851a7cb6dfc4e58cdae8d2645c36acba087fc3fd18ff4ac1422",
+      "size": 2616
     },
     {
       "path": ".gitignore",
@@ -337,8 +337,8 @@
     },
     {
       "path": "tests/test_kong_change_authority.py",
-      "sha256": "28c6178d693df6b49bf44f8a4eb33507207e2c6f4334a4a5ce4f3144f967294b",
-      "size": 12740
+      "sha256": "e2c6203b483c86b3e9ea53b789cc52cb20c3bb550b20f750a080415258e82805",
+      "size": 19469
     },
     {
       "path": "tests/test_kong_database_operations.py",
@@ -351,12 +351,18 @@
       "size": 14737
     },
     {
+      "path": "tools/generate_migration_manifests.py",
+      "sha256": "de56b5ce6fbb92cea683d44352530bff774321e226b121a912cec38f3a898888",
+      "size": 13077
+    },
+    {
       "path": "tools/verify_migration_manifest.py",
-      "sha256": "015450a27fe20f8583ba2cf0f26fa9013be5e8aa1e6db1d34bc395dfe21adb56",
-      "size": 4231
+      "sha256": "154b3b2dd07d9e9efd64f8eb1e80e66ab40c1751c21a6dfa71a8ee1ef1fe5cc0",
+      "size": 4840
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
+  "manifest_generation_id": "d01a87cf6e6c0dd472328f3269328b3a897b518fdbf85587a56a2e022bf3edbf",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

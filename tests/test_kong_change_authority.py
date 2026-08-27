@@ -4,12 +4,15 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 
 import pytest
 import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+import generate_migration_manifests as manifest_generator
 PACKAGE = ROOT / "operations" / "kong-database" / "approvals"
 VALIDATOR = ROOT / "operations" / "kong-database" / "validate-change-authority.sh"
 
@@ -207,12 +210,12 @@ def load_manifests(root: Path) -> tuple[dict, dict]:
     )
 
 
-def test_dual_manifests_use_same_ordered_71_file_inventory(tmp_path):
+def test_dual_manifests_use_same_ordered_authority_inventory(tmp_path):
     root = copy_manifest_fixture(tmp_path)
     generate_manifests(root)
     json_manifest, yaml_manifest = load_manifests(root)
     assert json_manifest["files"] == yaml_manifest["files"]
-    assert len(json_manifest["files"]) == 71
+    assert len(json_manifest["files"]) == len(manifest_generator.approved_paths(root))
     assert [row["path"] for row in json_manifest["files"]] == sorted(
         row["path"] for row in json_manifest["files"]
     )
@@ -226,6 +229,170 @@ def test_manifest_generation_is_byte_for_byte_deterministic(tmp_path):
     generate_manifests(root)
     second = tuple((root / name).read_bytes() for name in ("MIGRATION_MANIFEST.json", "MIGRATION_MANIFEST.yaml"))
     assert first == second
+
+
+def test_generator_and_verifier_are_inventoried_with_matching_metadata(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    json_manifest, yaml_manifest = load_manifests(root)
+    json_rows = {row["path"]: row for row in json_manifest["files"]}
+    yaml_rows = {row["path"]: row for row in yaml_manifest["files"]}
+    for relative in ("tools/generate_migration_manifests.py", "tools/verify_migration_manifest.py"):
+        assert json_rows[relative] == yaml_rows[relative]
+        content = (root / relative).read_bytes()
+        assert json_rows[relative]["size"] == len(content)
+        assert json_rows[relative]["sha256"] == manifest_generator.sha256(content)
+    assert manifest_generator.MANIFEST_ARTIFACTS == {
+        "MIGRATION_MANIFEST.json", "MIGRATION_MANIFEST.yaml"
+    }
+
+
+@pytest.mark.parametrize(
+    "relative",
+    ["tools/generate_migration_manifests.py", "tools/verify_migration_manifest.py"],
+)
+def test_manifest_authority_tool_change_requires_regeneration(tmp_path, relative):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    with (root / relative).open("a") as stream:
+        stream.write("\n# stale authority test\n")
+    assert run_manifest_verifier(root).returncode != 0
+
+
+def test_generation_id_matches_across_formats_and_recomputes(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    json_manifest, yaml_manifest = load_manifests(root)
+    identifier = json_manifest["manifest_generation_id"]
+    assert identifier == yaml_manifest["manifest_generation_id"]
+    assert len(identifier) == 64
+    assert manifest_generator.generation_id(json_manifest) == identifier
+
+
+@pytest.mark.parametrize("mutation", ["missing", "malformed", "different", "nonmatching"])
+def test_invalid_generation_id_fails(tmp_path, mutation):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    json_manifest, yaml_manifest = load_manifests(root)
+    if mutation == "missing":
+        json_manifest.pop("manifest_generation_id")
+        yaml_manifest.pop("manifest_generation_id")
+    elif mutation == "malformed":
+        json_manifest["manifest_generation_id"] = "invalid"
+        yaml_manifest["manifest_generation_id"] = "invalid"
+    elif mutation == "different":
+        json_manifest["manifest_generation_id"] = "0" * 64
+    else:
+        json_manifest["manifest_generation_id"] = "0" * 64
+        yaml_manifest["manifest_generation_id"] = "0" * 64
+    (root / "MIGRATION_MANIFEST.json").write_text(
+        json.dumps(json_manifest, sort_keys=True, indent=2) + "\n"
+    )
+    (root / "MIGRATION_MANIFEST.yaml").write_text(yaml.safe_dump(yaml_manifest, sort_keys=True))
+    assert run_manifest_verifier(root).returncode != 0
+
+
+def test_mixed_generation_pair_fails(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    old_json = (root / "MIGRATION_MANIFEST.json").read_bytes()
+    with (root / "README.md").open("a") as stream:
+        stream.write("\nnew generation\n")
+    generate_manifests(root)
+    (root / "MIGRATION_MANIFEST.json").write_bytes(old_json)
+    assert run_manifest_verifier(root).returncode != 0
+
+
+class CheckpointFailure(manifest_generator.FileOperations):
+    def __init__(self, checkpoint: str, error_type=RuntimeError):
+        self.target = checkpoint
+        self.error_type = error_type
+
+    def checkpoint(self, name: str) -> None:
+        if name == self.target:
+            raise self.error_type(name)
+
+
+class ReplacementFailure(manifest_generator.FileOperations):
+    def __init__(self, replacement: int):
+        self.target = replacement
+        self.count = 0
+
+    def replace(self, source: Path, destination: Path) -> None:
+        self.count += 1
+        if self.count == self.target:
+            raise OSError(f"replacement {self.count} failed")
+        super().replace(source, destination)
+
+
+def manifest_bytes(root: Path) -> tuple[bytes, bytes]:
+    return tuple((root / name).read_bytes() for name in ("MIGRATION_MANIFEST.json", "MIGRATION_MANIFEST.yaml"))
+
+
+def transaction_residue(root: Path) -> list[Path]:
+    return sorted(root.glob(".MIGRATION_MANIFEST.*")) + sorted(root.glob(".migration-manifests.*"))
+
+
+@pytest.mark.parametrize(
+    "operations",
+    [
+        CheckpointFailure("prepared"),
+        CheckpointFailure("first_replaced"),
+        ReplacementFailure(2),
+        CheckpointFailure("before_final_verification"),
+    ],
+)
+def test_transaction_failure_restores_complete_old_pair(tmp_path, operations):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    previous = manifest_bytes(root)
+    with (root / "README.md").open("a") as stream:
+        stream.write("\ntransaction candidate\n")
+    with pytest.raises((RuntimeError, OSError)):
+        manifest_generator.generate(root, operations)
+    assert manifest_bytes(root) == previous
+    assert transaction_residue(root) == []
+
+
+def test_both_candidates_are_complete_before_first_destination_change(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    previous = manifest_bytes(root)
+
+    class InspectCandidates(CheckpointFailure):
+        def checkpoint(self, name: str) -> None:
+            if name == "candidates_staged":
+                staged = {
+                    manifest: (root / candidate).read_bytes()
+                    for manifest, candidate in manifest_generator.CANDIDATE_NAMES.items()
+                }
+                manifest_generator.validate_pair(staged, root)
+                assert manifest_bytes(root) == previous
+            super().checkpoint(name)
+
+    with pytest.raises(RuntimeError):
+        manifest_generator.generate(root, InspectCandidates("candidates_staged"))
+    assert manifest_bytes(root) == previous
+    assert transaction_residue(root) == []
+
+
+def test_interrupted_transaction_recovers_on_next_invocation(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    with (root / "README.md").open("a") as stream:
+        stream.write("\ninterrupted candidate\n")
+    with pytest.raises(KeyboardInterrupt):
+        manifest_generator.generate(root, CheckpointFailure("first_replaced", KeyboardInterrupt))
+    assert (root / manifest_generator.JOURNAL_NAME).is_file()
+    manifest_generator.generate(root)
+    assert run_manifest_verifier(root).returncode == 0
+    assert transaction_residue(root) == []
+
+
+def test_success_leaves_no_transaction_files(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    assert transaction_residue(root) == []
 
 
 @pytest.mark.parametrize(
