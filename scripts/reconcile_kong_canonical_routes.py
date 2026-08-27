@@ -59,11 +59,6 @@ def require_equal(actual, expected, label: str) -> None:
         )
 
 
-def require_config_subset(actual: dict, expected: dict, label: str) -> None:
-    for key, value in expected.items():
-        require_equal(actual.get(key), value, f"{label}.{key}")
-
-
 def form_value(value):
     if isinstance(value, bool):
         return "true" if value else "false"
@@ -84,7 +79,14 @@ def enabled_plugins(base: str, route_id: str) -> dict[str, dict]:
 
 def enabled_service_plugins(base: str, service_id: str) -> dict[str, dict]:
     plugins = all_rows(base, f"/services/{service_id}/plugins?size=1000")
-    return {plugin["name"]: plugin for plugin in plugins if plugin.get("enabled")}
+    grouped: dict[str, list[dict]] = {}
+    for plugin in plugins:
+        if plugin.get("enabled"):
+            grouped.setdefault(plugin["name"], []).append(plugin)
+    duplicates = sorted(name for name, values in grouped.items() if len(values) != 1)
+    if duplicates:
+        raise RuntimeError(f"duplicate enabled service plugins: {duplicates}")
+    return {name: values[0] for name, values in grouped.items()}
 
 
 def require_config_subset(actual, expected, label: str) -> None:
@@ -101,22 +103,27 @@ def verify_control_plane(admin: str, declared: dict, routes: list[dict], service
     verified: set[str] = set()
     for expected_service in declared.get("services", []):
         service = one([item for item in services.values() if item.get("name") == expected_service["name"]], "control-plane service")
-        require_equal(service.get("host"), "codestra-control-plane", "control-plane.service.host")
-        require_equal(service.get("port"), 8096, "control-plane.service.port")
+        declared_url = urlsplit(expected_service["url"])
+        require_equal(service.get("protocol"), declared_url.scheme, "control-plane.service.protocol")
+        require_equal(service.get("host"), declared_url.hostname, "control-plane.service.host")
+        require_equal(service.get("port"), declared_url.port, "control-plane.service.port")
+        for field in ("connect_timeout", "read_timeout", "write_timeout"):
+            require_equal(service.get(field), expected_service[field], f"control-plane.service.{field}")
         service_plugins = enabled_service_plugins(admin, service["id"])
+        expected_service_plugins = {plugin["name"] for plugin in expected_service.get("plugins", [])}
+        require_equal(sorted(service_plugins), sorted(expected_service_plugins), "control-plane.service_plugins")
         for plugin in expected_service.get("plugins", []):
-            if plugin["name"] not in service_plugins:
-                raise RuntimeError(f"control-plane missing service plugin: {plugin['name']}")
             require_config_subset(service_plugins[plugin["name"]].get("config", {}), plugin.get("config", {}), f"control-plane.{plugin['name']}")
         for expected in expected_service.get("routes", []):
             route = one([item for item in routes if item.get("name") == expected["name"]], f"control-plane route {expected['name']}")
             for field in ("hosts", "paths", "methods"):
                 require_equal(sorted(route.get(field) or []), sorted(expected.get(field) or []), f"{expected['name']}.{field}")
+            require_equal(route.get("strip_path"), expected["strip_path"], f"{expected['name']}.strip_path")
             require_equal(route.get("service", {}).get("id"), service["id"], f"{expected['name']}.service")
             route_plugins = enabled_plugins(admin, route["id"])
+            expected_route_plugins = {plugin["name"] for plugin in expected.get("plugins", [])}
+            require_equal(sorted(route_plugins), sorted(expected_route_plugins), f"{expected['name']}.route_plugins")
             for plugin in expected.get("plugins", []):
-                if plugin["name"] not in route_plugins:
-                    raise RuntimeError(f"{expected['name']} missing route plugin: {plugin['name']}")
                 require_config_subset(route_plugins[plugin["name"]].get("config", {}), plugin.get("config", {}), f"{expected['name']}.{plugin['name']}")
             verified.add(expected["name"])
     return verified

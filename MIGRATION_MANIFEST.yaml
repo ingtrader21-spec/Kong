@@ -186,8 +186,8 @@ files:
   sha256: b139515821a97eb6ab113c94ac09638f1bd4ae0fc9cd14da12dfdf1c7c4eb08c
   size: 12688
 - path: scripts/reconcile_kong_canonical_routes.py
-  sha256: ab49994c1e9f9d13c3e0f78ad140607ce4fbf09771c7a44b8139de9ef3356330
-  size: 18016
+  sha256: cf7b1950a5e9d80574258e74230c0d26e8ac39c349891063bb8b69854116f9ab
+  size: 18749
 - path: scripts/rollback_kong_standby.py
   sha256: 47878ef1417bc8c4efb241853bdefd3b1f60e811887f8e817ffc60537d7908d3
   size: 824
@@ -207,8 +207,8 @@ files:
   sha256: 2266e662e8984ce7e80231b32eb0c0574f62c3768bfb00d514b01acc61deda9e
   size: 6472
 - path: tests/test_kong_route_authority_hardening.py
-  sha256: 8df251a94cacfdc256149b6bf61622e92c1c0c4c4d624154aedadfc377419d8a
-  size: 10177
+  sha256: 0b2e013195c9d7ebf36ed81a6ed5617e7b0b4858451add86952cb2657035c62b
+  size: 14485
 - path: tools/verify_migration_manifest.py
   sha256: b79f77bd837128985bd10adfecfce9c2de1ceac06fe05ff550e10f8f6380bba9
   size: 1171

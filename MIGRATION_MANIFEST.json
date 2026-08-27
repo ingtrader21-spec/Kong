@@ -312,8 +312,8 @@
     },
     {
       "path": "scripts/reconcile_kong_canonical_routes.py",
-      "sha256": "ab49994c1e9f9d13c3e0f78ad140607ce4fbf09771c7a44b8139de9ef3356330",
-      "size": 18016
+      "sha256": "cf7b1950a5e9d80574258e74230c0d26e8ac39c349891063bb8b69854116f9ab",
+      "size": 18749
     },
     {
       "path": "scripts/rollback_kong_standby.py",
@@ -347,8 +347,8 @@
     },
     {
       "path": "tests/test_kong_route_authority_hardening.py",
-      "sha256": "8df251a94cacfdc256149b6bf61622e92c1c0c4c4d624154aedadfc377419d8a",
-      "size": 10177
+      "sha256": "0b2e013195c9d7ebf36ed81a6ed5617e7b0b4858451add86952cb2657035c62b",
+      "size": 14485
     },
     {
       "path": "tools/verify_migration_manifest.py",
