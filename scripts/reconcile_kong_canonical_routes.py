@@ -107,6 +107,8 @@ def verify_control_plane(admin: str, declared: dict, routes: list[dict], service
         require_equal(service.get("protocol"), declared_url.scheme, "control-plane.service.protocol")
         require_equal(service.get("host"), declared_url.hostname, "control-plane.service.host")
         require_equal(service.get("port"), declared_url.port, "control-plane.service.port")
+        declared_path = declared_url.path or None
+        require_equal(service.get("path"), declared_path, "control-plane.service.path")
         for field in ("connect_timeout", "read_timeout", "write_timeout"):
             require_equal(service.get(field), expected_service[field], f"control-plane.service.{field}")
         service_plugins = enabled_service_plugins(admin, service["id"])
@@ -116,7 +118,7 @@ def verify_control_plane(admin: str, declared: dict, routes: list[dict], service
             require_config_subset(service_plugins[plugin["name"]].get("config", {}), plugin.get("config", {}), f"control-plane.{plugin['name']}")
         for expected in expected_service.get("routes", []):
             route = one([item for item in routes if item.get("name") == expected["name"]], f"control-plane route {expected['name']}")
-            for field in ("hosts", "paths", "methods"):
+            for field in ("hosts", "paths", "methods", "protocols"):
                 require_equal(sorted(route.get(field) or []), sorted(expected.get(field) or []), f"{expected['name']}.{field}")
             require_equal(route.get("strip_path"), expected["strip_path"], f"{expected['name']}.strip_path")
             require_equal(route.get("service", {}).get("id"), service["id"], f"{expected['name']}.service")

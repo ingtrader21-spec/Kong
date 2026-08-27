@@ -21,8 +21,8 @@ files:
   sha256: 787280a5bc02d1636c96ee9ae5684e339b97a7fcc979a068ff7c9942a70f6b6f
   size: 3269
 - path: deploy/kong/control-plane.yml
-  sha256: c0951e9fd7945fbb274e61fb0d1f6eac7890cc8ed1b4b83c6fbc6690a0d9a56f
-  size: 6538
+  sha256: d1ef6b927332bc73e1cea989e4c809f36b5b2140815b12f9637023cb3f2656e4
+  size: 6720
 - path: deploy/kong/scope-policy.lua
   sha256: ac0bcced3a0aaa3c08046dbac3fd074cab6a0b478459d14ac86c6c412eb8a42c
   size: 3198
@@ -39,8 +39,8 @@ files:
   sha256: d5a95c1fac2312a4ab0d76e0d54937321222bdd53aee03fdea922ac9a7e1d906
   size: 3917
 - path: deploy/kong-production-standby/auth-middleware/test_body_limit.py
-  sha256: cc9d0bbc8cbc14b2cb0cb25fbb57ecc0ff2c7dc0d183d1f6533271716238f500
-  size: 3462
+  sha256: 0d97b9f17c9a1b5dd1355bc6c4b7a9e6014cf25d687a9b0cf0115afbf1748cba
+  size: 3463
 - path: deploy/kong-production-standby/auth-middleware/test_token_validation.py
   sha256: 9a7989794835df300305668cc65a0874a4c9770fc52346330c4a9d86fa8fa4a4
   size: 4354
@@ -186,8 +186,8 @@ files:
   sha256: b139515821a97eb6ab113c94ac09638f1bd4ae0fc9cd14da12dfdf1c7c4eb08c
   size: 12688
 - path: scripts/reconcile_kong_canonical_routes.py
-  sha256: cf7b1950a5e9d80574258e74230c0d26e8ac39c349891063bb8b69854116f9ab
-  size: 18749
+  sha256: 59aad72728bd84914f7110f6540a452f0f4deb9cd4ffa090e80f0bacbcc70a08
+  size: 18900
 - path: scripts/rollback_kong_standby.py
   sha256: 47878ef1417bc8c4efb241853bdefd3b1f60e811887f8e817ffc60537d7908d3
   size: 824
@@ -207,8 +207,8 @@ files:
   sha256: 2266e662e8984ce7e80231b32eb0c0574f62c3768bfb00d514b01acc61deda9e
   size: 6472
 - path: tests/test_kong_route_authority_hardening.py
-  sha256: 0b2e013195c9d7ebf36ed81a6ed5617e7b0b4858451add86952cb2657035c62b
-  size: 14485
+  sha256: c91f4e7f0bcddfdcdb13454db6468407e1613e47a801a50b4f13d264c9bce7c8
+  size: 14737
 - path: tools/verify_migration_manifest.py
   sha256: b79f77bd837128985bd10adfecfce9c2de1ceac06fe05ff550e10f8f6380bba9
   size: 1171

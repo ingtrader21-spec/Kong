@@ -93,7 +93,7 @@ def test_unsupported_content_encoding_is_rejected(encoding):
 
 
 def test_invalid_configuration_fails_startup(monkeypatch):
-    for value in ("0", "-1", "65537", "unbounded", ""):
+    for value in ("0", "-1", "131073", "unbounded", ""):
         monkeypatch.setenv("AUTH_MIDDLEWARE_MAX_BODY_BYTES", value)
         with pytest.raises(RuntimeError):
             BODY_LIMIT.configured_max_body_bytes()
