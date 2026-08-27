@@ -8,7 +8,7 @@ on:
       - .github/workflows/pr3-finalize-source-authority-runner.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   prepare:
@@ -17,7 +17,7 @@ jobs:
       - name: Checkout exact branch head
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Install validation dependencies
         run: python3 -m pip install --disable-pip-version-check pytest PyYAML
@@ -72,26 +72,14 @@ jobs:
           python3 -m compileall -q deploy operations scripts tests tools
           git diff --check
 
-      - name: Build exact repair bundle
+      - name: Commit and push exact tested tree
         run: |
-          mkdir -p pr3-source-authority-repair
-          cp --parents \
-            .gitignore \
-            MIGRATION_MANIFEST.json \
-            MIGRATION_MANIFEST.yaml \
-            tools/generate_migration_manifests.py \
-            tools/verify_migration_manifest.py \
-            scripts/reconcile_kong_canonical_routes.py \
-            deploy/kong/control-plane.yml \
-            tests/test_kong_change_authority.py \
-            tests/test_kong_route_authority_hardening.py \
-            pr3-source-authority-repair/
-          (cd pr3-source-authority-repair && sha256sum $(find . -type f | sort) > SHA256SUMS)
-
-      - name: Upload exact repair bundle
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: kong-pr3-source-authority-repair-${{ github.sha }}
-          path: pr3-source-authority-repair
-          if-no-files-found: error
-          retention-days: 1
+          test ! -e .github/workflows/pr3-finalize-source-authority.yml
+          test ! -e .github/workflows/pr3-finalize-source-authority-runner.yml
+          test "$(git ls-files --stage scripts/reconcile_kong_canonical_routes.py | awk '{print $1}')" = "100755"
+          git config user.name "codestra-source-authority[bot]"
+          git config user.email "appolon1908-hue@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix: close final Kong source-authority review findings"
+          git push origin "HEAD:fix/kong-source-authority-signed-replacement-20260827"
