@@ -1,0 +1,38 @@
+name: Generate Kong manifest candidate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Install manifest dependency
+        run: python3 -m pip install --disable-pip-version-check PyYAML
+
+      - name: Generate and verify candidate pair
+        run: |
+          python3 tools/generate_migration_manifests.py
+          python3 tools/generate_migration_manifests.py --check
+          python3 tools/verify_migration_manifest.py
+          mkdir -p generated-manifest-candidate
+          cp MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml generated-manifest-candidate/
+          sha256sum generated-manifest-candidate/MIGRATION_MANIFEST.* \
+            > generated-manifest-candidate/SHA256SUMS
+
+      - name: Upload candidate pair
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: kong-manifest-candidate-${{ github.event.pull_request.head.sha || github.sha }}
+          path: generated-manifest-candidate
+          if-no-files-found: error
+          retention-days: 1
