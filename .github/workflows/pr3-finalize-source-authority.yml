@@ -1,0 +1,275 @@
+name: Prepare PR 3 source-authority repair bundle
+
+on:
+  push:
+    branches:
+      - fix/kong-source-authority-signed-replacement-20260827
+    paths:
+      - .github/workflows/pr3-finalize-source-authority.yml
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Install validation dependencies
+        run: python3 -m pip install --disable-pip-version-check pytest PyYAML
+
+      - name: Apply reviewed source-only corrections
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path.cwd()
+          workflow = root / ".github/workflows/pr3-finalize-source-authority.yml"
+          workflow.unlink()
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              target = root / path
+              text = target.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one replacement target, found {count}")
+              target.write_text(text.replace(old, new, 1))
+
+          gitignore = root / ".gitignore"
+          ignored = gitignore.read_text()
+          if ".migration-manifests.lock\n" not in ignored:
+              if ignored and not ignored.endswith("\n"):
+                  ignored += "\n"
+              ignored += ".migration-manifests.lock\n"
+              gitignore.write_text(ignored)
+
+          replace_once(
+              "tools/generate_migration_manifests.py",
+              "import os\nimport uuid\n",
+              "import os\nimport stat\nimport uuid\n",
+          )
+          replace_once(
+              "tools/generate_migration_manifests.py",
+              "            validate_pair(published, root)\n",
+              "            validate_pair(published, root, validate_inventory=False)\n",
+          )
+          replace_once(
+              "tools/generate_migration_manifests.py",
+              '''@contextmanager\ndef generator_lock(root: Path) -> Iterator[None]:\n    path = root / LOCK_NAME\n    descriptor = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)\n    try:\n        fcntl.flock(descriptor, fcntl.LOCK_EX)\n        yield\n    finally:\n        fcntl.flock(descriptor, fcntl.LOCK_UN)\n        os.close(descriptor)\n        path.unlink(missing_ok=True)\n''',
+              '''def open_manifest_lock(path: Path) -> int:\n    flags = os.O_RDWR | os.O_CREAT | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)\n    try:\n        descriptor = os.open(path, flags, 0o600)\n    except OSError as error:\n        raise TransactionError(f"unable to open manifest lock safely: {error}") from error\n    try:\n        opened = os.fstat(descriptor)\n        linked = path.lstat()\n        if not stat.S_ISREG(opened.st_mode) or not stat.S_ISREG(linked.st_mode):\n            raise TransactionError("manifest lock must be a regular file")\n        if stat.S_ISLNK(linked.st_mode):\n            raise TransactionError("manifest lock must not be a symbolic link")\n        if opened.st_uid != os.geteuid() or linked.st_uid != os.geteuid():\n            raise TransactionError("manifest lock must be owned by the effective user")\n        if stat.S_IMODE(opened.st_mode) != 0o600 or stat.S_IMODE(linked.st_mode) != 0o600:\n            raise TransactionError("manifest lock mode must be 0600")\n        if opened.st_nlink != 1 or linked.st_nlink != 1:\n            raise TransactionError("manifest lock must have exactly one link")\n        if (opened.st_dev, opened.st_ino) != (linked.st_dev, linked.st_ino):\n            raise TransactionError("manifest lock path changed during open")\n        return descriptor\n    except Exception:\n        os.close(descriptor)\n        raise\n\n\n@contextmanager\ndef generator_lock(root: Path) -> Iterator[None]:\n    path = root / LOCK_NAME\n    descriptor = open_manifest_lock(path)\n    try:\n        fcntl.flock(descriptor, fcntl.LOCK_EX)\n        linked = path.lstat()\n        opened = os.fstat(descriptor)\n        if (opened.st_dev, opened.st_ino) != (linked.st_dev, linked.st_ino):\n            raise TransactionError("manifest lock inode changed while locked")\n        if stat.S_IMODE(opened.st_mode) != 0o600 or opened.st_uid != os.geteuid():\n            raise TransactionError("manifest lock ownership or mode changed while locked")\n        yield\n    finally:\n        fcntl.flock(descriptor, fcntl.LOCK_UN)\n        os.close(descriptor)\n''',
+          )
+          replace_once(
+              "tools/generate_migration_manifests.py",
+              '''def check(root: Path = ROOT) -> int:\n    if (root / JOURNAL_NAME).exists():\n        raise TransactionError("incomplete manifest transaction requires recovery")\n    expected = render(canonical_document(root))\n    actual = current_outputs(root)\n    validate_pair(actual, root)\n    if actual != expected:\n        raise TransactionError("committed manifests differ from deterministic generator output")\n    return validate_pair(expected, root)\n''',
+              '''def check(root: Path = ROOT) -> int:\n    with generator_lock(root):\n        if (root / JOURNAL_NAME).exists():\n            raise TransactionError("incomplete manifest transaction requires recovery")\n        expected = render(canonical_document(root))\n        actual = current_outputs(root)\n        validate_pair(actual, root)\n        if actual != expected:\n            raise TransactionError("committed manifests differ from deterministic generator output")\n        return validate_pair(expected, root)\n''',
+          )
+
+          replace_once(
+              "tools/verify_migration_manifest.py",
+              '''def verify(root: Path) -> int:\n    with generator_lock(root):\n        recover_transaction(root)\n    validate_pair(current_outputs(root), root)\n''',
+              '''def verify(root: Path) -> int:\n    with generator_lock(root):\n        recover_transaction(root)\n        return verify_locked(root)\n\n\ndef verify_locked(root: Path) -> int:\n    validate_pair(current_outputs(root), root)\n''',
+          )
+
+          replace_once(
+              "scripts/reconcile_kong_canonical_routes.py",
+              '''            for field in ("hosts", "paths", "methods", "protocols"):\n                require_equal(sorted(route.get(field) or []), sorted(expected.get(field) or []), f"{expected['name']}.{field}")\n            require_equal(route.get("strip_path"), expected["strip_path"], f"{expected['name']}.strip_path")\n            require_equal(route.get("service", {}).get("id"), service["id"], f"{expected['name']}.service")\n''',
+              '''            for field in ("hosts", "paths", "methods", "protocols"):\n                require_equal(sorted(route.get(field) or []), sorted(expected.get(field) or []), f"{expected['name']}.{field}")\n            for field in (\n                "strip_path",\n                "preserve_host",\n                "path_handling",\n                "https_redirect_status_code",\n                "request_buffering",\n                "response_buffering",\n                "regex_priority",\n            ):\n                require_equal(route.get(field), expected[field], f"{expected['name']}.{field}")\n            for field, empty in (("headers", {}), ("snis", []), ("sources", []), ("destinations", [])):\n                require_equal(route.get(field) or empty, expected.get(field) or empty, f"{expected['name']}.{field}")\n            require_equal(route.get("service", {}).get("id"), service["id"], f"{expected['name']}.service")\n''',
+          )
+
+          control = root / "deploy/kong/control-plane.yml"
+          control_text = control.read_text()
+          if "preserve_host: false" not in control_text:
+              old = "        strip_path: false\n"
+              if control_text.count(old) != 7:
+                  raise SystemExit(f"control-plane route count changed: {control_text.count(old)}")
+              new = (
+                  "        strip_path: false\n"
+                  "        preserve_host: false\n"
+                  "        path_handling: v0\n"
+                  "        https_redirect_status_code: 426\n"
+                  "        request_buffering: true\n"
+                  "        response_buffering: true\n"
+                  "        regex_priority: 0\n"
+              )
+              control.write_text(control_text.replace(old, new))
+
+          replace_once(
+              "tests/test_kong_change_authority.py",
+              '''def transaction_residue(root: Path) -> list[Path]:\n    return sorted(root.glob(".MIGRATION_MANIFEST.*")) + sorted(root.glob(".migration-manifests.*"))\n''',
+              '''def transaction_residue(root: Path) -> list[Path]:\n    paths = sorted(root.glob(".MIGRATION_MANIFEST.*")) + sorted(root.glob(".migration-manifests.*"))\n    return [path for path in paths if path.name != manifest_generator.LOCK_NAME]\n''',
+          )
+
+          change_tests = root / "tests/test_kong_change_authority.py"
+          change_text = change_tests.read_text()
+          marker = "def test_manifest_lock_inode_is_persistent_and_cross_process_exclusive"
+          if marker not in change_text:
+              change_text += r'''
+
+
+def _probe_manifest_lock(root: Path) -> int:
+    code = r"""
+import fcntl
+import os
+import sys
+path = sys.argv[1]
+flags = os.O_RDWR | os.O_CREAT | getattr(os, 'O_CLOEXEC', 0) | getattr(os, 'O_NOFOLLOW', 0)
+fd = os.open(path, flags, 0o600)
+try:
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        raise SystemExit(75)
+    else:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        raise SystemExit(0)
+finally:
+    os.close(fd)
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", code, str(root / manifest_generator.LOCK_NAME)],
+        timeout=5,
+    )
+    return result.returncode
+
+
+def test_manifest_lock_inode_is_persistent_and_cross_process_exclusive(tmp_path):
+    import stat
+
+    root = copy_manifest_fixture(tmp_path)
+    lock_path = root / manifest_generator.LOCK_NAME
+    with manifest_generator.generator_lock(root):
+        first = lock_path.stat()
+        assert _probe_manifest_lock(root) == 75
+    assert _probe_manifest_lock(root) == 0
+    with manifest_generator.generator_lock(root):
+        second = lock_path.stat()
+        assert _probe_manifest_lock(root) == 75
+    assert (first.st_dev, first.st_ino) == (second.st_dev, second.st_ino)
+    assert stat.S_ISREG(second.st_mode)
+    assert stat.S_IMODE(second.st_mode) == 0o600
+    assert second.st_uid == os.geteuid()
+    assert second.st_nlink == 1
+
+
+def test_manifest_lock_rejects_mode_drift_and_symlinks(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    lock_path = root / manifest_generator.LOCK_NAME
+    with manifest_generator.generator_lock(root):
+        pass
+    lock_path.chmod(0o644)
+    with pytest.raises(manifest_generator.TransactionError, match="mode"):
+        with manifest_generator.generator_lock(root):
+            pass
+    lock_path.unlink()
+    lock_path.symlink_to(root / "README.md")
+    with pytest.raises((manifest_generator.TransactionError, OSError)):
+        with manifest_generator.generator_lock(root):
+            pass
+
+
+def test_check_holds_lock_through_expected_and_actual_comparison(tmp_path, monkeypatch):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    original = manifest_generator.current_outputs
+
+    def guarded_current_outputs(selected_root):
+        assert _probe_manifest_lock(selected_root) == 75
+        return original(selected_root)
+
+    monkeypatch.setattr(manifest_generator, "current_outputs", guarded_current_outputs)
+    assert manifest_generator.check(root) == len(manifest_generator.approved_paths(root))
+
+
+def test_verifier_holds_lock_through_all_manifest_reads(tmp_path, monkeypatch):
+    import importlib
+
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    verifier = importlib.import_module("verify_migration_manifest")
+    original = verifier.load_document
+
+    def guarded_load_document(path, *, yaml_format):
+        assert _probe_manifest_lock(root) == 75
+        return original(path, yaml_format=yaml_format)
+
+    monkeypatch.setattr(verifier, "load_document", guarded_load_document)
+    assert verifier.verify(root) == len(manifest_generator.approved_paths(root))
+
+
+def test_committed_generation_survives_later_authority_drift(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    with (root / "README.md").open("a") as stream:
+        stream.write("\ncommitted candidate\n")
+    with pytest.raises(KeyboardInterrupt):
+        manifest_generator.generate(
+            root,
+            CheckpointFailure("before_final_verification", KeyboardInterrupt),
+        )
+    committed = manifest_bytes(root)
+    assert (root / manifest_generator.JOURNAL_NAME).is_file()
+    with (root / "SECURITY.md").open("a") as stream:
+        stream.write("\npost-commit source drift\n")
+    with manifest_generator.generator_lock(root):
+        assert manifest_generator.recover_transaction(root) is True
+    assert manifest_bytes(root) == committed
+    assert transaction_residue(root) == []
+    assert run_manifest_verifier(root).returncode != 0
+'''
+              change_tests.write_text(change_text)
+
+          route_tests = root / "tests/test_kong_route_authority_hardening.py"
+          route_text = route_tests.read_text()
+          replace_target = '''            "strip_path": route["strip_path"],\n            "service": {"id": service["id"]},\n'''
+          replace_value = '''            "strip_path": route["strip_path"],\n            "preserve_host": route["preserve_host"],\n            "path_handling": route["path_handling"],\n            "https_redirect_status_code": route["https_redirect_status_code"],\n            "request_buffering": route["request_buffering"],\n            "response_buffering": route["response_buffering"],\n            "regex_priority": route["regex_priority"],\n            "headers": route.get("headers"),\n            "snis": route.get("snis"),\n            "sources": route.get("sources"),\n            "destinations": route.get("destinations"),\n            "service": {"id": service["id"]},\n'''
+          if replace_target in route_text:
+              route_text = route_text.replace(replace_target, replace_value, 1)
+          elif '"preserve_host": route["preserve_host"]' not in route_text:
+              raise SystemExit("route test fixture target not found")
+          mutation_target = '''        (lambda service, routes, plugins: routes[0].update(strip_path=True), "strip_path"),\n'''
+          mutation_value = mutation_target + '''        (lambda service, routes, plugins: routes[0].update(preserve_host=True), "preserve_host"),\n        (lambda service, routes, plugins: routes[0].update(path_handling="v1"), "path_handling"),\n        (lambda service, routes, plugins: routes[0].update(https_redirect_status_code=308), "https_redirect"),\n        (lambda service, routes, plugins: routes[0].update(request_buffering=False), "request_buffering"),\n        (lambda service, routes, plugins: routes[0].update(response_buffering=False), "response_buffering"),\n        (lambda service, routes, plugins: routes[0].update(regex_priority=10), "regex_priority"),\n        (lambda service, routes, plugins: routes[0].update(headers={"x-drift": ["1"]}), "headers"),\n'''
+          if mutation_target in route_text and "update(preserve_host=True)" not in route_text:
+              route_text = route_text.replace(mutation_target, mutation_value, 1)
+          route_tests.write_text(route_text)
+          PY
+
+      - name: Regenerate exact deterministic manifests
+        run: |
+          python3 tools/generate_migration_manifests.py
+          python3 tools/generate_migration_manifests.py --check
+          python3 tools/verify_migration_manifest.py
+
+      - name: Run focused and complete tests
+        run: |
+          python3 -m pytest -q tests/test_kong_change_authority.py tests/test_kong_route_authority_hardening.py
+          python3 -m pytest -q
+          python3 -m compileall -q deploy operations scripts tests tools
+          git diff --check
+
+      - name: Build exact repair bundle
+        run: |
+          mkdir -p pr3-source-authority-repair
+          cp --parents \
+            .gitignore \
+            MIGRATION_MANIFEST.json \
+            MIGRATION_MANIFEST.yaml \
+            tools/generate_migration_manifests.py \
+            tools/verify_migration_manifest.py \
+            scripts/reconcile_kong_canonical_routes.py \
+            deploy/kong/control-plane.yml \
+            tests/test_kong_change_authority.py \
+            tests/test_kong_route_authority_hardening.py \
+            pr3-source-authority-repair/
+          (cd pr3-source-authority-repair && sha256sum $(find . -type f | sort) > SHA256SUMS)
+
+      - name: Upload exact repair bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: kong-pr3-source-authority-repair-${{ github.sha }}
+          path: pr3-source-authority-repair
+          if-no-files-found: error
+          retention-days: 1
