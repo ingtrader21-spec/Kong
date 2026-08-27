@@ -36,16 +36,6 @@
       "size": 3269
     },
     {
-      "path": "deploy/kong/control-plane.yml",
-      "sha256": "c0951e9fd7945fbb274e61fb0d1f6eac7890cc8ed1b4b83c6fbc6690a0d9a56f",
-      "size": 6538
-    },
-    {
-      "path": "deploy/kong/scope-policy.lua",
-      "sha256": "ac0bcced3a0aaa3c08046dbac3fd074cab6a0b478459d14ac86c6c412eb8a42c",
-      "size": 3198
-    },
-    {
       "path": "deploy/kong-production-standby/README.md",
       "sha256": "4362f876f1a94480f48a5618c41f607de7f50ee1a532f4760bee524346a956fa",
       "size": 583
@@ -67,8 +57,8 @@
     },
     {
       "path": "deploy/kong-production-standby/auth-middleware/test_body_limit.py",
-      "sha256": "cc9d0bbc8cbc14b2cb0cb25fbb57ecc0ff2c7dc0d183d1f6533271716238f500",
-      "size": 3462
+      "sha256": "0d97b9f17c9a1b5dd1355bc6c4b7a9e6014cf25d687a9b0cf0115afbf1748cba",
+      "size": 3463
     },
     {
       "path": "deploy/kong-production-standby/auth-middleware/test_token_validation.py",
@@ -104,6 +94,16 @@
       "path": "deploy/kong-production-standby/kong/standby.json",
       "sha256": "0977fd510b2c8aaab8672df8be3f141462a3f5359708fa94ebba614f74d3bb59",
       "size": 2609
+    },
+    {
+      "path": "deploy/kong/control-plane.yml",
+      "sha256": "d1ef6b927332bc73e1cea989e4c809f36b5b2140815b12f9637023cb3f2656e4",
+      "size": 6720
+    },
+    {
+      "path": "deploy/kong/scope-policy.lua",
+      "sha256": "ac0bcced3a0aaa3c08046dbac3fd074cab6a0b478459d14ac86c6c412eb8a42c",
+      "size": 3198
     },
     {
       "path": "docs/migration/from-codestra-production-platform.md",
@@ -312,8 +312,8 @@
     },
     {
       "path": "scripts/reconcile_kong_canonical_routes.py",
-      "sha256": "cf7b1950a5e9d80574258e74230c0d26e8ac39c349891063bb8b69854116f9ab",
-      "size": 18749
+      "sha256": "59aad72728bd84914f7110f6540a452f0f4deb9cd4ffa090e80f0bacbcc70a08",
+      "size": 18900
     },
     {
       "path": "scripts/rollback_kong_standby.py",
@@ -337,8 +337,8 @@
     },
     {
       "path": "tests/test_kong_change_authority.py",
-      "sha256": "df3ab12329b5365c0ea7fe1135f152066e4e552f69b7b4883a6a434b8f0712f2",
-      "size": 6986
+      "sha256": "28c6178d693df6b49bf44f8a4eb33507207e2c6f4334a4a5ce4f3144f967294b",
+      "size": 12740
     },
     {
       "path": "tests/test_kong_database_operations.py",
@@ -347,13 +347,13 @@
     },
     {
       "path": "tests/test_kong_route_authority_hardening.py",
-      "sha256": "0b2e013195c9d7ebf36ed81a6ed5617e7b0b4858451add86952cb2657035c62b",
-      "size": 14485
+      "sha256": "c91f4e7f0bcddfdcdb13454db6468407e1613e47a801a50b4f13d264c9bce7c8",
+      "size": 14737
     },
     {
       "path": "tools/verify_migration_manifest.py",
-      "sha256": "b79f77bd837128985bd10adfecfce9c2de1ceac06fe05ff550e10f8f6380bba9",
-      "size": 1171
+      "sha256": "015450a27fe20f8583ba2cf0f26fa9013be5e8aa1e6db1d34bc395dfe21adb56",
+      "size": 4231
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",

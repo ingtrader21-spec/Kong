@@ -1,9 +1,12 @@
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import json
 import os
+import shutil
 import subprocess
 
 import pytest
+import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -168,3 +171,159 @@ def test_approval_packet_has_every_required_document():
         "approved-change.env.example",
     }
     assert expected <= {path.name for path in PACKAGE.iterdir()}
+
+
+def copy_manifest_fixture(tmp_path: Path) -> Path:
+    destination = tmp_path / "repository"
+    shutil.copytree(
+        ROOT,
+        destination,
+        ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache", "*.pyc"),
+    )
+    return destination
+
+
+def run_manifest_verifier(root: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["python3", str(root / "tools/verify_migration_manifest.py"), "--root", str(root)],
+        text=True,
+        capture_output=True,
+    )
+
+
+def generate_manifests(root: Path) -> None:
+    subprocess.run(
+        ["python3", str(root / "tools/generate_migration_manifests.py"), "--root", str(root)],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+
+
+def load_manifests(root: Path) -> tuple[dict, dict]:
+    return (
+        json.loads((root / "MIGRATION_MANIFEST.json").read_text()),
+        yaml.safe_load((root / "MIGRATION_MANIFEST.yaml").read_text()),
+    )
+
+
+def test_dual_manifests_use_same_ordered_71_file_inventory(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    json_manifest, yaml_manifest = load_manifests(root)
+    assert json_manifest["files"] == yaml_manifest["files"]
+    assert len(json_manifest["files"]) == 71
+    assert [row["path"] for row in json_manifest["files"]] == sorted(
+        row["path"] for row in json_manifest["files"]
+    )
+    assert run_manifest_verifier(root).returncode == 0
+
+
+def test_manifest_generation_is_byte_for_byte_deterministic(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    first = tuple((root / name).read_bytes() for name in ("MIGRATION_MANIFEST.json", "MIGRATION_MANIFEST.yaml"))
+    generate_manifests(root)
+    second = tuple((root / name).read_bytes() for name in ("MIGRATION_MANIFEST.json", "MIGRATION_MANIFEST.yaml"))
+    assert first == second
+
+
+@pytest.mark.parametrize(
+    ("manifest_name", "field"),
+    [
+        ("MIGRATION_MANIFEST.json", "sha256"),
+        ("MIGRATION_MANIFEST.yaml", "sha256"),
+        ("MIGRATION_MANIFEST.json", "size"),
+    ],
+)
+def test_stale_manifest_entry_fails(tmp_path, manifest_name, field):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    path = root / manifest_name
+    if path.suffix == ".json":
+        document = json.loads(path.read_text())
+        document["files"][0][field] = "0" * 64 if field == "sha256" else -1
+        path.write_text(json.dumps(document, sort_keys=True, indent=2) + "\n")
+    else:
+        document = yaml.safe_load(path.read_text())
+        document["files"][0][field] = "0" * 64
+        path.write_text(yaml.safe_dump(document, sort_keys=True))
+    assert run_manifest_verifier(root).returncode != 0
+
+
+@pytest.mark.parametrize("operation", ["remove", "add"])
+def test_json_entry_set_drift_fails(tmp_path, operation):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    path = root / "MIGRATION_MANIFEST.json"
+    document = json.loads(path.read_text())
+    if operation == "remove":
+        document["files"].pop()
+    else:
+        document["files"].append({"path": "unapproved", "sha256": "0" * 64, "size": 0})
+    path.write_text(json.dumps(document, sort_keys=True, indent=2) + "\n")
+    assert run_manifest_verifier(root).returncode != 0
+
+
+@pytest.mark.parametrize("manifest_name", ["MIGRATION_MANIFEST.json", "MIGRATION_MANIFEST.yaml"])
+def test_missing_manifest_fails(tmp_path, manifest_name):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    (root / manifest_name).unlink()
+    assert run_manifest_verifier(root).returncode != 0
+
+
+def test_one_sided_manifest_field_fails(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    path = root / "MIGRATION_MANIFEST.json"
+    document = json.loads(path.read_text())
+    document["json_only_field"] = True
+    path.write_text(json.dumps(document, sort_keys=True, indent=2) + "\n")
+    assert run_manifest_verifier(root).returncode != 0
+
+
+def test_missing_declared_authority_file_fails(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    (root / "README.md").unlink()
+    assert run_manifest_verifier(root).returncode != 0
+
+
+def test_undeclared_kong_authority_file_fails(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    (root / "scripts/undeclared_authority.py").write_text("raise SystemExit(0)\n")
+    assert run_manifest_verifier(root).returncode != 0
+
+
+def tracked_mode(root: Path, relative: str) -> str:
+    result = subprocess.run(
+        ["git", "ls-files", "--stage", "--", relative],
+        cwd=root,
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    return result.stdout.split(maxsplit=1)[0]
+
+
+def test_canonical_reconciler_is_tracked_executable_and_directly_invocable():
+    relative = "scripts/reconcile_kong_canonical_routes.py"
+    assert tracked_mode(ROOT, relative) == "100755"
+    result = subprocess.run([str(ROOT / relative), "--help"], text=True, capture_output=True)
+    assert result.returncode == 0, result.stderr
+
+
+def test_tracked_mode_guard_rejects_removed_executable_bit(tmp_path):
+    root = tmp_path / "repository"
+    root.mkdir()
+    relative = "scripts/reconcile_kong_canonical_routes.py"
+    path = root / relative
+    path.parent.mkdir()
+    path.write_text("#!/usr/bin/env python3\n")
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "add", relative], cwd=root, check=True)
+    subprocess.run(["git", "update-index", "--chmod=-x", relative], cwd=root, check=True)
+    assert tracked_mode(root, relative) == "100644"
+    assert tracked_mode(root, relative) != "100755"

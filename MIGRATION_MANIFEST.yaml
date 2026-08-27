@@ -20,12 +20,6 @@ files:
 - path: config/kong-canonical-middleware-routes.json
   sha256: 787280a5bc02d1636c96ee9ae5684e339b97a7fcc979a068ff7c9942a70f6b6f
   size: 3269
-- path: deploy/kong/control-plane.yml
-  sha256: d1ef6b927332bc73e1cea989e4c809f36b5b2140815b12f9637023cb3f2656e4
-  size: 6720
-- path: deploy/kong/scope-policy.lua
-  sha256: ac0bcced3a0aaa3c08046dbac3fd074cab6a0b478459d14ac86c6c412eb8a42c
-  size: 3198
 - path: deploy/kong-production-standby/README.md
   sha256: 4362f876f1a94480f48a5618c41f607de7f50ee1a532f4760bee524346a956fa
   size: 583
@@ -62,6 +56,12 @@ files:
 - path: deploy/kong-production-standby/kong/standby.json
   sha256: 0977fd510b2c8aaab8672df8be3f141462a3f5359708fa94ebba614f74d3bb59
   size: 2609
+- path: deploy/kong/control-plane.yml
+  sha256: d1ef6b927332bc73e1cea989e4c809f36b5b2140815b12f9637023cb3f2656e4
+  size: 6720
+- path: deploy/kong/scope-policy.lua
+  sha256: ac0bcced3a0aaa3c08046dbac3fd074cab6a0b478459d14ac86c6c412eb8a42c
+  size: 3198
 - path: docs/migration/from-codestra-production-platform.md
   sha256: d60890efc390f77f8ec93c92df157efb50e623af5b13b451470aba50145ae577
   size: 589
@@ -201,8 +201,8 @@ files:
   sha256: 1c65c940de3a3854a2eb7b54d06ce7444a452e67c562449d970955b8337513e8
   size: 2333
 - path: tests/test_kong_change_authority.py
-  sha256: df3ab12329b5365c0ea7fe1135f152066e4e552f69b7b4883a6a434b8f0712f2
-  size: 6986
+  sha256: 28c6178d693df6b49bf44f8a4eb33507207e2c6f4334a4a5ce4f3144f967294b
+  size: 12740
 - path: tests/test_kong_database_operations.py
   sha256: 2266e662e8984ce7e80231b32eb0c0574f62c3768bfb00d514b01acc61deda9e
   size: 6472
@@ -210,8 +210,8 @@ files:
   sha256: c91f4e7f0bcddfdcdb13454db6468407e1613e47a801a50b4f13d264c9bce7c8
   size: 14737
 - path: tools/verify_migration_manifest.py
-  sha256: b79f77bd837128985bd10adfecfce9c2de1ceac06fe05ff550e10f8f6380bba9
-  size: 1171
+  sha256: 015450a27fe20f8583ba2cf0f26fa9013be5e8aa1e6db1d34bc395dfe21adb56
+  size: 4231
 generated_at: '2026-08-26T21:10:25.642865+00:00'
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
