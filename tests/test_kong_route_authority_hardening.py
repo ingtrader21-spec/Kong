@@ -274,6 +274,16 @@ def _control_plane_live_objects():
             "methods": route["methods"],
             "protocols": route["protocols"],
             "strip_path": route["strip_path"],
+            "preserve_host": route["preserve_host"],
+            "path_handling": route["path_handling"],
+            "https_redirect_status_code": route["https_redirect_status_code"],
+            "request_buffering": route["request_buffering"],
+            "response_buffering": route["response_buffering"],
+            "regex_priority": route["regex_priority"],
+            "headers": route.get("headers"),
+            "snis": route.get("snis"),
+            "sources": route.get("sources"),
+            "destinations": route.get("destinations"),
             "service": {"id": service["id"]},
         }
         for index, route in enumerate(expected_service["routes"])
@@ -321,6 +331,13 @@ def test_control_plane_verifier_accepts_exact_declarative_authority(monkeypatch)
         (lambda service, routes, plugins: service.update(read_timeout=60000), "service.read_timeout"),
         (lambda service, routes, plugins: routes[0].update(protocols=["https"]), "protocols"),
         (lambda service, routes, plugins: routes[0].update(strip_path=True), "strip_path"),
+        (lambda service, routes, plugins: routes[0].update(preserve_host=True), "preserve_host"),
+        (lambda service, routes, plugins: routes[0].update(path_handling="v1"), "path_handling"),
+        (lambda service, routes, plugins: routes[0].update(https_redirect_status_code=308), "https_redirect"),
+        (lambda service, routes, plugins: routes[0].update(request_buffering=False), "request_buffering"),
+        (lambda service, routes, plugins: routes[0].update(response_buffering=False), "response_buffering"),
+        (lambda service, routes, plugins: routes[0].update(regex_priority=10), "regex_priority"),
+        (lambda service, routes, plugins: routes[0].update(headers={"x-drift": ["1"]}), "headers"),
         (
             lambda service, routes, plugins: plugins.append(
                 {"name": "cors", "enabled": True, "config": {}}

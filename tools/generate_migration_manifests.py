@@ -8,6 +8,7 @@ import fcntl
 import hashlib
 import json
 import os
+import stat
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
@@ -227,7 +228,7 @@ def recover_transaction(root: Path) -> bool:
                 raise TransactionError("published JSON does not match transaction journal")
             if sha256(published[YAML_MANIFEST]) != journal.get("candidate_yaml_sha256"):
                 raise TransactionError("published YAML does not match transaction journal")
-            validate_pair(published, root)
+            validate_pair(published, root, validate_inventory=False)
         except Exception:
             restore_previous_pair(root)
     elif journal.get("state") == "PREPARED":
@@ -238,17 +239,56 @@ def recover_transaction(root: Path) -> bool:
     return True
 
 
+def open_manifest_lock(path: Path) -> int:
+    flags = (
+        os.O_RDWR
+        | os.O_CREAT
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    try:
+        descriptor = os.open(path, flags, 0o600)
+    except OSError as error:
+        raise TransactionError(f"unable to open manifest lock safely: {error}") from error
+    try:
+        opened = os.fstat(descriptor)
+        linked = path.lstat()
+        if stat.S_ISLNK(linked.st_mode):
+            raise TransactionError("manifest lock must not be a symbolic link")
+        if not stat.S_ISREG(opened.st_mode) or not stat.S_ISREG(linked.st_mode):
+            raise TransactionError("manifest lock must be a regular file")
+        if opened.st_uid != os.geteuid() or linked.st_uid != os.geteuid():
+            raise TransactionError("manifest lock must be owned by the effective user")
+        if stat.S_IMODE(opened.st_mode) != 0o600 or stat.S_IMODE(linked.st_mode) != 0o600:
+            raise TransactionError("manifest lock mode must be 0600")
+        if opened.st_nlink != 1 or linked.st_nlink != 1:
+            raise TransactionError("manifest lock must have exactly one link")
+        if (opened.st_dev, opened.st_ino) != (linked.st_dev, linked.st_ino):
+            raise TransactionError("manifest lock path changed during open")
+        return descriptor
+    except Exception:
+        os.close(descriptor)
+        raise
+
+
 @contextmanager
 def generator_lock(root: Path) -> Iterator[None]:
     path = root / LOCK_NAME
-    descriptor = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+    descriptor = open_manifest_lock(path)
     try:
         fcntl.flock(descriptor, fcntl.LOCK_EX)
+        linked = path.lstat()
+        opened = os.fstat(descriptor)
+        if (opened.st_dev, opened.st_ino) != (linked.st_dev, linked.st_ino):
+            raise TransactionError("manifest lock inode changed while locked")
+        if stat.S_IMODE(opened.st_mode) != 0o600 or opened.st_uid != os.geteuid():
+            raise TransactionError("manifest lock ownership or mode changed while locked")
+        if opened.st_nlink != 1 or linked.st_nlink != 1:
+            raise TransactionError("manifest lock link count changed while locked")
         yield
     finally:
         fcntl.flock(descriptor, fcntl.LOCK_UN)
         os.close(descriptor)
-        path.unlink(missing_ok=True)
 
 
 def generate(root: Path = ROOT, operations: FileOperations | None = None) -> None:
@@ -300,14 +340,15 @@ def generate(root: Path = ROOT, operations: FileOperations | None = None) -> Non
 
 
 def check(root: Path = ROOT) -> int:
-    if (root / JOURNAL_NAME).exists():
-        raise TransactionError("incomplete manifest transaction requires recovery")
-    expected = render(canonical_document(root))
-    actual = current_outputs(root)
-    validate_pair(actual, root)
-    if actual != expected:
-        raise TransactionError("committed manifests differ from deterministic generator output")
-    return validate_pair(expected, root)
+    with generator_lock(root):
+        if (root / JOURNAL_NAME).exists():
+            raise TransactionError("incomplete manifest transaction requires recovery")
+        expected = render(canonical_document(root))
+        actual = current_outputs(root)
+        validate_pair(actual, root)
+        if actual != expected:
+            raise TransactionError("committed manifests differ from deterministic generator output")
+        return validate_pair(expected, root)
 
 
 def main() -> None:
