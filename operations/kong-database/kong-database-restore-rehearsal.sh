@@ -59,9 +59,28 @@ docker exec "$db_name" pg_isready -U kong -d kong >/dev/null
 docker exec -i "$db_name" pg_restore -U kong -d kong \
   --exit-on-error --no-owner --no-acl <"$work_dir/kong.dump"
 
-live_services="$(curl -fsS http://127.0.0.1:8001/services?size=1000 | jq '.data|length')"
-live_routes="$(curl -fsS http://127.0.0.1:8001/routes?size=1000 | jq '.data|length')"
-live_plugins="$(curl -fsS http://127.0.0.1:8001/plugins?size=1000 | jq '.data|length')"
+kong_inventory() {
+  local origin="$1" collection="$2" next page records
+  next="$origin/$collection?size=1000"
+  records="$(mktemp "$work_dir/.${collection}.XXXXXX")"
+  while [[ -n "$next" ]]; do
+    case "$next" in
+      "$origin"/*) ;;
+      /*) next="$origin$next" ;;
+      *) echo "unsafe Kong pagination URL: $next" >&2; return 1 ;;
+    esac
+    page="$(curl -fsS "$next")"
+    jq -c '.data[] | {id, name}' <<<"$page" >>"$records"
+    next="$(jq -r '.next // empty' <<<"$page")"
+  done
+  printf '%s|%s\n' \
+    "$(wc -l <"$records")" \
+    "$(LC_ALL=C sort "$records" | sha256sum | awk '{print $1}')"
+}
+
+live_services_inventory="$(kong_inventory http://127.0.0.1:8001 services)"
+live_routes_inventory="$(kong_inventory http://127.0.0.1:8001 routes)"
+live_plugins_inventory="$(kong_inventory http://127.0.0.1:8001 plugins)"
 
 docker run -d --name "$gateway_name" --network "$network_name" \
   --read-only --tmpfs /tmp:rw,nosuid,nodev,noexec \
@@ -81,12 +100,15 @@ for _ in $(seq 1 60); do
   sleep 1
 done
 docker exec "$gateway_name" kong health >/dev/null
-restored_services="$(curl -fsS "http://$restore_ip:8001/services?size=1000" | jq '.data|length')"
-restored_routes="$(curl -fsS "http://$restore_ip:8001/routes?size=1000" | jq '.data|length')"
-restored_plugins="$(curl -fsS "http://$restore_ip:8001/plugins?size=1000" | jq '.data|length')"
-test "$restored_services" -eq "$live_services"
-test "$restored_routes" -eq "$live_routes"
-test "$restored_plugins" -eq "$live_plugins"
+restored_services_inventory="$(kong_inventory "http://$restore_ip:8001" services)"
+restored_routes_inventory="$(kong_inventory "http://$restore_ip:8001" routes)"
+restored_plugins_inventory="$(kong_inventory "http://$restore_ip:8001" plugins)"
+test "$restored_services_inventory" = "$live_services_inventory"
+test "$restored_routes_inventory" = "$live_routes_inventory"
+test "$restored_plugins_inventory" = "$live_plugins_inventory"
+restored_services="${restored_services_inventory%%|*}"
+restored_routes="${restored_routes_inventory%%|*}"
+restored_plugins="${restored_plugins_inventory%%|*}"
 
 rto_seconds="$(( $(date +%s) - start_epoch ))"
 cat >"$evidence_dir/result.txt" <<EOF

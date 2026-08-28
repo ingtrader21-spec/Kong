@@ -26,6 +26,11 @@ def test_restore_is_isolated_and_never_targets_production():
     assert "kong health" in value
     for topology in ("services", "routes", "plugins"):
         assert f"restored_{topology}" in value
+    assert "kong_inventory()" in value
+    assert "while [[ -n \"$next\" ]]" in value
+    assert "sha256sum" in value
+    assert "restored_services_inventory" in value
+    assert "?size=1000 | jq '.data|length'" not in value
 
 
 def test_metrics_and_alerts_cover_production_database_gates():

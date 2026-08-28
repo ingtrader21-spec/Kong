@@ -207,6 +207,15 @@ def main() -> int:
         if not args.apply:
             raise RuntimeError("campaign service consumer is missing")
         consumer = request(args.admin_url, "POST", "/consumers", manifest["consumer"])
+    elif args.apply:
+        request(
+            args.admin_url,
+            "PATCH",
+            f"/consumers/{consumer['id']}",
+            manifest["consumer"],
+        )
+        consumer = request(args.admin_url, "GET", f"/consumers/{consumer['id']}")
+    require_exact_fields(consumer, manifest["consumer"], "campaign service consumer")
     credentials = request(args.admin_url, "GET", f"/consumers/{consumer['id']}/jwt")["data"]
     credential = one([row for row in credentials if row.get("key") == manifest["consumer"]["custom_id"]], "JWT credential")
     jwt_payload = {"key": manifest["consumer"]["custom_id"], "algorithm": "RS256", "rsa_public_key": public_key}

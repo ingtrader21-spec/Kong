@@ -36,14 +36,26 @@ def request(method: str, path: str, payload=None):
 def upsert(collection: str, name: str, payload: dict):
     query = urllib.parse.urlencode({"name": name})
     existing = request("GET", f"/{collection}?{query}").get("data", [])
+    if len(existing) > 1:
+        raise RuntimeError(f"ambiguous Kong {collection} named {name}")
     if existing:
+        if TAG not in (existing[0].get("tags") or []):
+            raise RuntimeError(
+                f"refusing to adopt unowned Kong {collection} named {name}"
+            )
         return request("PATCH", f"/{collection}/{existing[0]['id']}", payload)
     return request("POST", f"/{collection}", payload)
 
 
 def plugin(route_id: str, name: str, config: dict):
     current = request("GET", f"/routes/{route_id}/plugins").get("data", [])
-    matches = [item for item in current if item["name"] == name and TAG in (item.get("tags") or [])]
+    same_name = [item for item in current if item["name"] == name]
+    unowned = [item for item in same_name if TAG not in (item.get("tags") or [])]
+    if unowned:
+        raise RuntimeError(f"refusing to replace unowned route plugin {name}")
+    matches = [item for item in same_name if TAG in (item.get("tags") or [])]
+    if len(matches) > 1:
+        raise RuntimeError(f"ambiguous managed route plugin {name}")
     payload = {"name": name, "enabled": True, "config": config, "tags": [TAG]}
     if matches:
         return request("PATCH", f"/plugins/{matches[0]['id']}", payload)

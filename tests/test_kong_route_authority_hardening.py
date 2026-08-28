@@ -12,6 +12,8 @@ RECONCILER_PATH = ROOT / "scripts/reconcile_kong_canonical_routes.py"
 EXPORTER_PATH = ROOT / "scripts/export_kong_public_route_contracts.py"
 CONTROL_PLANE_PATH = ROOT / "deploy/kong/control-plane.yml"
 SCOPE_POLICY_PATH = ROOT / "deploy/kong/scope-policy.lua"
+STANDBY_APPLIER_PATH = ROOT / "scripts/apply_kong_standby.py"
+CAMPAIGN_RECONCILER_PATH = ROOT / "scripts/reconcile_kong_campaign_automation.py"
 
 
 def _load(path: Path, name: str):
@@ -28,6 +30,39 @@ def _module():
 
 def _exporter():
     return _load(EXPORTER_PATH, "export_kong_public_route_contracts")
+
+
+def test_standby_apply_refuses_unowned_name_collisions(monkeypatch):
+    module = _load(STANDBY_APPLIER_PATH, "apply_kong_standby")
+    calls = []
+
+    def fake_request(method, path, payload=None):
+        calls.append((method, path, payload))
+        return {"data": [{"id": "existing", "name": "standby-service", "tags": ["production"]}]}
+
+    monkeypatch.setattr(module, "request", fake_request)
+    with pytest.raises(RuntimeError, match="refusing to adopt unowned"):
+        module.upsert("services", "standby-service", {"tags": [module.TAG]})
+    assert [method for method, _, _ in calls] == ["GET"]
+
+
+def test_standby_apply_updates_only_resources_it_already_owns(monkeypatch):
+    module = _load(STANDBY_APPLIER_PATH, "apply_kong_standby_owned")
+
+    def fake_request(method, path, payload=None):
+        if method == "GET":
+            return {"data": [{"id": "owned", "tags": [module.TAG]}]}
+        return {"id": "owned", **payload}
+
+    monkeypatch.setattr(module, "request", fake_request)
+    result = module.upsert("services", "standby-service", {"tags": [module.TAG]})
+    assert result["id"] == "owned"
+
+
+def test_campaign_reconciler_validates_manifest_consumer_identity():
+    source = CAMPAIGN_RECONCILER_PATH.read_text()
+    assert 'f"/consumers/{consumer[\'id\']}"' in source
+    assert 'require_exact_fields(consumer, manifest["consumer"], "campaign service consumer")' in source
 
 
 def _inline_scope_policy() -> str:
