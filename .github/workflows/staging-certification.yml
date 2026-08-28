@@ -17,10 +17,18 @@ jobs:
         with:
           fetch-depth: 0
       - name: Require candidate ancestry from main
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           git fetch origin main --depth=100
-          git merge-base --is-ancestor HEAD origin/main || \
-            git merge-base --is-ancestor origin/main HEAD
+          if [[ "$EVENT_NAME" == pull_request ]]; then
+            test "$HEAD_REF" = main
+            test "$HEAD_SHA" = "$(git rev-parse origin/main)"
+          else
+            test "${GITHUB_REF_NAME}" = staging
+          fi
       - name: Validate source authority without live mutation
         run: |
           python3 -m pip install --disable-pip-version-check pytest PyYAML

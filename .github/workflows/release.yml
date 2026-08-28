@@ -17,13 +17,17 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
       - name: Generate immutable release evidence
         env:
+          GH_TOKEN: ${{ github.token }}
           KONG_IMAGE_DIGEST: ${{ vars.KONG_IMAGE_DIGEST }}
           STAGING_CERTIFICATION: ${{ vars.STAGING_CERTIFICATION }}
           ROLLBACK_SOURCE_SHA: ${{ vars.ROLLBACK_SOURCE_SHA }}
         run: |
           python3 -m pip install --disable-pip-version-check PyYAML
+          verification="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}" --jq '.commit.verification.verified')"
+          test "$verification" = true
           python3 tools/generate_release_manifest.py \
             --output release-manifest.json \
+            --commit-verification-status VERIFIED \
             --kong-image-digest "${KONG_IMAGE_DIGEST:-UNRESOLVED}" \
             --staging-certification "${STAGING_CERTIFICATION:-UNRESOLVED}" \
             --rollback-source-sha "${ROLLBACK_SOURCE_SHA:-UNRESOLVED}"

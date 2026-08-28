@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -12,6 +13,8 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
+IMAGE_DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
+VERIFIED_SIGNATURES = {"G", "U", "VERIFIED"}
 
 
 def sha256(path: Path) -> str:
@@ -25,12 +28,13 @@ def git(*args: str) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--commit-verification-status")
     parser.add_argument("--kong-image-digest", default="UNRESOLVED")
     parser.add_argument("--staging-certification", default="UNRESOLVED")
     parser.add_argument("--rollback-source-sha", default="UNRESOLVED")
     args = parser.parse_args()
     authority = yaml.safe_load((ROOT / "MIGRATION_MANIFEST.yaml").read_text())
-    verification = git("log", "-1", "--format=%G?")
+    verification = args.commit_verification_status or git("log", "-1", "--format=%G?")
     document = {
         "source_sha": git("rev-parse", "HEAD"),
         "source_tree": git("rev-parse", "HEAD^{tree}"),
@@ -46,9 +50,13 @@ def main() -> int:
         "rollback_source_sha": args.rollback_source_sha,
     }
     args.output.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n")
-    unresolved = [key for key, value in document.items() if value == "UNRESOLVED"]
+    unresolved = {key for key, value in document.items() if value == "UNRESOLVED"}
+    if verification not in VERIFIED_SIGNATURES:
+        unresolved.add("commit_verification_status")
+    if not IMAGE_DIGEST.fullmatch(args.kong_image_digest):
+        unresolved.add("kong_image_digest")
     print("RELEASE_MANIFEST=PASS" if not unresolved else "RELEASE_MANIFEST=INCOMPLETE")
-    print("UNRESOLVED=" + ",".join(unresolved))
+    print("UNRESOLVED=" + ",".join(sorted(unresolved)))
     return 0 if not unresolved else 2
 
 

@@ -3,8 +3,8 @@ files:
   sha256: e0cde929258821281cf039f09bd0d050a42c4fbe067e3c2489e905df4f7f9a67
   size: 1128
 - path: .github/workflows/release.yml
-  sha256: f8043e9c79c21ee4bf2b408655fbfe08c3ebcac2827511323ba279a79bad3c2e
-  size: 1211
+  sha256: a7d47ab20fb2da8ad3263331480d8ee408ea7e7203bceb711de45d53f0d47bc6
+  size: 1464
 - path: .github/workflows/security.yml
   sha256: d02a6624049d6e4962e4330b3772c4cc6c448a4a1aeabe19ecc531c8281e1574
   size: 2177
@@ -12,8 +12,8 @@ files:
   sha256: 863fe725259224a3ebff8f53f517a68986cdde6a08052b229dfbf6072139413e
   size: 629
 - path: .github/workflows/staging-certification.yml
-  sha256: 033e1c75abb9f1657bf62fb96adaa9dd495ecd9d4cf8e73fe63cac9da060cd9c
-  size: 1118
+  sha256: b4d22ee901e6fe8992b7d3f2b5b760d0f1017712467527f60119c9e87248f2bc
+  size: 1393
 - path: .github/workflows/validate.yml
   sha256: 85e4278c9a3155b0e2d556bc8db39dcaee34120cce55a959998fb8e4eec7b1bf
   size: 1848
@@ -230,17 +230,20 @@ files:
 - path: tests/test_kong_route_authority_hardening.py
   sha256: 242a6a801b6228888eac6d42c495a5e18d63dc4e564fa471e5859f72b1c55a7e
   size: 17693
+- path: tests/test_release_governance.py
+  sha256: 44669324390a5e9364f595aa46c9d03e149848688b75cca0197a6701394b7e5a
+  size: 1157
 - path: tools/generate_migration_manifests.py
   sha256: 0559c486feeff5a6bdb10e304f86b19f49676e98b13f055252c4cc38c9ff5553
   size: 21341
 - path: tools/generate_release_manifest.py
-  sha256: b098d1337fd15bbc31db79e2851256c341d44da919213dbe4f8841eae7dfd8fa
-  size: 2149
+  sha256: a348fe1c377d6bf9d9509c9fae13ece02b3df3101a881fe3d9905519d194cc51
+  size: 2559
 - path: tools/verify_migration_manifest.py
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 6a8303f66f477c93604122117deabda0fcd1988c0fffe67b7bfd4a2f02f0fc2e
+manifest_generation_id: b47d08fc5fecda287e2d1177bdba64197594f67f39492e6fd1652dd35c827e3a
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
