@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           fetch-depth: 0
       - name: Require candidate ancestry from main
@@ -31,4 +31,3 @@ jobs:
         run: |
           echo 'This gate validates promotion provenance and source authority.'
           echo 'Live staging acceptance remains a separately reviewed, read-only/no-provider-effects certification.'
-

@@ -11,7 +11,7 @@ jobs:
     runs-on: self-hosted
     environment: production-read-only
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
       - name: Enforce capture-only boundary
         run: |
           echo 'Server capture is intentionally manual and read-only.'
@@ -19,4 +19,3 @@ jobs:
       - name: Require reviewed capture implementation
         run: |
           test -x tools/capture_kong_server_baseline.sh
-

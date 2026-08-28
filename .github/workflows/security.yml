@@ -14,7 +14,7 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           fetch-depth: 0
       - name: Scan Git history for secrets
@@ -32,11 +32,11 @@ jobs:
           python3 -m pip install --disable-pip-version-check pip-audit==2.10.1
           python3 -m pip_audit -r deploy/kong-production-standby/auth-middleware/requirements.txt
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@5ba2889ada762081db2c4f32a729827dce632c7b
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938
         with:
           languages: python
       - name: Analyze with CodeQL
-        uses: github/codeql-action/analyze@5ba2889ada762081db2c4f32a729827dce632c7b
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938
       - name: Scan filesystem and container definitions
         uses: aquasecurity/trivy-action@d2a0b60797ff03db6132bd4e2b293f9b37081297
         with:
@@ -52,7 +52,7 @@ jobs:
           format: spdx-json
           output-file: kong-source.spdx.json
       - name: Upload SBOM
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: kong-source-sbom
           path: kong-source.spdx.json
