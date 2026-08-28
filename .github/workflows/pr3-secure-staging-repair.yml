@@ -1,0 +1,98 @@
+name: Execute PR 3 secure staging repair
+
+on:
+  push:
+    branches:
+      - fix/kong-source-authority-signed-replacement-20260827
+    paths:
+      - .github/workflows/pr3-secure-staging-repair.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact repair trigger
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Verify guarded repair ancestry
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          expected_base=765b9b73544755087db353d8d59cbfe1367ce8db
+          git merge-base --is-ancestor "$expected_base" HEAD
+          unexpected="$(
+            git diff --name-only "$expected_base"...HEAD \
+              | grep -vE '^\.github/(repair/pr3-payload-[0-9]{2}\.b64|workflows/pr3-secure-staging-repair\.yml)$' \
+              || true
+          )"
+          test -z "$unexpected" || {
+            printf 'Unexpected source drift before guarded repair:\n%s\n' "$unexpected" >&2
+            exit 1
+          }
+          test "$(find .github/repair -maxdepth 1 -type f -name 'pr3-payload-*.b64' | wc -l)" -eq 4
+
+      - name: Install validation dependencies
+        run: python3 -m pip install --disable-pip-version-check pytest PyYAML
+
+      - name: Apply exact reviewed repair
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cat .github/repair/pr3-payload-*.b64 > /tmp/pr3-repair.b64
+          echo '85ff0b1d34184d088c6c359f90c1bb63de28b8b59072c0106eaaaa6b313de18e  /tmp/pr3-repair.b64' \
+            | sha256sum --check
+          base64 --decode /tmp/pr3-repair.b64 > /tmp/pr3-repair.py
+          echo 'e810f04fbbb7002fd5957517b3ffcc2e1d28b72f490281b8625406a34c77d533  /tmp/pr3-repair.py' \
+            | sha256sum --check
+          python3 -m py_compile /tmp/pr3-repair.py
+          rm -f .github/repair/pr3-payload-*.b64
+          rmdir .github/repair
+          python3 /tmp/pr3-repair.py
+
+      - name: Regenerate and verify exact authority manifests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 tools/generate_migration_manifests.py
+          python3 tools/generate_migration_manifests.py --check
+          python3 tools/verify_migration_manifest.py
+          test ! -e .github/workflows/pr3-secure-staging-repair.yml
+          test ! -e .github/repair
+
+      - name: Run complete source validation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m compileall -q deploy operations scripts tests tools
+          python3 -m pytest -q
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import yaml
+          for path in Path('.').rglob('*.json'):
+              json.loads(path.read_text())
+          for path in list(Path('.').rglob('*.yml')) + list(Path('.').rglob('*.yaml')):
+              yaml.safe_load(path.read_text())
+          PY
+          git diff --check
+          chmod 755 scripts/reconcile_kong_canonical_routes.py
+
+      - name: Commit exact repaired source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'Codestra Production Automation'
+          git config user.email 'appolon1908-hue@users.noreply.github.com'
+          git add -A
+          test ! -e .github/workflows/pr3-secure-staging-repair.yml
+          test ! -e .github/repair
+          git diff --cached --check
+          git commit -m 'fix(kong): secure manifest staging and service-state drift checks'
+          git push origin HEAD:fix/kong-source-authority-signed-replacement-20260827
