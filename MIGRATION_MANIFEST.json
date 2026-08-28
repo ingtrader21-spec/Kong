@@ -7,12 +7,12 @@
     },
     {
       "path": ".github/workflows/release.yml",
-      "sha256": "d8824b7dadc609f239a28ed1c762398ba4d0de6413279f6c81c9a586bca38523",
+      "sha256": "f8043e9c79c21ee4bf2b408655fbfe08c3ebcac2827511323ba279a79bad3c2e",
       "size": 1211
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "43984f3ddcbb8a9ced785e29bf6da673013af710690b3084a89060f7d4f08367",
+      "sha256": "d02a6624049d6e4962e4330b3772c4cc6c448a4a1aeabe19ecc531c8281e1574",
       "size": 2177
     },
     {
@@ -402,7 +402,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "bcc4dc6d258998383423b38b2a946f115a595f0f2629ed01e39b37a5a513e58c",
+  "manifest_generation_id": "6a8303f66f477c93604122117deabda0fcd1988c0fffe67b7bfd4a2f02f0fc2e",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
