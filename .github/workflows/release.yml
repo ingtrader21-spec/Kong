@@ -12,6 +12,7 @@ permissions:
 jobs:
   release-evidence:
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Generate immutable release evidence
