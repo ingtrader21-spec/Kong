@@ -261,6 +261,7 @@ def _control_plane_live_objects():
         "host": "codestra-control-plane",
         "port": 8096,
         "path": None,
+        "enabled": expected_service["enabled"],
         "connect_timeout": 3000,
         "read_timeout": 30000,
         "write_timeout": 30000,
@@ -328,6 +329,7 @@ def test_control_plane_verifier_accepts_exact_declarative_authority(monkeypatch)
     [
         (lambda service, routes, plugins: service.update(protocol="https"), "service.protocol"),
         (lambda service, routes, plugins: service.update(path="/wrong"), "service.path"),
+        (lambda service, routes, plugins: service.update(enabled=False), "service.enabled"),
         (lambda service, routes, plugins: service.update(read_timeout=60000), "service.read_timeout"),
         (lambda service, routes, plugins: routes[0].update(protocols=["https"]), "protocols"),
         (lambda service, routes, plugins: routes[0].update(strip_path=True), "strip_path"),

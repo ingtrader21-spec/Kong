@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
 
@@ -364,10 +365,11 @@ def test_both_candidates_are_complete_before_first_destination_change(tmp_path):
     class InspectCandidates(CheckpointFailure):
         def checkpoint(self, name: str) -> None:
             if name == "candidates_staged":
-                staged = {
-                    manifest: (root / candidate).read_bytes()
-                    for manifest, candidate in manifest_generator.CANDIDATE_NAMES.items()
-                }
+                staged = {}
+                for manifest, prefix in manifest_generator.CANDIDATE_NAMES.items():
+                    matches = list(root.glob(f"{prefix}.*"))
+                    assert len(matches) == 1
+                    staged[manifest] = matches[0].read_bytes()
                 manifest_generator.validate_pair(staged, root)
                 assert manifest_bytes(root) == previous
             super().checkpoint(name)
@@ -708,3 +710,82 @@ def test_committed_generation_survives_later_authority_drift(tmp_path):
     assert manifest_bytes(root) == committed
     assert transaction_residue(root) == []
     assert run_manifest_verifier(root).returncode != 0
+
+
+
+def test_secure_staging_write_refuses_existing_symlink(tmp_path):
+    target = tmp_path / "protected-target"
+    target.write_bytes(b"protected\n")
+    target.chmod(0o640)
+    staging = tmp_path / ".candidate"
+    staging.symlink_to(target)
+    before_mode = target.stat().st_mode
+
+    with pytest.raises(manifest_generator.TransactionError, match="create staging file safely"):
+        manifest_generator.write_durable(staging, b"overwrite\n", 0o600)
+
+    assert target.read_bytes() == b"protected\n"
+    assert target.stat().st_mode == before_mode
+    assert staging.is_symlink()
+
+
+def test_transaction_candidates_use_unpredictable_ids_and_detect_inode_swap(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    previous = manifest_bytes(root)
+    target = root / "protected-target"
+    target.write_bytes(b"protected\n")
+    target.chmod(0o640)
+
+    class SwapCandidate(manifest_generator.FileOperations):
+        def checkpoint(self, name: str) -> None:
+            if name != "candidates_staged":
+                return
+            prefix = manifest_generator.CANDIDATE_NAMES[manifest_generator.YAML_MANIFEST]
+            matches = list(root.glob(f"{prefix}.*"))
+            assert len(matches) == 1
+            candidate = matches[0]
+            transaction_id = candidate.name.rsplit(".", 1)[-1]
+            assert len(transaction_id) == 32
+            assert all(character in "0123456789abcdef" for character in transaction_id)
+            candidate.unlink()
+            candidate.symlink_to(target)
+
+    with (root / "README.md").open("a") as stream:
+        stream.write("\nsecure staging candidate\n")
+    with pytest.raises(manifest_generator.TransactionError, match="staging file"):
+        manifest_generator.generate(root, SwapCandidate())
+
+    assert manifest_bytes(root) == previous
+    assert target.read_bytes() == b"protected\n"
+    assert stat.S_IMODE(target.stat().st_mode) == 0o640
+    assert transaction_residue(root) == []
+
+
+def test_transaction_recovery_files_are_unique_and_non_symlink(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+
+    class InspectRecovery(manifest_generator.FileOperations):
+        def checkpoint(self, name: str) -> None:
+            if name != "prepared":
+                return
+            journal = json.loads((root / manifest_generator.JOURNAL_NAME).read_text())
+            transaction_id = manifest_generator.require_transaction_id(journal["transaction_id"])
+            recovery_names = manifest_generator.transaction_names(
+                manifest_generator.RECOVERY_NAMES,
+                transaction_id,
+            )
+            for recovery_name in recovery_names.values():
+                recovery = root / recovery_name
+                metadata = recovery.lstat()
+                assert stat.S_ISREG(metadata.st_mode)
+                assert not stat.S_ISLNK(metadata.st_mode)
+                assert stat.S_IMODE(metadata.st_mode) == 0o600
+                assert metadata.st_nlink == 1
+
+    with (root / "README.md").open("a") as stream:
+        stream.write("\nunique recovery candidate\n")
+    manifest_generator.generate(root, InspectRecovery())
+    assert run_manifest_verifier(root).returncode == 0
+    assert transaction_residue(root) == []

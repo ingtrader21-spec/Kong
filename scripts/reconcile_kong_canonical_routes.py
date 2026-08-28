@@ -109,6 +109,11 @@ def verify_control_plane(admin: str, declared: dict, routes: list[dict], service
         require_equal(service.get("port"), declared_url.port, "control-plane.service.port")
         declared_path = declared_url.path or None
         require_equal(service.get("path"), declared_path, "control-plane.service.path")
+        require_equal(
+            service.get("enabled"),
+            expected_service["enabled"],
+            "control-plane.service.enabled",
+        )
         for field in ("connect_timeout", "read_timeout", "write_timeout"):
             require_equal(service.get(field), expected_service[field], f"control-plane.service.{field}")
         service_plugins = enabled_service_plugins(admin, service["id"])

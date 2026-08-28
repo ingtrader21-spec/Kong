@@ -1,0 +1,32 @@
+name: Export combined Kong source snapshot
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Create source snapshot
+        run: |
+          tar --exclude=.git --exclude=kong-combined-source.tar \
+            -cf kong-combined-source.tar .
+          sha256sum kong-combined-source.tar > kong-combined-source.tar.sha256
+
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: kong-combined-source-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            kong-combined-source.tar
+            kong-combined-source.tar.sha256
+          if-no-files-found: error
+          retention-days: 1
