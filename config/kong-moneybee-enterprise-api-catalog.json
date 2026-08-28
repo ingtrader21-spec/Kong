@@ -1,0 +1,149 @@
+{
+  "schema": "codestra.kong.moneybee.enterprise-api-catalog.v1",
+  "state": "desired-not-activated",
+  "canonicalHost": "api.moneybeeloan.com",
+  "canonicalApiVersion": "v2",
+  "legacyApiVersion": {
+    "version": "v1",
+    "deprecated": true,
+    "sunset": "2026-12-31T23:59:59Z",
+    "newRoutesProhibited": true
+  },
+  "upstream": {
+    "serviceName": "moneybee-api",
+    "host": "moneybee-api",
+    "port": 8000,
+    "protocol": "http"
+  },
+  "identity": {
+    "issuer": "https://auth.codestra.co/realms/codestra",
+    "discovery": "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration",
+    "requiredAudience": "moneybee-api",
+    "borrowerClient": "moneybee-borrower",
+    "lenderClient": "moneybee-lender",
+    "adminClient": "moneybee-admin",
+    "backendMustRevalidateJwt": true
+  },
+  "baselinePlugins": [
+    "correlation-id",
+    "rate-limiting",
+    "request-size-limiting",
+    "response-transformer"
+  ],
+  "routeClasses": [
+    {
+      "name": "public-origination",
+      "paths": ["/api/v2/public/prequalifications"],
+      "methods": ["POST"],
+      "authentication": "public",
+      "rateLimitPerMinute": 20,
+      "maxBodyBytes": 131072,
+      "idempotencyRequired": true,
+      "botProtectionRequired": true,
+      "plugins": ["correlation-id", "rate-limiting", "request-size-limiting", "response-transformer"]
+    },
+    {
+      "name": "borrower-portal",
+      "pathPrefixes": ["/api/v2/borrower/"],
+      "authentication": "oidc",
+      "allowedAuthorizedParties": ["moneybee-borrower"],
+      "emailVerifiedRequired": true,
+      "rateLimitPerMinute": 240,
+      "maxBodyBytes": 2097152,
+      "plugins": ["openid-connect", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting", "response-transformer"]
+    },
+    {
+      "name": "borrower-application-api",
+      "pathPrefixes": ["/api/v2/applications/", "/api/v2/offers/", "/api/v2/conditions/"],
+      "authentication": "oidc",
+      "allowedAuthorizedParties": ["moneybee-borrower", "moneybee-admin"],
+      "emailVerifiedRequired": true,
+      "resourceAuthorization": "backend-required",
+      "rateLimitPerMinute": 240,
+      "maxBodyBytes": 2097152,
+      "plugins": ["openid-connect", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting", "response-transformer"]
+    },
+    {
+      "name": "lender-portal",
+      "pathPrefixes": ["/api/v2/lender/", "/api/v2/lenders/"],
+      "authentication": "oidc",
+      "allowedAuthorizedParties": ["moneybee-lender"],
+      "emailVerifiedRequired": true,
+      "resourceAuthorization": "backend-required",
+      "rateLimitPerMinute": 300,
+      "maxBodyBytes": 2097152,
+      "plugins": ["openid-connect", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting", "response-transformer"]
+    },
+    {
+      "name": "admin-control-plane",
+      "pathPrefixes": ["/api/v2/admin/"],
+      "authentication": "oidc",
+      "allowedAuthorizedParties": ["moneybee-admin"],
+      "emailVerifiedRequired": true,
+      "mfaRequired": true,
+      "requiredAmrAny": ["otp", "webauthn"],
+      "resourceAuthorization": "backend-required",
+      "rateLimitPerMinute": 180,
+      "maxBodyBytes": 1048576,
+      "plugins": ["openid-connect", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting", "response-transformer"]
+    },
+    {
+      "name": "finance-control-plane",
+      "pathPrefixes": ["/api/v2/finance/"],
+      "authentication": "oidc",
+      "allowedAuthorizedParties": ["moneybee-admin"],
+      "emailVerifiedRequired": true,
+      "mfaRequired": true,
+      "requiredAmrAny": ["otp", "webauthn"],
+      "resourceAuthorization": "backend-required",
+      "idempotencyRequiredForWrites": true,
+      "optimisticConcurrencyRequiredForMutableResources": true,
+      "rateLimitPerMinute": 120,
+      "maxBodyBytes": 1048576,
+      "plugins": ["openid-connect", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting", "response-transformer"]
+    },
+    {
+      "name": "provider-webhooks",
+      "pathPrefixes": ["/api/v2/webhooks/"],
+      "authentication": "provider-signature",
+      "oidcProhibited": true,
+      "timestampWindowRequired": true,
+      "durableInboxBeforeAck": true,
+      "duplicatePayloadConflictRequired": true,
+      "rateLimitPerMinute": 600,
+      "maxBodyBytes": 2097152,
+      "plugins": ["correlation-id", "rate-limiting", "request-size-limiting", "response-transformer"]
+    },
+    {
+      "name": "health",
+      "paths": ["/health/live", "/health/ready"],
+      "methods": ["GET"],
+      "authentication": "public-minimal",
+      "sensitiveDependencyDetailsProhibited": true,
+      "rateLimitPerMinute": 600,
+      "maxBodyBytes": 8192,
+      "plugins": ["correlation-id", "rate-limiting", "response-transformer"]
+    }
+  ],
+  "globalSecurity": {
+    "tlsRequired": true,
+    "wildcardHostsAllowed": false,
+    "passwordTransit": false,
+    "otpTransit": false,
+    "keycloakAdminApiExposure": false,
+    "cacheFinancialResponses": false,
+    "cacheAuthenticationResponses": false,
+    "requestIdRequired": true,
+    "correlationIdRequired": true,
+    "traceparentAccepted": true,
+    "activationRequiresReviewedRuntimeChange": true
+  },
+  "prohibitedPublicPaths": [
+    "/admin/realms",
+    "/realms/codestra/users",
+    "/keycloak/users",
+    "/identity/otp",
+    "/identity/password",
+    "/identity/reset-token"
+  ]
+}
