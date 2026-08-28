@@ -156,23 +156,134 @@ def fsync_directory(root: Path) -> None:
         os.close(descriptor)
 
 
-def write_durable(path: Path, content: bytes, mode: int) -> None:
-    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
+FileIdentity = tuple[int, int]
+
+
+def require_transaction_id(value: object) -> str:
+    if (
+        not isinstance(value, str)
+        or len(value) != 32
+        or any(character not in "0123456789abcdef" for character in value)
+    ):
+        raise TransactionError("invalid manifest transaction ID")
+    return value
+
+
+def transaction_names(prefixes: dict[str, str], transaction_id: str) -> dict[str, str]:
+    identifier = require_transaction_id(transaction_id)
+    return {manifest: f"{prefix}.{identifier}" for manifest, prefix in prefixes.items()}
+
+
+def restore_names(transaction_id: str) -> dict[str, str]:
+    identifier = require_transaction_id(transaction_id)
+    return {
+        manifest: f".{manifest}.restore.{identifier}.tmp"
+        for manifest in MANIFEST_ARTIFACTS
+    }
+
+
+def validate_staging_path(
+    path: Path,
+    identity: FileIdentity,
+    mode: int,
+) -> None:
+    try:
+        linked = path.lstat()
+    except OSError as error:
+        raise TransactionError(f"staging file path is unavailable: {path.name}: {error}") from error
+    if stat.S_ISLNK(linked.st_mode) or not stat.S_ISREG(linked.st_mode):
+        raise TransactionError(f"staging file must be a regular non-symlink: {path.name}")
+    if linked.st_uid != os.geteuid():
+        raise TransactionError(f"staging file must be owned by the effective user: {path.name}")
+    if linked.st_nlink != 1:
+        raise TransactionError(f"staging file must have exactly one link: {path.name}")
+    if stat.S_IMODE(linked.st_mode) != mode:
+        raise TransactionError(f"staging file mode drift: {path.name}")
+    if (linked.st_dev, linked.st_ino) != identity:
+        raise TransactionError(f"staging file inode changed: {path.name}")
+
+
+def validate_open_staging_file(
+    descriptor: int,
+    path: Path,
+    mode: int,
+    identity: FileIdentity | None = None,
+) -> FileIdentity:
+    opened = os.fstat(descriptor)
+    opened_identity = (opened.st_dev, opened.st_ino)
+    if not stat.S_ISREG(opened.st_mode):
+        raise TransactionError(f"staging descriptor must reference a regular file: {path.name}")
+    if opened.st_uid != os.geteuid():
+        raise TransactionError(f"staging descriptor must be owned by the effective user: {path.name}")
+    if opened.st_nlink != 1:
+        raise TransactionError(f"staging descriptor must have exactly one link: {path.name}")
+    if stat.S_IMODE(opened.st_mode) != mode:
+        raise TransactionError(f"staging descriptor mode drift: {path.name}")
+    if identity is not None and opened_identity != identity:
+        raise TransactionError(f"staging descriptor inode changed: {path.name}")
+    validate_staging_path(path, opened_identity, mode)
+    return opened_identity
+
+
+def write_durable(path: Path, content: bytes, mode: int) -> FileIdentity:
+    flags = (
+        os.O_WRONLY
+        | os.O_CREAT
+        | os.O_EXCL
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    try:
+        descriptor = os.open(path, flags, mode)
+    except OSError as error:
+        raise TransactionError(f"unable to create staging file safely: {path.name}: {error}") from error
     try:
         os.fchmod(descriptor, mode)
+        identity = validate_open_staging_file(descriptor, path, mode)
         with os.fdopen(descriptor, "wb", closefd=False) as stream:
             stream.write(content)
             stream.flush()
             os.fsync(stream.fileno())
+        validate_open_staging_file(descriptor, path, mode, identity)
     finally:
         os.close(descriptor)
+    validate_staging_path(path, identity, mode)
+    return identity
 
 
-def write_journal(root: Path, journal: dict[str, object]) -> None:
+def read_durable(
+    path: Path,
+    mode: int,
+    identity: FileIdentity | None = None,
+) -> bytes:
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as error:
+        raise TransactionError(f"unable to open staging file safely: {path.name}: {error}") from error
+    try:
+        opened_identity = validate_open_staging_file(descriptor, path, mode, identity)
+        with os.fdopen(descriptor, "rb", closefd=False) as stream:
+            content = stream.read()
+        validate_open_staging_file(descriptor, path, mode, opened_identity)
+    finally:
+        os.close(descriptor)
+    validate_staging_path(path, opened_identity, mode)
+    return content
+
+
+def write_journal(
+    root: Path,
+    journal: dict[str, object],
+    transaction_id: str,
+) -> None:
+    identifier = require_transaction_id(transaction_id)
     content = (json.dumps(journal, sort_keys=True, indent=2) + "\n").encode()
-    temporary = root / f".{JOURNAL_NAME}.{uuid.uuid4().hex}.tmp"
-    write_durable(temporary, content, 0o600)
+    temporary = root / f".{JOURNAL_NAME}.{identifier}.tmp"
+    identity = write_durable(temporary, content, 0o600)
+    validate_staging_path(temporary, identity, 0o600)
     os.replace(temporary, root / JOURNAL_NAME)
+    validate_staging_path(root / JOURNAL_NAME, identity, 0o600)
     fsync_directory(root)
 
 
@@ -180,26 +291,45 @@ def current_outputs(root: Path) -> dict[str, bytes]:
     return {name: (root / name).read_bytes() for name in MANIFEST_ARTIFACTS}
 
 
-def cleanup_transaction(root: Path) -> None:
-    for name in [JOURNAL_NAME, *RECOVERY_NAMES.values(), *CANDIDATE_NAMES.values()]:
+def cleanup_transaction(root: Path, transaction_id: str) -> None:
+    identifier = require_transaction_id(transaction_id)
+    candidates = transaction_names(CANDIDATE_NAMES, identifier)
+    recoveries = transaction_names(RECOVERY_NAMES, identifier)
+    restores = restore_names(identifier)
+    names = [
+        JOURNAL_NAME,
+        f".{JOURNAL_NAME}.{identifier}.tmp",
+        *candidates.values(),
+        *recoveries.values(),
+        *restores.values(),
+    ]
+    for name in names:
         try:
             (root / name).unlink()
         except FileNotFoundError:
             pass
-    for path in root.glob(f".{JOURNAL_NAME}.*.tmp"):
-        path.unlink(missing_ok=True)
     fsync_directory(root)
 
 
-def restore_previous_pair(root: Path) -> None:
-    recovery = {name: (root / recovery_name).read_bytes() for name, recovery_name in RECOVERY_NAMES.items()}
+def restore_previous_pair(
+    root: Path,
+    recovery_names: dict[str, str],
+    transaction_id: str,
+) -> None:
+    identifier = require_transaction_id(transaction_id)
+    recovery = {
+        name: read_durable(root / recovery_name, 0o600)
+        for name, recovery_name in recovery_names.items()
+    }
     validate_pair(recovery, root, validate_inventory=False)
+    restores = restore_names(identifier)
     for name in (YAML_MANIFEST, JSON_MANIFEST):
-        temporary = root / f".{name}.restore"
-        write_durable(temporary, recovery[name], 0o644)
+        temporary = root / restores[name]
+        identity = write_durable(temporary, recovery[name], 0o644)
+        validate_staging_path(temporary, identity, 0o644)
         os.replace(temporary, root / name)
     for name in (YAML_MANIFEST, JSON_MANIFEST):
-        descriptor = os.open(root / name, os.O_RDONLY)
+        descriptor = os.open(root / name, os.O_RDONLY | getattr(os, "O_CLOEXEC", 0))
         try:
             os.fsync(descriptor)
         finally:
@@ -210,13 +340,20 @@ def restore_previous_pair(root: Path) -> None:
 
 def recover_transaction(root: Path) -> bool:
     journal_path = root / JOURNAL_NAME
-    if not journal_path.exists():
+    try:
+        journal_path.lstat()
+    except FileNotFoundError:
         return False
     try:
-        journal = json.loads(journal_path.read_text())
-    except (OSError, ValueError) as error:
+        journal = json.loads(read_durable(journal_path, 0o600).decode())
+    except (UnicodeDecodeError, ValueError) as error:
         raise TransactionError(f"unreadable transaction journal: {error}") from error
-    recovery = {name: (root / recovery_name).read_bytes() for name, recovery_name in RECOVERY_NAMES.items()}
+    transaction_id = require_transaction_id(journal.get("transaction_id"))
+    recovery_names = transaction_names(RECOVERY_NAMES, transaction_id)
+    recovery = {
+        name: read_durable(root / recovery_name, 0o600)
+        for name, recovery_name in recovery_names.items()
+    }
     if sha256(recovery[JSON_MANIFEST]) != journal.get("previous_json_sha256"):
         raise TransactionError("JSON recovery copy does not match transaction journal")
     if sha256(recovery[YAML_MANIFEST]) != journal.get("previous_yaml_sha256"):
@@ -230,12 +367,12 @@ def recover_transaction(root: Path) -> bool:
                 raise TransactionError("published YAML does not match transaction journal")
             validate_pair(published, root, validate_inventory=False)
         except Exception:
-            restore_previous_pair(root)
+            restore_previous_pair(root, recovery_names, transaction_id)
     elif journal.get("state") == "PREPARED":
-        restore_previous_pair(root)
+        restore_previous_pair(root, recovery_names, transaction_id)
     else:
         raise TransactionError("unknown transaction journal state")
-    cleanup_transaction(root)
+    cleanup_transaction(root, transaction_id)
     return True
 
 
@@ -295,35 +432,64 @@ def generate(root: Path = ROOT, operations: FileOperations | None = None) -> Non
     operations = operations or FileOperations()
     with generator_lock(root):
         recover_transaction(root)
+        transaction_id = uuid.uuid4().hex
+        candidate_names = transaction_names(CANDIDATE_NAMES, transaction_id)
+        recovery_names = transaction_names(RECOVERY_NAMES, transaction_id)
         outputs = render(canonical_document(root))
         validate_pair(outputs, root)
         previous = current_outputs(root)
         modes = {name: (root / name).stat().st_mode & 0o777 for name in MANIFEST_ARTIFACTS}
+        candidate_identities: dict[str, FileIdentity] = {}
         try:
             for name in (YAML_MANIFEST, JSON_MANIFEST):
-                write_durable(root / CANDIDATE_NAMES[name], outputs[name], modes[name])
-            validate_pair({name: (root / CANDIDATE_NAMES[name]).read_bytes() for name in MANIFEST_ARTIFACTS}, root)
+                candidate_identities[name] = write_durable(
+                    root / candidate_names[name],
+                    outputs[name],
+                    modes[name],
+                )
+            staged = {
+                name: read_durable(
+                    root / candidate_names[name],
+                    modes[name],
+                    candidate_identities[name],
+                )
+                for name in MANIFEST_ARTIFACTS
+            }
+            validate_pair(staged, root)
             operations.checkpoint("candidates_staged")
             for name in (YAML_MANIFEST, JSON_MANIFEST):
-                write_durable(root / RECOVERY_NAMES[name], previous[name], 0o600)
+                write_durable(root / recovery_names[name], previous[name], 0o600)
             journal = {
-                "transaction_id": uuid.uuid4().hex,
+                "transaction_id": transaction_id,
                 "state": "PREPARED",
                 "previous_json_sha256": sha256(previous[JSON_MANIFEST]),
                 "previous_yaml_sha256": sha256(previous[YAML_MANIFEST]),
                 "candidate_json_sha256": sha256(outputs[JSON_MANIFEST]),
                 "candidate_yaml_sha256": sha256(outputs[YAML_MANIFEST]),
             }
-            write_journal(root, journal)
+            write_journal(root, journal, transaction_id)
             operations.checkpoint("prepared")
-            operations.replace(root / CANDIDATE_NAMES[YAML_MANIFEST], root / YAML_MANIFEST)
+            validate_staging_path(
+                root / candidate_names[YAML_MANIFEST],
+                candidate_identities[YAML_MANIFEST],
+                modes[YAML_MANIFEST],
+            )
+            operations.replace(root / candidate_names[YAML_MANIFEST], root / YAML_MANIFEST)
             operations.checkpoint("first_replaced")
-            operations.replace(root / CANDIDATE_NAMES[JSON_MANIFEST], root / JSON_MANIFEST)
+            validate_staging_path(
+                root / candidate_names[JSON_MANIFEST],
+                candidate_identities[JSON_MANIFEST],
+                modes[JSON_MANIFEST],
+            )
+            operations.replace(root / candidate_names[JSON_MANIFEST], root / JSON_MANIFEST)
             operations.checkpoint("second_replaced")
             journal["state"] = "COMMITTED"
-            write_journal(root, journal)
+            write_journal(root, journal, transaction_id)
             for name in (YAML_MANIFEST, JSON_MANIFEST):
-                descriptor = os.open(root / name, os.O_RDONLY)
+                descriptor = os.open(
+                    root / name,
+                    os.O_RDONLY | getattr(os, "O_CLOEXEC", 0),
+                )
                 try:
                     os.fsync(descriptor)
                 finally:
@@ -331,11 +497,15 @@ def generate(root: Path = ROOT, operations: FileOperations | None = None) -> Non
             fsync_directory(root)
             operations.checkpoint("before_final_verification")
             validate_pair(current_outputs(root), root)
-            cleanup_transaction(root)
+            cleanup_transaction(root, transaction_id)
         except Exception:
-            if (root / JOURNAL_NAME).exists():
-                restore_previous_pair(root)
-            cleanup_transaction(root)
+            try:
+                (root / JOURNAL_NAME).lstat()
+            except FileNotFoundError:
+                pass
+            else:
+                restore_previous_pair(root, recovery_names, transaction_id)
+            cleanup_transaction(root, transaction_id)
             raise
 
 

@@ -2,6 +2,7 @@ _format_version: "3.0"
 _transform: true
 services:
   - name: codestra-control-plane
+    enabled: true
     url: http://codestra-control-plane:8096
     connect_timeout: 3000
     read_timeout: 30000
