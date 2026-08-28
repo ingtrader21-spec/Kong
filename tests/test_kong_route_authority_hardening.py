@@ -251,6 +251,128 @@ def test_control_plane_scope_policy_covers_exact_admin_and_message_roots():
     assert 'X-Authenticated-Role", "platform_admin"' in policy
 
 
+def _control_plane_live_objects():
+    declared = yaml.safe_load(CONTROL_PLANE_PATH.read_text())
+    expected_service = declared["services"][0]
+    service = {
+        "id": "service-1",
+        "name": expected_service["name"],
+        "protocol": "http",
+        "host": "codestra-control-plane",
+        "port": 8096,
+        "path": None,
+        "enabled": expected_service["enabled"],
+        "connect_timeout": 3000,
+        "read_timeout": 30000,
+        "write_timeout": 30000,
+    }
+    routes = [
+        {
+            "id": f"route-{index}",
+            "name": route["name"],
+            "hosts": route["hosts"],
+            "paths": route["paths"],
+            "methods": route["methods"],
+            "protocols": route["protocols"],
+            "strip_path": route["strip_path"],
+            "preserve_host": route["preserve_host"],
+            "path_handling": route["path_handling"],
+            "https_redirect_status_code": route["https_redirect_status_code"],
+            "request_buffering": route["request_buffering"],
+            "response_buffering": route["response_buffering"],
+            "regex_priority": route["regex_priority"],
+            "headers": route.get("headers"),
+            "snis": route.get("snis"),
+            "sources": route.get("sources"),
+            "destinations": route.get("destinations"),
+            "service": {"id": service["id"]},
+        }
+        for index, route in enumerate(expected_service["routes"])
+    ]
+    service_plugins = [
+        {"name": plugin["name"], "enabled": True, "config": plugin.get("config", {})}
+        for plugin in expected_service["plugins"]
+    ]
+    route_plugins = {
+        route["name"]: [
+            {"name": plugin["name"], "enabled": True, "config": plugin.get("config", {})}
+            for plugin in route.get("plugins", [])
+        ]
+        for route in expected_service["routes"]
+    }
+    return declared, service, routes, service_plugins, route_plugins
+
+
+def _stub_control_plane_plugins(monkeypatch, module, service_plugins, route_plugins, routes):
+    route_names = {route["id"]: route["name"] for route in routes}
+
+    def fake_all_rows(_base, path):
+        if path.startswith("/services/"):
+            return service_plugins
+        route_id = path.split("/")[2]
+        return route_plugins[route_names[route_id]]
+
+    monkeypatch.setattr(module, "all_rows", fake_all_rows)
+
+
+def test_control_plane_verifier_accepts_exact_declarative_authority(monkeypatch):
+    module = _module()
+    declared, service, routes, service_plugins, route_plugins = _control_plane_live_objects()
+    _stub_control_plane_plugins(monkeypatch, module, service_plugins, route_plugins, routes)
+    assert module.verify_control_plane("http://admin.invalid", declared, routes, {service["id"]: service}) == {
+        route["name"] for route in declared["services"][0]["routes"]
+    }
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        (lambda service, routes, plugins: service.update(protocol="https"), "service.protocol"),
+        (lambda service, routes, plugins: service.update(path="/wrong"), "service.path"),
+        (lambda service, routes, plugins: service.update(enabled=False), "service.enabled"),
+        (lambda service, routes, plugins: service.update(read_timeout=60000), "service.read_timeout"),
+        (lambda service, routes, plugins: routes[0].update(protocols=["https"]), "protocols"),
+        (lambda service, routes, plugins: routes[0].update(strip_path=True), "strip_path"),
+        (lambda service, routes, plugins: routes[0].update(preserve_host=True), "preserve_host"),
+        (lambda service, routes, plugins: routes[0].update(path_handling="v1"), "path_handling"),
+        (lambda service, routes, plugins: routes[0].update(https_redirect_status_code=308), "https_redirect"),
+        (lambda service, routes, plugins: routes[0].update(request_buffering=False), "request_buffering"),
+        (lambda service, routes, plugins: routes[0].update(response_buffering=False), "response_buffering"),
+        (lambda service, routes, plugins: routes[0].update(regex_priority=10), "regex_priority"),
+        (lambda service, routes, plugins: routes[0].update(headers={"x-drift": ["1"]}), "headers"),
+        (
+            lambda service, routes, plugins: plugins.append(
+                {"name": "cors", "enabled": True, "config": {}}
+            ),
+            "service_plugins",
+        ),
+    ],
+)
+def test_control_plane_verifier_rejects_declarative_drift(monkeypatch, mutation, message):
+    module = _module()
+    declared, service, routes, service_plugins, route_plugins = _control_plane_live_objects()
+    mutation(service, routes, service_plugins)
+    _stub_control_plane_plugins(monkeypatch, module, service_plugins, route_plugins, routes)
+    with pytest.raises(RuntimeError, match=message):
+        module.verify_control_plane("http://admin.invalid", declared, routes, {service["id"]: service})
+
+
+def test_control_plane_verifier_rejects_duplicate_and_undeclared_route_plugins(monkeypatch):
+    module = _module()
+    declared, service, routes, service_plugins, route_plugins = _control_plane_live_objects()
+    protected = next(name for name, plugins in route_plugins.items() if plugins)
+    route_plugins[protected].append(route_plugins[protected][0].copy())
+    _stub_control_plane_plugins(monkeypatch, module, service_plugins, route_plugins, routes)
+    with pytest.raises(RuntimeError, match="duplicate enabled route plugins"):
+        module.verify_control_plane("http://admin.invalid", declared, routes, {service["id"]: service})
+
+    route_plugins[protected] = route_plugins[protected][:1]
+    unprotected = next(name for name, plugins in route_plugins.items() if not plugins)
+    route_plugins[unprotected].append({"name": "cors", "enabled": True, "config": {}})
+    with pytest.raises(RuntimeError, match="route_plugins"):
+        module.verify_control_plane("http://admin.invalid", declared, routes, {service["id"]: service})
+
+
 def test_undefined_control_plane_paths_are_denied_before_proxy_identity_headers():
     policy = SCOPE_POLICY_PATH.read_text()
     deny = policy.index('return kong.response.exit(403,{error="route_scope_undefined"})')

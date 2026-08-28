@@ -7,6 +7,7 @@ import argparse
 import importlib
 import json
 import sys
+import yaml
 from pathlib import Path
 from urllib.parse import urlencode, urljoin, urlsplit
 from urllib.request import Request, urlopen
@@ -58,11 +59,6 @@ def require_equal(actual, expected, label: str) -> None:
         )
 
 
-def require_config_subset(actual: dict, expected: dict, label: str) -> None:
-    for key, value in expected.items():
-        require_equal(actual.get(key), value, f"{label}.{key}")
-
-
 def form_value(value):
     if isinstance(value, bool):
         return "true" if value else "false"
@@ -79,6 +75,76 @@ def enabled_plugins(base: str, route_id: str) -> dict[str, dict]:
     if duplicates:
         raise RuntimeError(f"duplicate enabled route plugins: {duplicates}")
     return {name: values[0] for name, values in grouped.items()}
+
+
+def enabled_service_plugins(base: str, service_id: str) -> dict[str, dict]:
+    plugins = all_rows(base, f"/services/{service_id}/plugins?size=1000")
+    grouped: dict[str, list[dict]] = {}
+    for plugin in plugins:
+        if plugin.get("enabled"):
+            grouped.setdefault(plugin["name"], []).append(plugin)
+    duplicates = sorted(name for name, values in grouped.items() if len(values) != 1)
+    if duplicates:
+        raise RuntimeError(f"duplicate enabled service plugins: {duplicates}")
+    return {name: values[0] for name, values in grouped.items()}
+
+
+def require_config_subset(actual, expected, label: str) -> None:
+    if isinstance(expected, dict):
+        for key, value in expected.items():
+            if key not in actual:
+                raise RuntimeError(f"{label}: missing config key {key}")
+            require_config_subset(actual[key], value, f"{label}.{key}")
+    else:
+        require_equal(actual, expected, label)
+
+
+def verify_control_plane(admin: str, declared: dict, routes: list[dict], services: dict[str, dict]) -> set[str]:
+    verified: set[str] = set()
+    for expected_service in declared.get("services", []):
+        service = one([item for item in services.values() if item.get("name") == expected_service["name"]], "control-plane service")
+        declared_url = urlsplit(expected_service["url"])
+        require_equal(service.get("protocol"), declared_url.scheme, "control-plane.service.protocol")
+        require_equal(service.get("host"), declared_url.hostname, "control-plane.service.host")
+        require_equal(service.get("port"), declared_url.port, "control-plane.service.port")
+        declared_path = declared_url.path or None
+        require_equal(service.get("path"), declared_path, "control-plane.service.path")
+        require_equal(
+            service.get("enabled"),
+            expected_service["enabled"],
+            "control-plane.service.enabled",
+        )
+        for field in ("connect_timeout", "read_timeout", "write_timeout"):
+            require_equal(service.get(field), expected_service[field], f"control-plane.service.{field}")
+        service_plugins = enabled_service_plugins(admin, service["id"])
+        expected_service_plugins = {plugin["name"] for plugin in expected_service.get("plugins", [])}
+        require_equal(sorted(service_plugins), sorted(expected_service_plugins), "control-plane.service_plugins")
+        for plugin in expected_service.get("plugins", []):
+            require_config_subset(service_plugins[plugin["name"]].get("config", {}), plugin.get("config", {}), f"control-plane.{plugin['name']}")
+        for expected in expected_service.get("routes", []):
+            route = one([item for item in routes if item.get("name") == expected["name"]], f"control-plane route {expected['name']}")
+            for field in ("hosts", "paths", "methods", "protocols"):
+                require_equal(sorted(route.get(field) or []), sorted(expected.get(field) or []), f"{expected['name']}.{field}")
+            for field in (
+                "strip_path",
+                "preserve_host",
+                "path_handling",
+                "https_redirect_status_code",
+                "request_buffering",
+                "response_buffering",
+                "regex_priority",
+            ):
+                require_equal(route.get(field), expected[field], f"{expected['name']}.{field}")
+            for field, empty in (("headers", {}), ("snis", []), ("sources", []), ("destinations", [])):
+                require_equal(route.get(field) or empty, expected.get(field) or empty, f"{expected['name']}.{field}")
+            require_equal(route.get("service", {}).get("id"), service["id"], f"{expected['name']}.service")
+            route_plugins = enabled_plugins(admin, route["id"])
+            expected_route_plugins = {plugin["name"] for plugin in expected.get("plugins", [])}
+            require_equal(sorted(route_plugins), sorted(expected_route_plugins), f"{expected['name']}.route_plugins")
+            for plugin in expected.get("plugins", []):
+                require_config_subset(route_plugins[plugin["name"]].get("config", {}), plugin.get("config", {}), f"{expected['name']}.{plugin['name']}")
+            verified.add(expected["name"])
+    return verified
 
 
 def security_authority(root: Path, expected: dict) -> tuple[Path, dict, dict]:
@@ -338,14 +404,17 @@ def main() -> int:
     }
     managed_names = {route["name"] for route in manifest["routes"]}
     contract_names = {route["name"] for route in manifest["contractRoutes"]}
-    approved_names = managed_names | contract_names
+    control_plane = yaml.safe_load((root / "deploy/kong/control-plane.yml").read_text())
+    control_plane_names = verify_control_plane(args.admin_url, control_plane, routes, services)
+    approved_names = managed_names | contract_names | control_plane_names
     unverified_names = set(manifest.get("unverifiedExistingRouteNames", []))
     if approved_names & unverified_names:
         raise RuntimeError("a route cannot be both approved and unverified")
 
     public_hosts = {manifest["canonicalHost"], manifest["legacyHost"]}
     public_routes = [
-        route for route in routes if public_hosts.intersection(route.get("hosts") or [])
+        route for route in routes
+        if not route.get("hosts") or public_hosts.intersection(route.get("hosts") or [])
     ]
     unverified_public = sorted(
         route.get("name") or route["id"]

@@ -2,55 +2,105 @@ _format_version: "3.0"
 _transform: true
 services:
   - name: codestra-control-plane
+    enabled: true
     url: http://codestra-control-plane:8096
     connect_timeout: 3000
     read_timeout: 30000
     write_timeout: 30000
     routes:
       - name: control-plane-control
+        protocols: [http]
         hosts: [api.codestra.co]
         paths: [/api/v1/control]
         methods: [POST, PATCH]
         strip_path: false
+        preserve_host: false
+        path_handling: v0
+        https_redirect_status_code: 426
+        request_buffering: true
+        response_buffering: true
+        regex_priority: 0
         plugins:
           - name: request-size-limiting
             config: {allowed_payload_size: 1, size_unit: megabytes, require_content_length: true}
       - name: communication-message-read
+        protocols: [http]
         hosts: [api.codestra.co]
         paths: [/api/v1/messages]
         methods: [GET]
         strip_path: false
+        preserve_host: false
+        path_handling: v0
+        https_redirect_status_code: 426
+        request_buffering: true
+        response_buffering: true
+        regex_priority: 0
       - name: control-plane-events
+        protocols: [http]
         hosts: [api.codestra.co]
         paths: [/api/v1/events]
         methods: [POST]
         strip_path: false
+        preserve_host: false
+        path_handling: v0
+        https_redirect_status_code: 426
+        request_buffering: true
+        response_buffering: true
+        regex_priority: 0
         plugins:
           - name: request-size-limiting
             config: {allowed_payload_size: 1, size_unit: megabytes, require_content_length: true}
       - name: control-plane-results
+        protocols: [http]
         hosts: [api.codestra.co]
         paths: [/api/v1/results]
         methods: [POST]
         strip_path: false
+        preserve_host: false
+        path_handling: v0
+        https_redirect_status_code: 426
+        request_buffering: true
+        response_buffering: true
+        regex_priority: 0
         plugins:
           - name: request-size-limiting
             config: {allowed_payload_size: 1, size_unit: megabytes, require_content_length: true}
       - name: control-plane-reconciliation
+        protocols: [http]
         hosts: [api.codestra.co]
         paths: [/api/v1/reconciliation]
         methods: [GET, POST]
         strip_path: false
+        preserve_host: false
+        path_handling: v0
+        https_redirect_status_code: 426
+        request_buffering: true
+        response_buffering: true
+        regex_priority: 0
       - name: control-plane-health
+        protocols: [http]
         hosts: [api.codestra.co]
         paths: [/api/v1/health]
         methods: [GET]
         strip_path: false
+        preserve_host: false
+        path_handling: v0
+        https_redirect_status_code: 426
+        request_buffering: true
+        response_buffering: true
+        regex_priority: 0
       - name: control-plane-system-admin
+        protocols: [http]
         hosts: [api.codestra.co]
         paths: [/v1/admin/system]
         methods: [GET]
         strip_path: false
+        preserve_host: false
+        path_handling: v0
+        https_redirect_status_code: 426
+        request_buffering: true
+        response_buffering: true
+        regex_priority: 0
     plugins:
       - name: openid-connect
         config:

@@ -108,8 +108,8 @@ evidence_file() {
   case "$key" in
     KONG_BACKUP_EVIDENCE) expected=BACKUP ;;
     KONG_OFFHOST_BACKUP_EVIDENCE) expected=OFFHOST ;;
-    KONG_RESTORE_EVIDENCE) expected=RESTORE ;;
-    KONG_PITR_REHEARSAL_EVIDENCE) expected=PITR ;;
+    KONG_RESTORE_EVIDENCE) expected=RESTORE_TEST ;;
+    KONG_PITR_REHEARSAL_EVIDENCE) expected=PITR_REHEARSAL ;;
     KONG_ROLLBACK_EVIDENCE) expected=ROLLBACK ;;
     KONG_TELEPHONY_EVIDENCE) expected=TELEPHONY ;;
     *) return 1 ;;
