@@ -1,0 +1,34 @@
+name: Staging certification policy
+
+on:
+  pull_request:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  staging-certification:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Require candidate ancestry from main
+        run: |
+          git fetch origin main --depth=100
+          git merge-base --is-ancestor HEAD origin/main || \
+            git merge-base --is-ancestor origin/main HEAD
+      - name: Validate source authority without live mutation
+        run: |
+          python3 -m pip install --disable-pip-version-check pytest PyYAML
+          pytest -q
+          python3 tools/generate_migration_manifests.py --check
+          python3 tools/verify_migration_manifest.py
+      - name: Declare live certification boundary
+        run: |
+          echo 'This gate validates promotion provenance and source authority.'
+          echo 'Live staging acceptance remains a separately reviewed, read-only/no-provider-effects certification.'
+

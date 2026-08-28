@@ -1,0 +1,58 @@
+name: Security and supply-chain validation
+
+on:
+  pull_request:
+    branches: [main, staging, production]
+  push:
+    branches: [main, staging, production]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Scan Git history for secrets
+        run: |
+          GITLEAKS_VERSION=8.30.1
+          GITLEAKS_SHA256=551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+          curl --fail --location --silent --show-error \
+            --output /tmp/gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tar.gz" | sha256sum --check
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks git --redact --no-banner .
+      - name: Audit Python dependencies
+        run: |
+          python3 -m pip install --disable-pip-version-check pip-audit==2.10.1
+          python3 -m pip_audit -r deploy/kong-production-standby/auth-middleware/requirements.txt
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@5ba2889ada762081db2c4f32a729827dce632c7b
+        with:
+          languages: python
+      - name: Analyze with CodeQL
+        uses: github/codeql-action/analyze@5ba2889ada762081db2c4f32a729827dce632c7b
+      - name: Scan filesystem and container definitions
+        uses: aquasecurity/trivy-action@d2a0b60797ff03db6132bd4e2b293f9b37081297
+        with:
+          scan-type: fs
+          scan-ref: .
+          version: v0.74.0
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+        with:
+          path: .
+          format: spdx-json
+          output-file: kong-source.spdx.json
+      - name: Upload SBOM
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: kong-source-sbom
+          path: kong-source.spdx.json

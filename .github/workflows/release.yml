@@ -1,0 +1,34 @@
+name: Generate production release evidence
+
+on:
+  pull_request:
+    branches: [production]
+  push:
+    branches: [production]
+
+permissions:
+  contents: read
+
+jobs:
+  release-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Generate immutable release evidence
+        env:
+          KONG_IMAGE_DIGEST: ${{ vars.KONG_IMAGE_DIGEST }}
+          STAGING_CERTIFICATION: ${{ vars.STAGING_CERTIFICATION }}
+          ROLLBACK_SOURCE_SHA: ${{ vars.ROLLBACK_SOURCE_SHA }}
+        run: |
+          python3 -m pip install --disable-pip-version-check PyYAML
+          python3 tools/generate_release_manifest.py \
+            --output release-manifest.json \
+            --kong-image-digest "${KONG_IMAGE_DIGEST:-UNRESOLVED}" \
+            --staging-certification "${STAGING_CERTIFICATION:-UNRESOLVED}" \
+            --rollback-source-sha "${ROLLBACK_SOURCE_SHA:-UNRESOLVED}"
+      - name: Upload release evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: kong-release-${{ github.sha }}
+          path: release-manifest.json

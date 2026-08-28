@@ -1,0 +1,31 @@
+name: Validate Kong configuration
+
+on:
+  pull_request:
+    branches: [main, staging, production]
+  push:
+    branches: [main, staging, production]
+
+permissions:
+  contents: read
+
+jobs:
+  kong-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install pinned decK
+        run: |
+          DECK_VERSION=1.55.0
+          DECK_SHA256=22958ee3a34fc91a41fb215c0f8f81c08e29d363bd5c41dc8287ce9bcd89bc11
+          curl --fail --location --silent --show-error \
+            --output /tmp/deck.tar.gz \
+            "https://github.com/Kong/deck/releases/download/v${DECK_VERSION}/deck_${DECK_VERSION}_linux_amd64.tar.gz"
+          echo "${DECK_SHA256}  /tmp/deck.tar.gz" | sha256sum --check
+          tar -xzf /tmp/deck.tar.gz -C /tmp deck
+      - name: Validate declarative and exact authority
+        run: |
+          /tmp/deck file validate deploy/kong/control-plane.yml
+          python3 -m pip install --disable-pip-version-check pytest PyYAML
+          pytest -q tests/test_kong_canonical_route_contract.py tests/test_kong_route_authority_hardening.py
+
