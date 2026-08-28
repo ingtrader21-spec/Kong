@@ -1,0 +1,225 @@
+name: Finalize exact Kong enterprise factory tree
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finalize-kong-enterprise-factory
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    if: >-
+      github.repository == 'appolon1908-hue/Kong' &&
+      github.event.pull_request.head.ref == 'architecture/kong-cell-platform-v1' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact pull-request branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Materialize reviewed enterprise files from exact Git blobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import base64
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          token = os.environ["GH_TOKEN"]
+          api_root = f"https://api.github.com/repos/{repo}"
+
+          def api(path: str) -> dict:
+              request = urllib.request.Request(
+                  api_root + path,
+                  headers={
+                      "Accept": "application/vnd.github+json",
+                      "Authorization": f"Bearer {token}",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "User-Agent": "codestra-kong-finalizer",
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.load(response)
+
+          def write_blob(path: str, sha: str, executable: bool = False) -> None:
+              payload = api(f"/git/blobs/{sha}")
+              if payload.get("encoding") != "base64":
+                  raise RuntimeError(f"unexpected blob encoding for {path}")
+              content = base64.b64decode(payload["content"], validate=False)
+              target = Path(path)
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(content)
+              target.chmod(0o755 if executable else 0o644)
+
+          reviewed_blobs = {
+              ".github/workflows/validate-enterprise-integrations.yml": ("fef43f76680f87c04a8c9b9f24f846943f82bda8", False),
+              "README.md": ("c8dbf43409b6208cf791b0278bb15e1691cef461", False),
+              "config/kong-integration-contract.schema.json": ("182bd9299d83e0dbc3607b75cfecbd7fec124e81", False),
+              "docs/architecture/KONG_ENTERPRISE_INTEGRATION_FACTORY_V1.md": ("5c882d78af20941cb543b30da9fed0fa55cb268e", False),
+              "docs/branches/KONG_ENTERPRISE_INTEGRATION_FACTORY_BRANCH.md": ("3cb5f953e921fbf59fad0d8b097f51ce7e64c483", False),
+              "scripts/kong_integration_contract.py": ("29580104fad68c8bf3801dbbdbf3656c4ff4d216", True),
+              "scripts/new_kong_integration.py": ("d730f6f5547954a0e8296a6638074f28a227db7a", True),
+              "scripts/render_kong_integrations.py": ("d90141e769747babe6a3c6185c2ea2bec07bbe27", True),
+              "scripts/validate_kong_integrations.py": ("89990b3c1700ad7eb67559035f45c0a69a95c467", True),
+          }
+          for path, (sha, executable) in reviewed_blobs.items():
+              write_blob(path, sha, executable)
+
+          source_tree = api("/git/trees/786714dede3b9f01a04ba9abcf210c676d03e738?recursive=1")
+          integration_entries = [
+              entry for entry in source_tree.get("tree", [])
+              if entry.get("type") == "blob" and entry.get("path", "").startswith("config/integrations/")
+          ]
+          if len(integration_entries) != 9:
+              raise RuntimeError(f"expected 9 integration contracts, found {len(integration_entries)}")
+          for entry in integration_entries:
+              write_blob(entry["path"], entry["sha"], False)
+          PY
+
+      - name: Add compact negative-security test authority
+        run: |
+          cat > tests/test_kong_integration_factory.py <<'PY'
+          from __future__ import annotations
+
+          import shutil
+          import sys
+          from pathlib import Path
+
+          import pytest
+          import yaml
+
+          ROOT = Path(__file__).resolve().parents[1]
+          sys.path.insert(0, str(ROOT / "scripts"))
+          import kong_integration_contract as contract
+
+
+          def documents(root: Path = ROOT):
+              return contract.discover(root)
+
+
+          def routes(root: Path = ROOT):
+              for path, document in documents(root):
+                  for route in document["spec"]["routes"]:
+                      yield path, document, route
+
+
+          def test_catalog_and_route_contracts_are_complete():
+              report = contract.validate(ROOT)
+              assert report.integrations == 9
+              assert report.routes == 17
+              assert all(route["upstream"].startswith("middleware-") for _, _, route in routes())
+
+
+          def test_effects_fail_closed_and_mutations_are_idempotent_zero_retry():
+              for path, _, route in routes():
+                  controls = route["controls"]
+                  assert controls["capabilityDefaultEnabled"] is False, path
+                  assert controls["mutatingRetries"] == 0, path
+                  mutating = set(route["methods"]) & contract.MUTATING_METHODS
+                  assert mutating <= set(controls["idempotencyRequiredFor"]), path
+
+
+          def test_webhooks_and_telephony_are_restricted():
+              for path, document, route in routes():
+                  if route["policyChain"] == "webhook":
+                      assert route["methods"] == ["POST"], path
+                      assert route["auth"]["mode"] == "signed-webhook", path
+                      assert route["auth"]["allowlistRequired"] is True, path
+                      assert route["controls"]["cors"] == "disabled", path
+                  if document["spec"]["cell"] == "telephony-private":
+                      assert route["visibility"] == "private-vlan", path
+
+
+          def mutated_root(tmp_path: Path, source_name: str, mutate) -> Path:
+              root = tmp_path / "repo"
+              (root / "config" / "integrations").mkdir(parents=True)
+              for name in ("kong-integration-contract.schema.json", "codestra-kong-policy-chains.v1.json"):
+                  shutil.copy2(ROOT / "config" / name, root / "config" / name)
+              for source in (ROOT / "config" / "integrations").glob("*.yaml"):
+                  document = yaml.safe_load(source.read_text())
+                  if source.name == source_name:
+                      mutate(document)
+                  (root / "config" / "integrations" / source.name).write_text(
+                      yaml.safe_dump(document, sort_keys=False)
+                  )
+              return root
+
+
+          def test_direct_system_upstream_is_rejected(tmp_path):
+              def mutate(document):
+                  document["spec"]["routes"][0]["upstream"] = "odoo-production"
+              with pytest.raises(contract.ContractError, match="non-Middleware upstream"):
+                  contract.validate(mutated_root(tmp_path, "codestra-platform.yaml", mutate))
+
+
+          def test_route_shadowing_is_rejected(tmp_path):
+              def mutate(document):
+                  document["spec"]["routes"][0]["path"] = "/v1/messages"
+                  document["spec"]["routes"][0]["hosts"] = ["api.codestra.co"]
+              with pytest.raises(contract.ContractError, match="route shadowing"):
+                  contract.validate(mutated_root(tmp_path, "klyrow-email.yaml", mutate))
+
+
+          def test_live_capability_and_public_telephony_are_rejected(tmp_path):
+              def enable(document):
+                  document["spec"]["routes"][0]["controls"]["capabilityDefaultEnabled"] = True
+              with pytest.raises(contract.ContractError, match="must default disabled"):
+                  contract.validate(mutated_root(tmp_path, "telnexa-sms.yaml", enable))
+
+              def expose(document):
+                  document["spec"]["routes"][0]["visibility"] = "public"
+              with pytest.raises(contract.ContractError, match="telephony routes must remain private-VLAN"):
+                  contract.validate(mutated_root(tmp_path, "telephony-private.yaml", expose))
+          PY
+
+      - name: Finalize deterministic source authority
+        run: |
+          rm -f noop .github/workflows/finalize-enterprise-factory.yml
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("tools/generate_migration_manifests.py")
+          source = path.read_text()
+          if '    "generated",\n' not in source:
+              needle = '    "config",\n'
+              if needle not in source:
+                  raise SystemExit("AUTHORITY_ROOTS config entry not found")
+              source = source.replace(needle, needle + '    "generated",\n', 1)
+              path.write_text(source)
+          PY
+          python3 -m pip install --disable-pip-version-check \
+            pytest==9.1.1 PyYAML==6.0.3 jsonschema==4.26.0
+          python3 scripts/validate_codestra_cells.py
+          python3 scripts/validate_kong_integrations.py
+          python3 scripts/render_kong_integrations.py
+          python3 scripts/render_kong_integrations.py --check
+          pytest -q tests/test_codestra_cells.py tests/test_kong_integration_factory.py
+          python3 tools/generate_migration_manifests.py
+          python3 tools/generate_migration_manifests.py --check
+          python3 tools/verify_migration_manifest.py
+          python3 -m compileall -q scripts tests tools
+
+      - name: Commit exact final tree without rewriting history
+        run: |
+          git config user.name "Codestra Production Automation"
+          git config user.email "appolon1908-hue@users.noreply.github.com"
+          git add -A
+          test -n "$(git status --porcelain)"
+          git commit -m "feat(kong): add enterprise integration factory"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
