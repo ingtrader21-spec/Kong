@@ -1,6 +1,11 @@
 {
   "files": [
     {
+      "path": ".github/workflows/generate-manifest-candidate.yml",
+      "sha256": "fdfcc827b9ef0402c743062994fcee3d42fc37270d759d73afbd86446e91d1a7",
+      "size": 1279
+    },
+    {
       "path": ".github/workflows/validate.yml",
       "sha256": "846943a074181851a7cb6dfc4e58cdae8d2645c36acba087fc3fd18ff4ac1422",
       "size": 2616
@@ -19,6 +24,21 @@
       "path": "SECURITY.md",
       "sha256": "373c0992cd18a04a0cde04bfad36dce018ea2738cf4299aa35aa0a0430021dca",
       "size": 430
+    },
+    {
+      "path": "config/codestra-kong-cells.v1.json",
+      "sha256": "fa70135b7ff7d59abc14e415b6a9b4143e62d83e25cc3472fdff60e3487d2186",
+      "size": 2021
+    },
+    {
+      "path": "config/codestra-kong-policy-chains.v1.json",
+      "sha256": "b39d5d9f6949d8886ed76748a871fa15205d8115bb43742bc510f29dc3b47f03",
+      "size": 1250
+    },
+    {
+      "path": "config/codestra-kong-route-registry.v1.json",
+      "sha256": "3146e0f633308ccffdac53ef73ebc41df6b096fc42c4dbdb375d814a4cd520c7",
+      "size": 3624
     },
     {
       "path": "config/kong-callback-routes.json",
@@ -104,6 +124,16 @@
       "path": "deploy/kong/scope-policy.lua",
       "sha256": "ac0bcced3a0aaa3c08046dbac3fd074cab6a0b478459d14ac86c6c412eb8a42c",
       "size": 3198
+    },
+    {
+      "path": "docs/architecture/CODESTRA_KONG_CELL_PLATFORM_V1.md",
+      "sha256": "e0a580580fdbf5bd4eb7848d45b87ef3010fd26b2429ee5db56966207d74ecf3",
+      "size": 5820
+    },
+    {
+      "path": "docs/branches/KONG_CELL_BRANCH_MAP.md",
+      "sha256": "5deb0e36a8d6532b8ce03d897bc14ad6f4506524787fe04ea50949bbda8d71d9",
+      "size": 1031
     },
     {
       "path": "docs/migration/from-codestra-production-platform.md",
@@ -326,9 +356,19 @@
       "size": 4750
     },
     {
+      "path": "scripts/validate_codestra_cells.py",
+      "sha256": "61941ba82bf4794613be35b0656b2e8d23e73151a5c401dcd45c39c16961e6f7",
+      "size": 2513
+    },
+    {
       "path": "scripts/validate_kong_production_standby.py",
       "sha256": "a33d3937b02067660c72fe7cc55e7d78a649c66c643d62f62bb82f10d860cc28",
       "size": 2952
+    },
+    {
+      "path": "tests/test_codestra_cells.py",
+      "sha256": "c1125ef2be72a086569c2d4eaf9e06ad4dc6b0b0b1d2bc3ebf85832b703a9f5c",
+      "size": 883
     },
     {
       "path": "tests/test_kong_canonical_route_contract.py",
@@ -362,7 +402,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "5c9557d05bbd0d44e9b3f5af5b48c51ab3b39d447151734dacd8cbdc55596893",
+  "manifest_generation_id": "304e80a27c1465f85692317986b451b87b002ae22fc7134469b6e12c91bb72ab",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
