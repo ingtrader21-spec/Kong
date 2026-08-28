@@ -120,7 +120,18 @@ def verify_control_plane(admin: str, declared: dict, routes: list[dict], service
             route = one([item for item in routes if item.get("name") == expected["name"]], f"control-plane route {expected['name']}")
             for field in ("hosts", "paths", "methods", "protocols"):
                 require_equal(sorted(route.get(field) or []), sorted(expected.get(field) or []), f"{expected['name']}.{field}")
-            require_equal(route.get("strip_path"), expected["strip_path"], f"{expected['name']}.strip_path")
+            for field in (
+                "strip_path",
+                "preserve_host",
+                "path_handling",
+                "https_redirect_status_code",
+                "request_buffering",
+                "response_buffering",
+                "regex_priority",
+            ):
+                require_equal(route.get(field), expected[field], f"{expected['name']}.{field}")
+            for field, empty in (("headers", {}), ("snis", []), ("sources", []), ("destinations", [])):
+                require_equal(route.get(field) or empty, expected.get(field) or empty, f"{expected['name']}.{field}")
             require_equal(route.get("service", {}).get("id"), service["id"], f"{expected['name']}.service")
             route_plugins = enabled_plugins(admin, route["id"])
             expected_route_plugins = {plugin["name"] for plugin in expected.get("plugins", [])}

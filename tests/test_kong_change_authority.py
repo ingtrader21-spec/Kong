@@ -330,7 +330,9 @@ def manifest_bytes(root: Path) -> tuple[bytes, bytes]:
 
 
 def transaction_residue(root: Path) -> list[Path]:
-    return sorted(root.glob(".MIGRATION_MANIFEST.*")) + sorted(root.glob(".migration-manifests.*"))
+    paths = sorted(root.glob(".MIGRATION_MANIFEST.*")) + sorted(root.glob(".migration-manifests.*"))
+    return [path for path in paths if path.name != manifest_generator.LOCK_NAME]
+
 
 
 @pytest.mark.parametrize(
@@ -494,3 +496,215 @@ def test_tracked_mode_guard_rejects_removed_executable_bit(tmp_path):
     subprocess.run(["git", "update-index", "--chmod=-x", relative], cwd=root, check=True)
     assert tracked_mode(root, relative) == "100644"
     assert tracked_mode(root, relative) != "100755"
+
+
+
+def _probe_manifest_lock(root: Path) -> int:
+    code = (
+        "import fcntl\n"
+        "import os\n"
+        "import sys\n"
+        "path = sys.argv[1]\n"
+        "flags = os.O_RDWR | os.O_CREAT | getattr(os, 'O_CLOEXEC', 0) | getattr(os, 'O_NOFOLLOW', 0)\n"
+        "fd = os.open(path, flags, 0o600)\n"
+        "try:\n"
+        "    try:\n"
+        "        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)\n"
+        "    except BlockingIOError:\n"
+        "        raise SystemExit(75)\n"
+        "    else:\n"
+        "        fcntl.flock(fd, fcntl.LOCK_UN)\n"
+        "        raise SystemExit(0)\n"
+        "finally:\n"
+        "    os.close(fd)\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code, str(root / manifest_generator.LOCK_NAME)],
+        timeout=5,
+    )
+    return result.returncode
+
+
+def _wait_for_path(path: Path, process: subprocess.Popen, timeout: float = 5.0) -> None:
+    import time
+
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if path.exists():
+            return
+        if process.poll() is not None:
+            raise AssertionError(f"lock holder exited early: {process.returncode}")
+        time.sleep(0.01)
+    process.kill()
+    raise AssertionError(f"timed out waiting for {path}")
+
+
+def _assert_command_serializes_behind_lock(root: Path, command: list[str]) -> None:
+    import time
+
+    ready = root / ".lock-test-ready"
+    release = root / ".lock-test-release"
+    holder_code = (
+        "import sys\n"
+        "import time\n"
+        "from pathlib import Path\n"
+        "root = Path(sys.argv[1])\n"
+        "sys.path.insert(0, str(root / 'tools'))\n"
+        "import generate_migration_manifests as generator\n"
+        "ready = Path(sys.argv[2])\n"
+        "release = Path(sys.argv[3])\n"
+        "with generator.generator_lock(root):\n"
+        "    ready.write_text('ready\\n')\n"
+        "    while not release.exists():\n"
+        "        time.sleep(0.01)\n"
+    )
+    holder = subprocess.Popen(
+        [sys.executable, "-c", holder_code, str(root), str(ready), str(release)],
+        text=True,
+    )
+    contender = None
+    try:
+        _wait_for_path(ready, holder)
+        contender = subprocess.Popen(command, cwd=root, text=True)
+        time.sleep(0.25)
+        assert contender.poll() is None, "lock-aware command bypassed an active manifest lock"
+        release.write_text("release\n")
+        assert holder.wait(timeout=5) == 0
+        assert contender.wait(timeout=20) == 0
+    finally:
+        release.write_text("release\n")
+        if holder.poll() is None:
+            holder.kill()
+        if contender is not None and contender.poll() is None:
+            contender.kill()
+        ready.unlink(missing_ok=True)
+        release.unlink(missing_ok=True)
+
+
+def test_manifest_lock_inode_is_persistent_and_cross_process_exclusive(tmp_path):
+    import stat
+
+    root = copy_manifest_fixture(tmp_path)
+    lock_path = root / manifest_generator.LOCK_NAME
+    with manifest_generator.generator_lock(root):
+        first = lock_path.stat()
+        assert _probe_manifest_lock(root) == 75
+    assert _probe_manifest_lock(root) == 0
+    with manifest_generator.generator_lock(root):
+        second = lock_path.stat()
+        assert _probe_manifest_lock(root) == 75
+    assert (first.st_dev, first.st_ino) == (second.st_dev, second.st_ino)
+    assert stat.S_ISREG(second.st_mode)
+    assert stat.S_IMODE(second.st_mode) == 0o600
+    assert second.st_uid == os.geteuid()
+    assert second.st_nlink == 1
+
+
+def test_manifest_lock_rejects_mode_drift_and_symlinks(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    lock_path = root / manifest_generator.LOCK_NAME
+    with manifest_generator.generator_lock(root):
+        pass
+    lock_path.chmod(0o644)
+    with pytest.raises(manifest_generator.TransactionError, match="mode"):
+        with manifest_generator.generator_lock(root):
+            pass
+    lock_path.unlink()
+    lock_path.symlink_to(root / "README.md")
+    with pytest.raises((manifest_generator.TransactionError, OSError)):
+        with manifest_generator.generator_lock(root):
+            pass
+
+
+@pytest.mark.parametrize(
+    "command_kind",
+    ["generate", "check", "verify"],
+)
+def test_generator_verifier_and_check_serialize_across_processes(tmp_path, command_kind):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    if command_kind == "generate":
+        command = [
+            sys.executable,
+            str(root / "tools/generate_migration_manifests.py"),
+            "--root",
+            str(root),
+        ]
+    elif command_kind == "check":
+        command = [
+            sys.executable,
+            str(root / "tools/generate_migration_manifests.py"),
+            "--root",
+            str(root),
+            "--check",
+        ]
+    else:
+        command = [
+            sys.executable,
+            str(root / "tools/verify_migration_manifest.py"),
+            "--root",
+            str(root),
+        ]
+    _assert_command_serializes_behind_lock(root, command)
+
+
+def test_check_holds_lock_through_expected_and_actual_comparison(tmp_path, monkeypatch):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    original_outputs = manifest_generator.current_outputs
+    original_inventory = manifest_generator.inventory
+
+    def guarded_current_outputs(selected_root):
+        assert _probe_manifest_lock(selected_root) == 75
+        return original_outputs(selected_root)
+
+    def guarded_inventory(selected_root=manifest_generator.ROOT):
+        assert _probe_manifest_lock(selected_root) == 75
+        return original_inventory(selected_root)
+
+    monkeypatch.setattr(manifest_generator, "current_outputs", guarded_current_outputs)
+    monkeypatch.setattr(manifest_generator, "inventory", guarded_inventory)
+    assert manifest_generator.check(root) == len(manifest_generator.approved_paths(root))
+
+
+def test_verifier_holds_lock_through_manifest_and_authority_reads(tmp_path, monkeypatch):
+    import importlib
+
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    verifier = importlib.import_module("verify_migration_manifest")
+    original_load_document = verifier.load_document
+    original_approved_paths = verifier.approved_paths
+
+    def guarded_load_document(path, *, yaml_format):
+        assert _probe_manifest_lock(root) == 75
+        return original_load_document(path, yaml_format=yaml_format)
+
+    def guarded_approved_paths(selected_root):
+        assert _probe_manifest_lock(root) == 75
+        return original_approved_paths(selected_root)
+
+    monkeypatch.setattr(verifier, "load_document", guarded_load_document)
+    monkeypatch.setattr(verifier, "approved_paths", guarded_approved_paths)
+    assert verifier.verify(root) == len(manifest_generator.approved_paths(root))
+
+
+def test_committed_generation_survives_later_authority_drift(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    with (root / "README.md").open("a") as stream:
+        stream.write("\ncommitted candidate\n")
+    with pytest.raises(KeyboardInterrupt):
+        manifest_generator.generate(
+            root,
+            CheckpointFailure("before_final_verification", KeyboardInterrupt),
+        )
+    committed = manifest_bytes(root)
+    assert (root / manifest_generator.JOURNAL_NAME).is_file()
+    with (root / "SECURITY.md").open("a") as stream:
+        stream.write("\npost-commit source drift\n")
+    with manifest_generator.generator_lock(root):
+        assert manifest_generator.recover_transaction(root) is True
+    assert manifest_bytes(root) == committed
+    assert transaction_residue(root) == []
+    assert run_manifest_verifier(root).returncode != 0

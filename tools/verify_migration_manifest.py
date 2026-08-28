@@ -60,6 +60,10 @@ def indexed_files(document: dict[str, object], label: str) -> tuple[list[dict[st
 def verify(root: Path) -> int:
     with generator_lock(root):
         recover_transaction(root)
+        return verify_locked(root)
+
+
+def verify_locked(root: Path) -> int:
     validate_pair(current_outputs(root), root)
     yaml_document = load_document(root / YAML_MANIFEST, yaml_format=True)
     json_document = load_document(root / JSON_MANIFEST, yaml_format=False)

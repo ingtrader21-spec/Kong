@@ -21,3 +21,4 @@ runtime/
 spool/
 backups/
 evidence/private/
+.migration-manifests.lock
