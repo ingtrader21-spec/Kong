@@ -5,7 +5,15 @@
     "name": "codestra-middleware-n8n-control-plane",
     "host": "codestra-middleware-integration-api-1",
     "port": 8095,
-    "protocol": "http"
+    "protocol": "http",
+    "retries": 1,
+    "connect_timeout": 3000,
+    "read_timeout": 10000,
+    "write_timeout": 10000
+  },
+  "consumer": {
+    "username": "codestra-n8n-automation",
+    "custom_id": "n8n-automation"
   },
   "issuer": "https://auth.codestra.co/realms/codestra",
   "audience": "middleware-api",
