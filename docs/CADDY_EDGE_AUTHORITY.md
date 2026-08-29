@@ -1,61 +1,65 @@
-# Caddy API-Edge Source Authority
+# Caddy-to-Kong Authority Boundary
 
 ## Decision
 
-`appolon1908-hue/Kong` is the canonical source repository for **Codestra API-edge policy**, including the Caddy configuration that fronts Kong and enforces the outer TLS/host/network boundary for `api.codestra.co` and related governed API ingress.
+`appolon1908-hue/Caddy` is the principal source repository for shared Codestra Caddy edge configuration.
 
-This does **not** make Kong a central release-authority repository. Each product/service still releases independently. This repository owns only the gateway/edge policy and artifacts that belong to the Kong ingress boundary.
+`appolon1908-hue/Kong` is the principal source repository for Kong gateway services, routes, plugins, OIDC/JWT policy, rate/body/route enforcement, gateway reconciliation and the compatibility contract Caddy must satisfy when forwarding governed API ingress.
 
-## Why this decision exists
+Kong does **not** own Caddy source merely because Caddy forwards traffic to Kong.
 
-Stage 0 inventory found no single repository owning the shared Caddy edge. Existing Caddy material is fragmented:
-
-- historical Server A/private VICIdial ingress reconciliation exists in `appolon1908-hue/codestra-production-platform`;
-- individual product repositories contain product-specific Caddy examples/templates;
-- current Kong source already owns API gateway, route, security, standby/failover and Caddy/Kong validation concerns.
-
-Without an explicit owner, runtime Caddy drift cannot be tied to a reviewed source SHA.
-
-## Authority boundary
+## Architecture
 
 ```text
 Internet / private ingress
         |
         v
-Caddy  -- TLS, host, source/network edge
-        |
+Caddy   -- principal repo: appolon1908-hue/Caddy
+        |  TLS, host, network edge, reverse proxy, log redaction
         v
-Kong   -- OIDC/JWT, ACL/scope, rate/body/route policy
-        |
+Kong    -- principal repo: appolon1908-hue/Kong
+        |  OIDC/JWT, ACL/scope, rate/body/route policy
         v
-Middleware -- tenant/actor revalidation, durable command/write authority
+Middleware
+           tenant/actor revalidation, durable command/write authority
 ```
 
-Keycloak is the identity authority. Caddy must not manufacture trusted identity headers. Kong validates the Keycloak token, and Middleware independently revalidates the service/tenant authorization required for privileged commands.
+Keycloak is the identity authority. Caddy must not manufacture trusted service identity. Kong validates the reviewed Keycloak token/policy for the gateway route, and Middleware independently revalidates the identity/tenant authorization needed for privileged commands.
 
-## Canonical path
+## Historical reference
 
-New shared API-edge Caddy source should live under:
+`appolon1908-hue/codestra-production-platform` is historical runtime/deployment/reconciliation/rollback evidence only.
+
+The reviewed historical baseline:
 
 ```text
-deploy/caddy/
+release/production-activation:operations/caddy/api.codestra.co.caddy
 ```
 
-with reviewable host snippets, TLS/network policy, tests and immutable release metadata. Product-site webserver/Caddy configuration that serves a product's own frontend remains in that product repository unless it is part of the shared `api.codestra.co` edge.
+has been imported into `appolon1908-hue/Caddy` with provenance recorded. The old copy remains historical evidence and is not the place for new Caddy feature development.
 
-## Migration rule
+## Kong responsibilities for the boundary
 
-This decision does not move live traffic or overwrite current host files. Existing runtime Caddy configuration remains authoritative for the running host until a separately reviewed migration:
+Kong source may and should validate the assumptions it requires from Caddy, including:
 
-1. inventories the live Caddy config read-only;
-2. records its checksum and listener/host map;
-3. ports the exact required behavior into `deploy/caddy/`;
-4. proves no legacy identity-header trust;
-5. validates Caddy -> Kong routes in write-disabled staging;
-6. rehearses rollback;
-7. deploys an immutable reviewed artifact/config set;
-8. verifies live read-back before declaring source convergence.
+- the intended upstream listener/route boundary;
+- preservation of the bearer token required for Kong/ Middleware validation;
+- request-size and transport expectations;
+- no caller-controlled trusted identity-header bypass;
+- no public exposure of Kong Admin;
+- health/readiness route compatibility;
+- failure behavior when gateway policy rejects a request.
 
-## Historical repository
+Those compatibility tests do not turn Kong into the Caddy source repository.
 
-`appolon1908-hue/codestra-production-platform` is historical runtime/reconciliation evidence, not the future shared Caddy source authority. Its recorded Server A/private VICIdial Caddy material must be migrated or explicitly retired, not silently copied into production.
+## Change rule
+
+If a change is primarily a Caddy concern (TLS site block, reverse proxy target, Caddy request policy, Caddy log redaction, Caddy modules or Caddy release/reload behavior), change `appolon1908-hue/Caddy`.
+
+If a change is a Kong concern (service/route/plugin/OIDC/scope/rate-limit/gateway reconciliation), change `appolon1908-hue/Kong`.
+
+If both change, use coordinated PRs and versioned compatibility evidence; do not duplicate either implementation in the other repository.
+
+## Runtime migration
+
+No live traffic or Caddy file is changed by this document. Before the Caddy repository becomes runtime-authoritative for a host, perform read-only inventory, checksum reconciliation, complete config validation, staging Caddy→Kong/Middleware tests, rollback rehearsal, controlled reload and post-change read-back.
