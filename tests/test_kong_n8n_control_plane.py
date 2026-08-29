@@ -64,8 +64,19 @@ def test_exact_plugin_verifier_accepts_contract_and_rejects_scope_drift():
     spec = json.loads(SPEC_PATH.read_text())
     route = spec["routes"][0]
     plugins = _plugin_set(module, spec, route)
+    assert plugins["jwt"]["config"]["hide_credentials"] is False
     module.verify_plugins(plugins, route, spec)
     plugins["post-function"]["config"]["access"] = ["return true"]
+    with pytest.raises(RuntimeError):
+        module.verify_plugins(plugins, route, spec)
+
+
+def test_exact_plugin_verifier_rejects_authorization_header_stripping():
+    module = _load(RECONCILER_PATH, "reconcile_kong_n8n_control_plane_bearer_preservation")
+    spec = json.loads(SPEC_PATH.read_text())
+    route = spec["routes"][0]
+    plugins = _plugin_set(module, spec, route)
+    plugins["jwt"]["config"]["hide_credentials"] = True
     with pytest.raises(RuntimeError):
         module.verify_plugins(plugins, route, spec)
 
