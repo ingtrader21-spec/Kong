@@ -233,10 +233,15 @@ def ensure_route(admin: str, spec: dict, service: dict, expected: dict, apply: b
         "preserve_host": "false",
         "https_redirect_status_code": 426,
     }
+    inert_payload = {
+        **payload,
+        "hosts[]": ["staged.invalid"],
+        "paths[]": [f"/__codestra_staged/{expected['name']}"],
+    }
     if route and apply:
-        request(admin, "PATCH", f"/routes/{route['id']}", payload)
+        request(admin, "PATCH", f"/routes/{route['id']}", inert_payload)
     elif not route and apply:
-        request(admin, "POST", "/routes", payload)
+        request(admin, "POST", "/routes", inert_payload)
     elif not route:
         raise RuntimeError(f"missing route: {expected['name']}")
     route = one(
@@ -244,26 +249,52 @@ def ensure_route(admin: str, spec: dict, service: dict, expected: dict, apply: b
         f"route {expected['name']}",
     )
     assert route is not None
-    require_exact_fields(
-        route,
-        {
-            "name": expected["name"],
-            "hosts": [spec["host"]],
-            "paths": [expected["path"]],
-            "methods": [expected["method"]],
-            "protocols": ["http"],
-            "strip_path": False,
-            "preserve_host": False,
-            "https_redirect_status_code": 426,
-        },
-        expected["name"],
-    )
+    if not apply:
+        require_exact_fields(
+            route,
+            {
+                "name": expected["name"],
+                "hosts": [spec["host"]],
+                "paths": [expected["path"]],
+                "methods": [expected["method"]],
+                "protocols": ["http"],
+                "strip_path": False,
+                "preserve_host": False,
+                "https_redirect_status_code": 426,
+            },
+            expected["name"],
+        )
     if route.get("service", {}).get("id") != service["id"]:
         raise RuntimeError(f"{expected['name']} service binding drift")
     plugin_configs = expected_plugin_configs(spec, expected)
     for name, config in plugin_configs.items():
         ensure_plugin(admin, route["id"], name, config, apply)
     verify_plugins(enabled_plugins(admin, route["id"]), expected, spec)
+    if apply:
+        request(admin, "PATCH", f"/routes/{route['id']}", payload)
+        route = one(
+            [
+                row
+                for row in all_rows(admin, "/routes?size=1000")
+                if row.get("name") == expected["name"]
+            ],
+            f"route {expected['name']}",
+        )
+        assert route is not None
+        require_exact_fields(
+            route,
+            {
+                "name": expected["name"],
+                "hosts": [spec["host"]],
+                "paths": [expected["path"]],
+                "methods": [expected["method"]],
+                "protocols": ["http"],
+                "strip_path": False,
+                "preserve_host": False,
+                "https_redirect_status_code": 426,
+            },
+            expected["name"],
+        )
     return route
 
 
@@ -290,6 +321,8 @@ def main() -> int:
         raise RuntimeError("N8N client identity and Kong consumer custom_id differ")
     if spec.get("preserve_authorization_header") is not True or spec.get("token_exchange") is not False:
         raise RuntimeError("N8N bearer token must be preserved for Middleware revalidation")
+    if spec.get("safety", {}).get("middleware_revalidates_identity") is not True:
+        raise RuntimeError("Middleware identity revalidation must be explicitly required")
     if args.apply and (
         spec.get("status") not in {"APPROVED_STAGING", "APPROVED_PRODUCTION"}
         or spec.get("safety", {}).get("reconciliation_apply") is not True
@@ -311,7 +344,7 @@ def main() -> int:
                 "issuer": spec["issuer"],
                 "audience": spec["audience"],
                 "client_id": spec["client_id"],
-                "middleware_revalidation": True,
+                "middleware_revalidation": spec["safety"]["middleware_revalidates_identity"],
                 "status": "PASS",
             }
         )

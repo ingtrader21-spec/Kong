@@ -6,6 +6,7 @@
     "host": "codestra-middleware-integration-api-1",
     "port": 8095,
     "protocol": "http",
+    "enabled": true,
     "retries": 1,
     "connect_timeout": 3000,
     "read_timeout": 10000,
