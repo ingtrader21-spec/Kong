@@ -75,7 +75,7 @@
       "serviceHost": "codestra-middleware-integration-api-1",
       "servicePort": 8095,
       "securityAuthority": "config/kong-n8n-control-plane-routes.json",
-      "requiredPlugins": ["jwt", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
     },
     {
       "name": "codestra-n8n-command-read",
@@ -88,7 +88,7 @@
       "serviceHost": "codestra-middleware-integration-api-1",
       "servicePort": 8095,
       "securityAuthority": "config/kong-n8n-control-plane-routes.json",
-      "requiredPlugins": ["jwt", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
     }
   ],
   "routes": [
