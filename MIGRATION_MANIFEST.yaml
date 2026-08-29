@@ -63,8 +63,8 @@ files:
   sha256: ac0bcced3a0aaa3c08046dbac3fd074cab6a0b478459d14ac86c6c412eb8a42c
   size: 3198
 - path: docs/CADDY_EDGE_AUTHORITY.md
-  sha256: 0549e76c769ea6dfffac988ecaaccf70ffdade6f6c5a3c05978bc9649d14f06f
-  size: 2874
+  sha256: ae5aa1b00036fbc54a516d354b948ab096b97c1a18f0ec42e7a13e7b57dd18d8
+  size: 2992
 - path: docs/migration/from-codestra-production-platform.md
   sha256: d60890efc390f77f8ec93c92df157efb50e623af5b13b451470aba50145ae577
   size: 589
@@ -219,7 +219,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 72f8e8684a57a038d3d284892c716f64b351aa5c20fd56aa0e04e64d69133df9
+manifest_generation_id: 4be2141c19ca49fa3d42deac4159e15f0498c2c15c46127dec140d0526dc6f9a
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
