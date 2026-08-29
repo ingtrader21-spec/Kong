@@ -84,6 +84,12 @@ def claim_guard(spec: dict, route: dict) -> str:
 
 def expected_plugin_configs(spec: dict, route: dict) -> dict[str, dict]:
     return {
+        "openid-connect": {
+            "issuer": spec["oidc_discovery"],
+            "auth_methods": ["bearer"],
+            "audience": [spec["audience"]],
+            "consumer_claim": ["azp"],
+        },
         "jwt": {
             "key_claim_name": "azp",
             "claims_to_verify": ["exp"],
@@ -272,6 +278,14 @@ def main() -> int:
     args = parser.parse_args()
 
     spec = json.loads(args.manifest.read_text())
+    expected_discovery = spec.get("issuer", "") + "/.well-known/openid-configuration"
+    expected_jwks = spec.get("issuer", "") + "/protocol/openid-connect/certs"
+    if spec.get("oidc_discovery") != expected_discovery:
+        raise RuntimeError("N8N OIDC discovery must match canonical Keycloak issuer")
+    if spec.get("jwks_uri") != expected_jwks:
+        raise RuntimeError("N8N JWKS URI must match canonical Keycloak issuer")
+    if args.jwks_url.rstrip("/") != expected_jwks.rstrip("/"):
+        raise RuntimeError("runtime JWKS URL differs from reviewed N8N authority")
     if spec.get("client_id") != spec.get("consumer", {}).get("custom_id"):
         raise RuntimeError("N8N client identity and Kong consumer custom_id differ")
     if spec.get("preserve_authorization_header") is not True or spec.get("token_exchange") is not False:
