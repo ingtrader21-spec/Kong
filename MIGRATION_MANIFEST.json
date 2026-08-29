@@ -1,6 +1,11 @@
 {
   "files": [
     {
+      "path": ".github/workflows/refresh-caddy-authority-manifest.yml",
+      "sha256": "352495d19bb1c04dc02a381314f58617bddb08bb5c0f08e3c6c51e5c47cc4722",
+      "size": 1444
+    },
+    {
       "path": ".github/workflows/validate.yml",
       "sha256": "846943a074181851a7cb6dfc4e58cdae8d2645c36acba087fc3fd18ff4ac1422",
       "size": 2616
@@ -104,6 +109,11 @@
       "path": "deploy/kong/scope-policy.lua",
       "sha256": "ac0bcced3a0aaa3c08046dbac3fd074cab6a0b478459d14ac86c6c412eb8a42c",
       "size": 3198
+    },
+    {
+      "path": "docs/CADDY_EDGE_AUTHORITY.md",
+      "sha256": "0549e76c769ea6dfffac988ecaaccf70ffdade6f6c5a3c05978bc9649d14f06f",
+      "size": 2874
     },
     {
       "path": "docs/migration/from-codestra-production-platform.md",
@@ -237,8 +247,8 @@
     },
     {
       "path": "operations/kong-database/kong-database-restore-rehearsal.sh",
-      "sha256": "58ca9c0beb05ac5caaad4d1d4044354906ac9bd58e65cfb58d0c81554ba0d49f",
-      "size": 4661
+      "sha256": "328a38afeae1dc546213db8a377e9deaa2fc4c28923254567579bfc2bbe572ea",
+      "size": 5394
     },
     {
       "path": "operations/kong-database/kong-database.rules.yml",
@@ -292,8 +302,8 @@
     },
     {
       "path": "scripts/apply_kong_standby.py",
-      "sha256": "00fd1dcb1146d7b2b0577a051a4d337085f7b7c6153f3f156601a8e14142d40b",
-      "size": 5268
+      "sha256": "625eaf001803ef114abdd20d713e5cae5ece8c2ab765918f7aecc00d90b94ffd",
+      "size": 5858
     },
     {
       "path": "scripts/export_kong_public_route_contracts.py",
@@ -307,8 +317,8 @@
     },
     {
       "path": "scripts/reconcile_kong_campaign_automation.py",
-      "sha256": "b139515821a97eb6ab113c94ac09638f1bd4ae0fc9cd14da12dfdf1c7c4eb08c",
-      "size": 12688
+      "sha256": "a62514a4ff3288acf6bc6472a87477d661853710e566c3df21b0ef2c6af96227",
+      "size": 13031
     },
     {
       "path": "scripts/reconcile_kong_canonical_routes.py",
@@ -342,13 +352,13 @@
     },
     {
       "path": "tests/test_kong_database_operations.py",
-      "sha256": "2266e662e8984ce7e80231b32eb0c0574f62c3768bfb00d514b01acc61deda9e",
-      "size": 6472
+      "sha256": "250603155faf3033a2171cae10eba8222fa4cb2ad4c800dcd42c14d438b924e4",
+      "size": 6697
     },
     {
       "path": "tests/test_kong_route_authority_hardening.py",
-      "sha256": "887d3e447c494a69133a43b5f575b1c588715a5be94f4d782fc009c5a640bc7d",
-      "size": 16147
+      "sha256": "242a6a801b6228888eac6d42c495a5e18d63dc4e564fa471e5859f72b1c55a7e",
+      "size": 17693
     },
     {
       "path": "tools/generate_migration_manifests.py",
@@ -362,7 +372,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "49ab8d9efb21284a3035c8e5c3307207df371c301ced3a057a462162ce165624",
+  "manifest_generation_id": "83222f21d35517b5960d1334534338bd456240c366f9de75965d6d58b113cdde",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
