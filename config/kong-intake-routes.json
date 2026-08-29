@@ -20,7 +20,9 @@
       "maxBodyMb": 1,
       "ratePerMinute": 120,
       "requiredPlugins": [
+        "jwt",
         "openid-connect",
+        "pre-function",
         "correlation-id",
         "rate-limiting",
         "request-size-limiting",
