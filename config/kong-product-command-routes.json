@@ -1,0 +1,59 @@
+{
+  "service": {
+    "name": "codestra-middleware-command-api",
+    "host": "codestra-middleware-integration-api-1",
+    "port": 8095,
+    "protocol": "http"
+  },
+  "issuer": "https://auth.codestra.co/realms/codestra",
+  "audience": "middleware-api",
+  "host": "api.codestra.co",
+  "tenantHeader": "X-Tenant-ID",
+  "consumerHeader": "X-Codestra-Consumer-Id",
+  "consumers": [
+    {
+      "client_id": "beyvra-backend",
+      "scope": "beyvra.middleware.command.write"
+    },
+    {
+      "client_id": "breero-backend",
+      "scope": "breero.middleware.command.write"
+    },
+    {
+      "client_id": "larim-a-backend",
+      "scope": "larim-a.middleware.command.write"
+    },
+    {
+      "client_id": "moneybee-backend",
+      "scope": "moneybee.middleware.command.write"
+    },
+    {
+      "client_id": "social-codestra",
+      "scope": "social.middleware.command.write"
+    },
+    {
+      "client_id": "transportation-backend",
+      "scope": "transportation.middleware.command.write"
+    }
+  ],
+  "routes": [
+    {
+      "name": "codestra-middleware-command-submit",
+      "paths": ["/v1/commands"],
+      "methods": ["POST"],
+      "strip_path": false,
+      "scopePolicy": "registered_product_command_scope",
+      "rate_per_minute": 120,
+      "max_body_mb": 1
+    },
+    {
+      "name": "codestra-middleware-operation-readback",
+      "paths": ["/v1/operations"],
+      "methods": ["GET"],
+      "strip_path": false,
+      "scopePolicy": "registered_product_command_scope",
+      "rate_per_minute": 240,
+      "max_body_mb": 1
+    }
+  ]
+}

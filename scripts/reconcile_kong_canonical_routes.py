@@ -165,6 +165,13 @@ def security_authority(root: Path, expected: dict) -> tuple[Path, dict, dict]:
         )
         require_equal([route["path"]], expected["paths"], f"{route_name}.authority.paths")
         require_equal(expected["methods"], ["POST"], f"{route_name}.authority.methods")
+    elif path.name == "kong-product-command-routes.json":
+        route = one(
+            [item for item in manifest["routes"] if item["name"] == route_name],
+            f"security authority route {route_name}",
+        )
+        require_equal(route["paths"], expected["paths"], f"{route_name}.authority.paths")
+        require_equal(sorted(route["methods"]), sorted(expected["methods"]), f"{route_name}.authority.methods")
     else:
         raise RuntimeError(f"unsupported route security authority: {path}")
     require_equal(manifest["host"], expected["hosts"][0], f"{route_name}.authority.host")
@@ -193,6 +200,47 @@ def verify_security_plugins(
     if authority_path.name == "kong-callback-routes.json":
         callback = security_module(root, "reconcile_kong_callback_routes")
         callback.verify_plugins(plugins, authority_route, manifest)
+        return
+    if authority_path.name == "kong-product-command-routes.json":
+        product_commands = security_module(root, "reconcile_kong_product_command_routes")
+        product_commands.require_plugin(
+            plugins["jwt"],
+            {
+                "key_claim_name": "azp",
+                "claims_to_verify": ["exp"],
+                "header_names": ["authorization"],
+                "run_on_preflight": True,
+            },
+            f"{expected['name']}.jwt",
+        )
+        product_commands.require_plugin(
+            plugins["post-function"],
+            {"access": [product_commands.claim_guard(manifest)]},
+            f"{expected['name']}.claim_guard",
+        )
+        product_commands.require_plugin(
+            plugins["request-size-limiting"],
+            {"allowed_payload_size": authority_route["max_body_mb"]},
+            f"{expected['name']}.body_limit",
+        )
+        product_commands.require_plugin(
+            plugins["rate-limiting"],
+            {
+                "minute": authority_route["rate_per_minute"],
+                "policy": "local",
+                "limit_by": "consumer",
+            },
+            f"{expected['name']}.rate_limit",
+        )
+        product_commands.require_plugin(
+            plugins["correlation-id"],
+            {
+                "header_name": "X-Correlation-ID",
+                "generator": "uuid",
+                "echo_downstream": True,
+            },
+            f"{expected['name']}.correlation_id",
+        )
         return
     if authority_path.name != "kong-campaign-automation-routes.json":
         raise RuntimeError(f"unsupported route security authority: {authority_path}")
