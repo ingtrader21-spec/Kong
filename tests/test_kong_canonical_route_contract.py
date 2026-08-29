@@ -47,7 +47,7 @@ def test_authenticated_middleware_contract_routes_are_canonical():
 
 
 def test_n8n_control_plane_preserves_identity_for_middleware_revalidation():
-    assert N8N_AUTHORITY["status"] == "PREPARED_DISABLED"
+    assert N8N_AUTHORITY["status"] == "APPROVED_PRODUCTION"
     assert N8N_AUTHORITY["issuer"] == "https://auth.codestra.co/realms/codestra"
     assert N8N_AUTHORITY["audience"] == "middleware-api"
     assert N8N_AUTHORITY["client_id"] == "n8n-automation"
@@ -57,7 +57,7 @@ def test_n8n_control_plane_preserves_identity_for_middleware_revalidation():
     assert routes["codestra-n8n-command-submit"]["scope"] == "middleware.request.forward"
     assert routes["codestra-n8n-command-read"]["scope"] == "middleware.status.read"
     assert N8N_AUTHORITY["safety"]["direct_provider_routes"] is False
-    assert N8N_AUTHORITY["safety"]["reconciliation_apply"] is False
+    assert N8N_AUTHORITY["safety"]["reconciliation_apply"] is True
 
 
 def test_every_managed_route_has_explicit_security_controls():

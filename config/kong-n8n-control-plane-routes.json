@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1",
-  "status": "PREPARED_DISABLED",
+  "status": "APPROVED_PRODUCTION",
   "service": {
     "name": "codestra-middleware-n8n-control-plane",
     "host": "codestra-middleware-integration-api-1",
@@ -45,7 +45,7 @@
     }
   ],
   "safety": {
-    "reconciliation_apply": false,
+    "reconciliation_apply": true,
     "credentials_in_repository": false,
     "direct_provider_routes": false,
     "middleware_revalidates_identity": true,
