@@ -1,18 +1,23 @@
 import importlib.util
 import json
+import sys
 from pathlib import Path
 
 import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
 SPEC_PATH = ROOT / "config" / "kong-n8n-control-plane-routes.json"
 CANONICAL_PATH = ROOT / "config" / "kong-canonical-middleware-routes.json"
-RECONCILER_PATH = ROOT / "scripts" / "reconcile_kong_n8n_control_plane.py"
-CANONICAL_RECONCILER_PATH = ROOT / "scripts" / "reconcile_kong_canonical_routes.py"
+RECONCILER_PATH = SCRIPTS / "reconcile_kong_n8n_control_plane.py"
+CANONICAL_RECONCILER_PATH = SCRIPTS / "reconcile_kong_canonical_routes.py"
 
 
 def _load(path: Path, name: str):
+    scripts = str(SCRIPTS)
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
     spec = importlib.util.spec_from_file_location(name, path)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
