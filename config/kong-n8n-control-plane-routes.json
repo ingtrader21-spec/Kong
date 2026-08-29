@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "status": "PREPARED_DISABLED",
+  "service": {
+    "name": "codestra-middleware-n8n-control-plane",
+    "host": "codestra-middleware-integration-api-1",
+    "port": 8095,
+    "protocol": "http"
+  },
+  "issuer": "https://auth.codestra.co/realms/codestra",
+  "audience": "middleware-api",
+  "client_id": "n8n-automation",
+  "host": "api.codestra.co",
+  "preserve_authorization_header": true,
+  "token_exchange": false,
+  "routes": [
+    {
+      "name": "codestra-n8n-command-submit",
+      "path": "/v1/integrations/n8n/commands",
+      "method": "POST",
+      "scope": "middleware.request.forward",
+      "required_headers": ["Authorization", "X-Tenant-ID", "X-Correlation-ID", "Idempotency-Key"],
+      "rate_per_minute": 120,
+      "max_body_mb": 1
+    },
+    {
+      "name": "codestra-n8n-command-read",
+      "path": "/v1/integrations/n8n/operations",
+      "method": "GET",
+      "scope": "middleware.status.read",
+      "required_headers": ["Authorization", "X-Tenant-ID"],
+      "rate_per_minute": 240,
+      "max_body_mb": 1
+    }
+  ],
+  "safety": {
+    "reconciliation_apply": false,
+    "credentials_in_repository": false,
+    "direct_provider_routes": false,
+    "middleware_revalidates_identity": true
+  }
+}
