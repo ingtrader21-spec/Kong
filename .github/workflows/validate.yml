@@ -61,3 +61,54 @@ jobs:
           python3 tools/verify_migration_manifest.py
           git diff --exit-code
           test -z "$(git status --porcelain)"
+
+  kong-config:
+    name: kong-config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install config validators
+        run: |
+          python3 -m pip install --disable-pip-version-check PyYAML
+          DECK_VERSION=1.55.0
+          DECK_SHA256=22958ee3a34fc91a41fb215c0f8f81c08e29d363bd5c41dc8287ce9bcd89bc11
+          curl --fail --location --silent --show-error \
+            --output /tmp/deck.tar.gz \
+            "https://github.com/Kong/deck/releases/download/v${DECK_VERSION}/deck_${DECK_VERSION}_linux_amd64.tar.gz"
+          echo "${DECK_SHA256}  /tmp/deck.tar.gz" | sha256sum --check
+          tar -xzf /tmp/deck.tar.gz -C /tmp deck
+      - name: Validate canonical Kong configuration
+        run: |
+          set -Eeuo pipefail
+          /tmp/deck file validate deploy/kong/control-plane.yml
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import yaml
+          for path in Path('config').rglob('*.json'):
+              json.loads(path.read_text())
+          for path in list(Path('deploy').rglob('*.yml')) + list(Path('deploy').rglob('*.yaml')):
+              yaml.safe_load(path.read_text())
+          PY
+          python3 tools/generate_migration_manifests.py --check
+          python3 tools/verify_migration_manifest.py
+
+  security:
+    name: security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install security test dependencies
+        run: python3 -m pip install --disable-pip-version-check pytest PyYAML
+      - name: Enforce fail-closed security policy
+        run: |
+          set -Eeuo pipefail
+          ! grep -RIlE --exclude-dir=.git --exclude-dir=tests --exclude-dir=reports --exclude-dir=docs \
+            --exclude='MIGRATION_MANIFEST.json' \
+            '(BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|Authorization:[[:space:]]*Bearer[[:space:]]+[^[:space:]]+|client_secret[[:space:]]*=[[:space:]]*[^[:space:]]+)' \
+            .
+          pytest -q \
+            tests/test_kong_route_authority_hardening.py \
+            tests/test_kong_change_authority.py \
+            tests/test_kong_database_operations.py
+          python3 tools/verify_migration_manifest.py
