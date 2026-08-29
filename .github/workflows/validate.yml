@@ -55,6 +55,7 @@ jobs:
             tests/test_kong_canonical_route_contract.py \
             tests/test_kong_route_authority_hardening.py \
             tests/test_kong_n8n_control_plane.py \
+            tests/test_kong_product_control_plane.py \
             tests/test_oidc_auth.py \
             tests/test_kong_database_operations.py \
             tests/test_kong_change_authority.py
