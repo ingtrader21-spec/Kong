@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0",
+  "status": "PREPARED_DISABLED",
+  "service": {
+    "name": "codestra-middleware-product-control-plane",
+    "host": "codestra-middleware-integration-api-1",
+    "port": 8095,
+    "protocol": "http",
+    "retries": 1,
+    "connect_timeout": 3000,
+    "read_timeout": 10000,
+    "write_timeout": 10000
+  },
+  "issuer": "https://auth.codestra.co/realms/codestra",
+  "oidc_discovery": "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration",
+  "jwks_uri": "https://auth.codestra.co/realms/codestra/protocol/openid-connect/certs",
+  "audience": "middleware-api",
+  "host": "api.codestra.co",
+  "preserve_authorization_header": true,
+  "token_exchange": false,
+  "tenant_claim": "tenant_id",
+  "clients": {
+    "moneybee-backend": {
+      "command_scope": "moneybee.middleware.command.write",
+      "status_scope": "moneybee.middleware.status.read",
+      "command_prefixes": ["crm."],
+      "targets": ["odoo-19"]
+    },
+    "breero-backend": {
+      "command_scope": "breero.middleware.command.write",
+      "status_scope": "breero.middleware.status.read",
+      "command_prefixes": ["crm."],
+      "targets": ["odoo-19"]
+    },
+    "larim-a-backend": {
+      "command_scope": "larim-a.middleware.command.write",
+      "status_scope": "larim-a.middleware.status.read",
+      "command_prefixes": ["crm."],
+      "targets": ["odoo-19"]
+    },
+    "transportation-backend": {
+      "command_scope": "transportation.middleware.command.write",
+      "status_scope": "transportation.middleware.status.read",
+      "command_prefixes": ["crm."],
+      "targets": ["odoo-19"]
+    },
+    "beyvra-backend": {
+      "command_scope": "beyvra.middleware.command.write",
+      "status_scope": "beyvra.middleware.status.read",
+      "command_prefixes": ["crm."],
+      "targets": ["odoo-19"]
+    },
+    "social-codestra": {
+      "command_scope": "social.middleware.command.write",
+      "status_scope": "social.middleware.status.read",
+      "command_prefixes": ["social."],
+      "targets": ["postly-social"]
+    }
+  },
+  "routes": [
+    {
+      "name": "codestra-product-command-submit",
+      "path": "/v1/commands",
+      "method": "POST",
+      "kind": "command",
+      "required_headers": ["Authorization", "X-Tenant-ID", "X-Correlation-ID", "Idempotency-Key"],
+      "rate_per_minute": 120,
+      "max_body_mb": 1
+    },
+    {
+      "name": "codestra-product-command-read",
+      "path": "/v1/operations",
+      "method": "GET",
+      "kind": "status",
+      "required_headers": ["Authorization", "X-Tenant-ID"],
+      "rate_per_minute": 240,
+      "max_body_mb": 1
+    }
+  ],
+  "safety": {
+    "reconciliation_apply": false,
+    "credentials_in_repository": false,
+    "direct_provider_routes": false,
+    "middleware_revalidates_identity": true,
+    "oidc_required": true,
+    "original_bearer_required": true,
+    "token_exchange": false
+  }
+}
