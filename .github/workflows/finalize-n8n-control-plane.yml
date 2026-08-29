@@ -1,0 +1,101 @@
+name: one-shot finalize n8n control plane
+
+on:
+  push:
+    branches:
+      - integration/platform-control-plane-v1-20260828
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout integration branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: integration/platform-control-plane-v1-20260828
+          fetch-depth: 1
+      - name: Patch dispatcher, test, refresh manifests, and remove one-shot workflow
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check pytest PyYAML
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/reconcile_kong_canonical_routes.py')
+          source = path.read_text()
+
+          authority_needle = '''    elif path.name == "kong-campaign-automation-routes.json":
+              route = one(
+                  [item for item in manifest["routes"] if item["name"] == route_name],
+                  f"security authority route {route_name}",
+              )
+              require_equal([route["path"]], expected["paths"], f"{route_name}.authority.paths")
+              require_equal(expected["methods"], ["POST"], f"{route_name}.authority.methods")
+          else:
+          '''
+          authority_replacement = '''    elif path.name == "kong-campaign-automation-routes.json":
+              route = one(
+                  [item for item in manifest["routes"] if item["name"] == route_name],
+                  f"security authority route {route_name}",
+              )
+              require_equal([route["path"]], expected["paths"], f"{route_name}.authority.paths")
+              require_equal(expected["methods"], ["POST"], f"{route_name}.authority.methods")
+          elif path.name == "kong-n8n-control-plane-routes.json":
+              route = one(
+                  [item for item in manifest["routes"] if item["name"] == route_name],
+                  f"security authority route {route_name}",
+              )
+              require_equal([route["path"]], expected["paths"], f"{route_name}.authority.paths")
+              require_equal([route["method"]], expected["methods"], f"{route_name}.authority.methods")
+          else:
+          '''
+          if authority_needle not in source:
+              raise SystemExit('security_authority patch anchor not found')
+          source = source.replace(authority_needle, authority_replacement, 1)
+
+          verify_needle = '''    if authority_path.name == "kong-callback-routes.json":
+              callback = security_module(root, "reconcile_kong_callback_routes")
+              callback.verify_plugins(plugins, authority_route, manifest)
+              return
+          if authority_path.name != "kong-campaign-automation-routes.json":
+              raise RuntimeError(f"unsupported route security authority: {authority_path}")
+          '''
+          verify_replacement = '''    if authority_path.name == "kong-callback-routes.json":
+              callback = security_module(root, "reconcile_kong_callback_routes")
+              callback.verify_plugins(plugins, authority_route, manifest)
+              return
+          if authority_path.name == "kong-n8n-control-plane-routes.json":
+              n8n = security_module(root, "reconcile_kong_n8n_control_plane")
+              n8n.verify_plugins(plugins, authority_route, manifest)
+              return
+          if authority_path.name != "kong-campaign-automation-routes.json":
+              raise RuntimeError(f"unsupported route security authority: {authority_path}")
+          '''
+          if verify_needle not in source:
+              raise SystemExit('verify_security_plugins patch anchor not found')
+          source = source.replace(verify_needle, verify_replacement, 1)
+          path.write_text(source)
+          PY
+          rm .github/workflows/finalize-n8n-control-plane.yml
+          python3 -m compileall -q scripts tests tools
+          pytest -q \
+            tests/test_kong_canonical_route_contract.py \
+            tests/test_kong_route_authority_hardening.py \
+            tests/test_kong_n8n_control_plane.py \
+            tests/test_kong_database_operations.py \
+            tests/test_kong_change_authority.py
+          python3 tools/generate_migration_manifests.py
+          python3 tools/generate_migration_manifests.py --check
+          python3 tools/verify_migration_manifest.py
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'feat: finalize exact N8N gateway authority'
+          git push origin HEAD:integration/platform-control-plane-v1-20260828
