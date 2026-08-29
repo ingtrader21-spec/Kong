@@ -26,6 +26,7 @@ def test_authenticated_middleware_contract_routes_are_canonical():
         "/api/v1/control/callbacks",
         "/api/v1/automation/policy-check",
         "/api/v1/integrations/n8n/results",
+        "/v1/intake/leads",
     }
     for route in routes.values():
         assert route["hosts"] == ["api.codestra.co"]
@@ -39,6 +40,12 @@ def test_authenticated_middleware_contract_routes_are_canonical():
             "request-size-limiting",
         } <= set(route["requiredPlugins"])
         assert {"pre-function", "post-function"} & set(route["requiredPlugins"])
+
+    intake = routes["codestra-intake-leads"]
+    assert intake["methods"] == ["POST"]
+    assert intake["securityAuthority"] == "config/kong-intake-routes.json"
+    assert "openid-connect" in intake["requiredPlugins"]
+    assert "request-termination" in intake["requiredPlugins"]
 
 
 def test_every_managed_route_has_explicit_security_controls():
