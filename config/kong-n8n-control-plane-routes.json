@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "status": "PREPARED_DISABLED",
   "service": {
     "name": "codestra-middleware-n8n-control-plane",
@@ -16,6 +16,8 @@
     "custom_id": "n8n-automation"
   },
   "issuer": "https://auth.codestra.co/realms/codestra",
+  "oidc_discovery": "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration",
+  "jwks_uri": "https://auth.codestra.co/realms/codestra/protocol/openid-connect/certs",
   "audience": "middleware-api",
   "client_id": "n8n-automation",
   "host": "api.codestra.co",
@@ -45,6 +47,8 @@
     "reconciliation_apply": false,
     "credentials_in_repository": false,
     "direct_provider_routes": false,
-    "middleware_revalidates_identity": true
+    "middleware_revalidates_identity": true,
+    "oidc_required": true,
+    "legacy_jwt_validation_retained": true
   }
 }
