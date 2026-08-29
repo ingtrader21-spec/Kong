@@ -2,8 +2,8 @@
   "files": [
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "846943a074181851a7cb6dfc4e58cdae8d2645c36acba087fc3fd18ff4ac1422",
-      "size": 2616
+      "sha256": "6e357acc481513234a991b5e475922f733c21cb4997677dbec31a81942dcfb9a",
+      "size": 4998
     },
     {
       "path": ".gitignore",
@@ -32,8 +32,13 @@
     },
     {
       "path": "config/kong-canonical-middleware-routes.json",
-      "sha256": "787280a5bc02d1636c96ee9ae5684e339b97a7fcc979a068ff7c9942a70f6b6f",
-      "size": 3269
+      "sha256": "e0e2dc75fc1cf9588c2cc21f67c05b54acb09d2587a8247b563e251c38f553ca",
+      "size": 4320
+    },
+    {
+      "path": "config/kong-n8n-control-plane-routes.json",
+      "sha256": "28372694a87623a36e6a247ab0b3e13d4f3e8d36aba41f07749920e035da426b",
+      "size": 1726
     },
     {
       "path": "deploy/kong-production-standby/README.md",
@@ -237,8 +242,8 @@
     },
     {
       "path": "operations/kong-database/kong-database-restore-rehearsal.sh",
-      "sha256": "58ca9c0beb05ac5caaad4d1d4044354906ac9bd58e65cfb58d0c81554ba0d49f",
-      "size": 4661
+      "sha256": "328a38afeae1dc546213db8a377e9deaa2fc4c28923254567579bfc2bbe572ea",
+      "size": 5394
     },
     {
       "path": "operations/kong-database/kong-database.rules.yml",
@@ -292,8 +297,8 @@
     },
     {
       "path": "scripts/apply_kong_standby.py",
-      "sha256": "00fd1dcb1146d7b2b0577a051a4d337085f7b7c6153f3f156601a8e14142d40b",
-      "size": 5268
+      "sha256": "625eaf001803ef114abdd20d713e5cae5ece8c2ab765918f7aecc00d90b94ffd",
+      "size": 5858
     },
     {
       "path": "scripts/export_kong_public_route_contracts.py",
@@ -307,13 +312,18 @@
     },
     {
       "path": "scripts/reconcile_kong_campaign_automation.py",
-      "sha256": "b139515821a97eb6ab113c94ac09638f1bd4ae0fc9cd14da12dfdf1c7c4eb08c",
-      "size": 12688
+      "sha256": "a62514a4ff3288acf6bc6472a87477d661853710e566c3df21b0ef2c6af96227",
+      "size": 13031
     },
     {
       "path": "scripts/reconcile_kong_canonical_routes.py",
-      "sha256": "a9b8062f620f09d1e45720c81883f853608b36fac454f0dc2d60d4a3c45c0e38",
-      "size": 19557
+      "sha256": "a67168d903c9632445a4e0bea875cb62244b54b1bbd86a1ae996dd1c23176cc1",
+      "size": 20189
+    },
+    {
+      "path": "scripts/reconcile_kong_n8n_control_plane.py",
+      "sha256": "8b551e5549e707eaa7b031392f8768cd2fbffb1dfadd57138475ae49f1a201d2",
+      "size": 15408
     },
     {
       "path": "scripts/rollback_kong_standby.py",
@@ -332,8 +342,8 @@
     },
     {
       "path": "tests/test_kong_canonical_route_contract.py",
-      "sha256": "1c65c940de3a3854a2eb7b54d06ce7444a452e67c562449d970955b8337513e8",
-      "size": 2333
+      "sha256": "68e732fdb4066c9689a7a00a2df3cd93ca7d73701a291f3a92ec88f91d902915",
+      "size": 3349
     },
     {
       "path": "tests/test_kong_change_authority.py",
@@ -342,13 +352,23 @@
     },
     {
       "path": "tests/test_kong_database_operations.py",
-      "sha256": "2266e662e8984ce7e80231b32eb0c0574f62c3768bfb00d514b01acc61deda9e",
-      "size": 6472
+      "sha256": "250603155faf3033a2171cae10eba8222fa4cb2ad4c800dcd42c14d438b924e4",
+      "size": 6697
+    },
+    {
+      "path": "tests/test_kong_n8n_control_plane.py",
+      "sha256": "a07baa61c0fbda1ffb794810e2cb3c7270fed6e38e9ce76ea29a969eb7be544d",
+      "size": 5827
     },
     {
       "path": "tests/test_kong_route_authority_hardening.py",
-      "sha256": "887d3e447c494a69133a43b5f575b1c588715a5be94f4d782fc009c5a640bc7d",
-      "size": 16147
+      "sha256": "242a6a801b6228888eac6d42c495a5e18d63dc4e564fa471e5859f72b1c55a7e",
+      "size": 17693
+    },
+    {
+      "path": "tests/test_oidc_auth.py",
+      "sha256": "83ab0940696503b2084a85f187aba5927dec6d1d7557ee5d254a113b0fb24844",
+      "size": 2578
     },
     {
       "path": "tools/generate_migration_manifests.py",
@@ -362,7 +382,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "49ab8d9efb21284a3035c8e5c3307207df371c301ced3a057a462162ce165624",
+  "manifest_generation_id": "8543772f2720aed0f8d9dd057b7f048e558396c6037398a8848a755d664280dc",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

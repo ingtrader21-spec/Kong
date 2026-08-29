@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "codestra.platform-control-plane",
+  "status": "PREPARED_DISABLED",
+  "repositories": {
+    "orchestration": "appolon1908-hue/N8N",
+    "write_authority": "appolon1908-hue/Middleware-",
+    "business_authority": "appolon1908-hue/Odoo",
+    "gateway_authority": "appolon1908-hue/Kong"
+  },
+  "flow": [
+    "n8n -> kong -> middleware",
+    "middleware -> temporal -> odoo",
+    "odoo -> middleware event/read-back",
+    "middleware -> kong -> n8n status read"
+  ],
+  "n8n_to_middleware": {
+    "gateway_host": "api.codestra.co",
+    "submit_path": "/v1/integrations/n8n/commands",
+    "read_path": "/v1/integrations/n8n/operations/{command_id}",
+    "client_id": "n8n-automation",
+    "audience": "middleware-api",
+    "submit_scope": "middleware.request.forward",
+    "read_scope": "middleware.status.read",
+    "required_headers": ["Authorization", "X-Tenant-ID", "X-Correlation-ID", "Idempotency-Key"],
+    "direct_provider_access": false
+  },
+  "middleware_to_odoo": {
+    "target": "odoo-19",
+    "capability": "ODOO_WRITE",
+    "base_url_env": "ODOO_INTEGRATION_BASE_URL",
+    "hmac_secret_env": "ODOO_INBOUND_HMAC_SECRET",
+    "create_lead_path": "/codestra/middleware/v1/crm/leads",
+    "lead_path": "/codestra/middleware/v1/crm/leads/{external_id}",
+    "activity_path": "/codestra/middleware/v1/crm/activities",
+    "readback_required": true
+  },
+  "safety": {
+    "workflows_active": false,
+    "ODOO_WRITE": false,
+    "ENABLE_EXTERNAL_DELIVERY": false,
+    "LIVE_WRITE": false,
+    "secrets_in_git": false,
+    "deployment_permitted_by_contract": false
+  }
+}
