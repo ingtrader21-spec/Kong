@@ -6,6 +6,9 @@ MANIFEST = json.loads(
     Path("config/kong-canonical-middleware-routes.json").read_text()
 )
 SOURCE = Path("scripts/reconcile_kong_canonical_routes.py").read_text()
+N8N_AUTHORITY = json.loads(
+    Path("config/kong-n8n-control-plane-routes.json").read_text()
+)
 
 
 def test_only_proven_middleware_routes_are_managed_public_routes():
@@ -26,6 +29,8 @@ def test_authenticated_middleware_contract_routes_are_canonical():
         "/api/v1/control/callbacks",
         "/api/v1/automation/policy-check",
         "/api/v1/integrations/n8n/results",
+        "/v1/integrations/n8n/commands",
+        "/v1/integrations/n8n/operations",
     }
     for route in routes.values():
         assert route["hosts"] == ["api.codestra.co"]
@@ -39,6 +44,20 @@ def test_authenticated_middleware_contract_routes_are_canonical():
             "request-size-limiting",
         } <= set(route["requiredPlugins"])
         assert {"pre-function", "post-function"} & set(route["requiredPlugins"])
+
+
+def test_n8n_control_plane_preserves_identity_for_middleware_revalidation():
+    assert N8N_AUTHORITY["status"] == "PREPARED_DISABLED"
+    assert N8N_AUTHORITY["issuer"] == "https://auth.codestra.co/realms/codestra"
+    assert N8N_AUTHORITY["audience"] == "middleware-api"
+    assert N8N_AUTHORITY["client_id"] == "n8n-automation"
+    assert N8N_AUTHORITY["preserve_authorization_header"] is True
+    assert N8N_AUTHORITY["token_exchange"] is False
+    routes = {route["name"]: route for route in N8N_AUTHORITY["routes"]}
+    assert routes["codestra-n8n-command-submit"]["scope"] == "middleware.request.forward"
+    assert routes["codestra-n8n-command-read"]["scope"] == "middleware.status.read"
+    assert N8N_AUTHORITY["safety"]["direct_provider_routes"] is False
+    assert N8N_AUTHORITY["safety"]["reconciliation_apply"] is False
 
 
 def test_every_managed_route_has_explicit_security_controls():
