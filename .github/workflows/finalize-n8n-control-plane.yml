@@ -27,43 +27,50 @@ jobs:
           from pathlib import Path
 
           path = Path('scripts/reconcile_kong_canonical_routes.py')
-          source = path.read_text()
+          lines = path.read_text().splitlines()
 
-          anchor = '''        require_equal(expected["methods"], ["POST"], f"{route_name}.authority.methods")
-          else:
-              raise RuntimeError(f"unsupported route security authority: {path}")
-          '''
-          replacement = '''        require_equal(expected["methods"], ["POST"], f"{route_name}.authority.methods")
-          elif path.name == "kong-n8n-control-plane-routes.json":
-              route = one(
-                  [item for item in manifest["routes"] if item["name"] == route_name],
-                  f"security authority route {route_name}",
-              )
-              require_equal([route["path"]], expected["paths"], f"{route_name}.authority.paths")
-              require_equal([route["method"]], expected["methods"], f"{route_name}.authority.methods")
-          else:
-              raise RuntimeError(f"unsupported route security authority: {path}")
-          '''
-          if source.count(anchor) != 1:
-              raise SystemExit(f'security_authority patch anchor count={source.count(anchor)}')
-          source = source.replace(anchor, replacement, 1)
+          authority_inserted = False
+          for index, line in enumerate(lines):
+              if line.strip() != 'else:' or index == 0:
+                  continue
+              if 'authority.methods' not in lines[index - 1] or '["POST"]' not in lines[index - 1]:
+                  continue
+              indent = line[: len(line) - len(line.lstrip())]
+              body = indent + '    '
+              block = [
+                  indent + 'elif path.name == "kong-n8n-control-plane-routes.json":',
+                  body + 'route = one(',
+                  body + '    [item for item in manifest["routes"] if item["name"] == route_name],',
+                  body + '    f"security authority route {route_name}",',
+                  body + ')',
+                  body + 'require_equal([route["path"]], expected["paths"], f"{route_name}.authority.paths")',
+                  body + 'require_equal([route["method"]], expected["methods"], f"{route_name}.authority.methods")',
+              ]
+              lines[index:index] = block
+              authority_inserted = True
+              break
+          if not authority_inserted:
+              raise SystemExit('security_authority insertion point not found')
 
-          anchor = '''        callback.verify_plugins(plugins, authority_route, manifest)
-              return
-          if authority_path.name != "kong-campaign-automation-routes.json":
-          '''
-          replacement = '''        callback.verify_plugins(plugins, authority_route, manifest)
-              return
-          if authority_path.name == "kong-n8n-control-plane-routes.json":
-              n8n = security_module(root, "reconcile_kong_n8n_control_plane")
-              n8n.verify_plugins(plugins, authority_route, manifest)
-              return
-          if authority_path.name != "kong-campaign-automation-routes.json":
-          '''
-          if source.count(anchor) != 1:
-              raise SystemExit(f'verify_security_plugins patch anchor count={source.count(anchor)}')
-          source = source.replace(anchor, replacement, 1)
-          path.write_text(source)
+          verify_inserted = False
+          for index, line in enumerate(lines):
+              if line.strip() != 'if authority_path.name != "kong-campaign-automation-routes.json":':
+                  continue
+              indent = line[: len(line) - len(line.lstrip())]
+              body = indent + '    '
+              block = [
+                  indent + 'if authority_path.name == "kong-n8n-control-plane-routes.json":',
+                  body + 'n8n = security_module(root, "reconcile_kong_n8n_control_plane")',
+                  body + 'n8n.verify_plugins(plugins, authority_route, manifest)',
+                  body + 'return',
+              ]
+              lines[index:index] = block
+              verify_inserted = True
+              break
+          if not verify_inserted:
+              raise SystemExit('verify_security_plugins insertion point not found')
+
+          path.write_text('\n'.join(lines) + '\n')
           PY
           rm .github/workflows/finalize-n8n-control-plane.yml
           python3 -m compileall -q scripts tests tools
