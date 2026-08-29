@@ -28,11 +28,11 @@
       "scope": "moneybee.middleware.command.write"
     },
     {
-      "client_id": "klyrow-saas",
+      "client_id": "klyrow",
       "scope": "klyrow.middleware.command.write"
     },
     {
-      "client_id": "kyqra-saas",
+      "client_id": "kyqra",
       "scope": "kyqra.middleware.command.write"
     },
     {

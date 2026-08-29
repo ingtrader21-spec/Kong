@@ -60,8 +60,8 @@ def test_product_command_routes_preserve_registered_product_tokens():
         "breero-backend": "breero.middleware.command.write",
         "larim-a-backend": "larim-a.middleware.command.write",
         "moneybee-backend": "moneybee.middleware.command.write",
-        "klyrow-saas": "klyrow.middleware.command.write",
-        "kyqra-saas": "kyqra.middleware.command.write",
+        "klyrow": "klyrow.middleware.command.write",
+        "kyqra": "kyqra.middleware.command.write",
         "social-codestra": "social.middleware.command.write",
         "transportation-backend": "transportation.middleware.command.write",
     }
