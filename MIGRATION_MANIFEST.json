@@ -2,8 +2,8 @@
   "files": [
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "45e269ade60fa7412aabb928bdd5bbfc25ccae4cc2400fb469f70507620b90bf",
-      "size": 2667
+      "sha256": "ba26a40da07517a549fdb521a90de3d3f1e983d08736b385dba12803b8892c9a",
+      "size": 4960
     },
     {
       "path": ".gitignore",
@@ -377,7 +377,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "941994507c065a371af5914984049f6c6c2c85ed793ddce5f6d59d7c28f22432",
+  "manifest_generation_id": "d86e03c3ce4c0f5f4c9d5192aa38d3f3daa95d48c9a71fec18077a7b7e1e583d",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
