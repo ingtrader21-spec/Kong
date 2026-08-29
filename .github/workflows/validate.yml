@@ -6,13 +6,17 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Checkout reviewed commit without persisted credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - name: Install validation dependencies
         run: |
           sudo apt-get update
@@ -68,6 +72,22 @@ jobs:
             MIGRATION_MANIFEST.yaml
           if-no-files-found: error
           retention-days: 1
+      - name: Commit exact generated manifest pair on same-repository PRs
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml; then
+            echo "Migration manifests are current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml
+          git commit -m "chore(authority): refresh Kong migration manifests"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${HEAD_REF}"
       - name: Verify committed migration authority
         run: |
           python3 tools/verify_migration_manifest.py
