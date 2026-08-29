@@ -1,0 +1,16 @@
+# Canonical Keycloak bearer-validation contract for protected Middleware routes.
+# This file contains no client secret. Runtime activation remains controlled by
+# the repository's exact route reconcilers and protected deployment process.
+_format_version: "3.0"
+
+plugins:
+  - name: openid-connect
+    enabled: true
+    config:
+      issuer: https://auth.codestra.co/realms/codestra/.well-known/openid-configuration
+      auth_methods:
+        - bearer
+      audience:
+        - middleware-api
+      consumer_claim:
+        - azp
