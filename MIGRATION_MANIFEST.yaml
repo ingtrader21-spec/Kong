@@ -1,7 +1,4 @@
 files:
-- path: .github/workflows/refresh-caddy-authority-manifest.yml
-  sha256: 352495d19bb1c04dc02a381314f58617bddb08bb5c0f08e3c6c51e5c47cc4722
-  size: 1444
 - path: .github/workflows/validate.yml
   sha256: 846943a074181851a7cb6dfc4e58cdae8d2645c36acba087fc3fd18ff4ac1422
   size: 2616
@@ -222,7 +219,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 83222f21d35517b5960d1334534338bd456240c366f9de75965d6d58b113cdde
+manifest_generation_id: 72f8e8684a57a038d3d284892c716f64b351aa5c20fd56aa0e04e64d69133df9
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
