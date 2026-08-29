@@ -89,32 +89,6 @@
       "servicePort": 8095,
       "securityAuthority": "config/kong-n8n-control-plane-routes.json",
       "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
-    },
-    {
-      "name": "codestra-product-command-submit",
-      "hosts": ["api.codestra.co"],
-      "paths": ["/v1/commands"],
-      "methods": ["POST"],
-      "protocols": ["http"],
-      "stripPath": false,
-      "preserveHost": false,
-      "serviceHost": "codestra-middleware-integration-api-1",
-      "servicePort": 8095,
-      "securityAuthority": "config/kong-product-control-plane-routes.json",
-      "requiredPlugins": ["openid-connect", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
-    },
-    {
-      "name": "codestra-product-command-read",
-      "hosts": ["api.codestra.co"],
-      "paths": ["/v1/operations"],
-      "methods": ["GET"],
-      "protocols": ["http"],
-      "stripPath": false,
-      "preserveHost": false,
-      "serviceHost": "codestra-middleware-integration-api-1",
-      "servicePort": 8095,
-      "securityAuthority": "config/kong-product-control-plane-routes.json",
-      "requiredPlugins": ["openid-connect", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
     }
   ],
   "routes": [
