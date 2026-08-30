@@ -92,7 +92,7 @@ def test_contract_routes_bind_exact_dedicated_security_authority():
         assert authority.is_file()
         assert route["hosts"] == ["api.codestra.co"]
         if route["securityAuthority"] == "config/kong-n8n-control-plane-routes.json":
-            assert route["serviceHost"] == "appolon-middleware-integration-api"
+            assert route["serviceHost"] == "middleware-integration-api"
             assert route["servicePort"] == 8080
         else:
             assert route["serviceHost"] == "codestra-middleware-integration-api-1"

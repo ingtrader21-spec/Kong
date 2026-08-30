@@ -14,3 +14,8 @@ def test_framework_404_is_blocking_but_domain_not_found_is_reachable():
     assert probe.is_framework_404(404, '{"message":"no Route matched with those values"}') is True
     assert probe.is_framework_404(404, '{"error":{"code":"command_not_found"}}') is False
     assert probe.is_framework_404(401, '{"detail":"Not Found"}') is False
+
+
+def test_only_auth_denials_and_domain_not_found_are_route_evidence():
+    assert probe.REACHABLE_STATUSES == {401, 403, 404}
+    assert 400 not in probe.REACHABLE_STATUSES

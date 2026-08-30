@@ -13,7 +13,7 @@ PROBES = (
     ("POST", "/v1/integrations/n8n/commands"),
     ("GET", "/v1/integrations/n8n/operations/00000000-0000-0000-0000-000000000000"),
 )
-REACHABLE_STATUSES = {400, 401, 403, 404}
+REACHABLE_STATUSES = {401, 403, 404}
 
 
 def probe(base_url: str, method: str, path: str) -> tuple[int, str]:
