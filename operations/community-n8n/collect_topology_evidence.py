@@ -27,6 +27,7 @@ from typing import Any, Sequence
 ROOT = Path(__file__).resolve().parents[2]
 CURRENT_RUNTIME_HOST = "appolon-middleware-integration-api"
 AMBIGUOUS_ALIAS = "middleware-integration-api"
+EXPECTED_KONG_SERVICE_LABEL = "kong-gateway"
 PROBE_PATH = (
     "/v1/integrations/n8n/operations/"
     "00000000-0000-0000-0000-000000000000"
@@ -37,7 +38,6 @@ DNS_NAME = re.compile(
     r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\Z"
 )
 SHA40 = re.compile(r"[0-9a-f]{40}\Z")
-NON_KONG_IDENTITY_TOKENS = {"postgres", "database", "backup"}
 
 
 class EvidenceError(RuntimeError):
@@ -144,15 +144,11 @@ def inspect_container(container: str) -> dict[str, Any]:
 
 
 def metadata_identifies_kong(row: dict[str, Any]) -> bool:
+    """Accept only the exact reviewed Compose gateway service identity."""
     config = row.get("Config") or {}
     labels = config.get("Labels") or {}
     service_label = str(labels.get("com.docker.compose.service") or "").casefold()
-    name = str(row.get("Name") or "").casefold()
-    image = str(config.get("Image") or "").casefold()
-    combined = " ".join((service_label, name, image))
-    if any(token in combined for token in NON_KONG_IDENTITY_TOKENS):
-        return False
-    return "kong" in service_label or "kong" in name or "kong" in image
+    return service_label == EXPECTED_KONG_SERVICE_LABEL
 
 
 def find_kong_container(requested: str | None) -> str:
