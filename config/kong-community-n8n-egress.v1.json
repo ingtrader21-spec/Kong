@@ -25,7 +25,7 @@
   },
   "identity": {
     "issuer": "https://auth.codestra.co/realms/codestra",
-    "client_id": "n8n-runtime",
+    "client_id": "n8n-automation",
     "audience": "middleware-api",
     "middleware_revalidates_token": true
   },

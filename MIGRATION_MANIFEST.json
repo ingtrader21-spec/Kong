@@ -47,8 +47,8 @@
     },
     {
       "path": "config/kong-community-n8n-egress.v1.json",
-      "sha256": "ccc02816e3f9581910b9c95cec207493a718914e546b06b9bc5accfa9cf30406",
-      "size": 1130
+      "sha256": "89fd62644f90fc38001254bff62a0a2390ceb5ce8ced442dfc75b4d960a06a9c",
+      "size": 1133
     },
     {
       "path": "config/kong-n8n-control-plane-routes.json",
@@ -147,8 +147,8 @@
     },
     {
       "path": "operations/community-n8n/README.md",
-      "sha256": "452ddbef94525f1cc5791dcbd4adeadf8f57e00ea9760cb8fba052269c205d36",
-      "size": 961
+      "sha256": "c8276eb528b7114dc294c916dd0f9a0a1f6f81a3cfb0193cd214bf20f1bc3b1c",
+      "size": 1106
     },
     {
       "path": "operations/community-n8n/enforce-docker-egress.sh",
@@ -397,8 +397,8 @@
     },
     {
       "path": "tests/test_community_n8n_egress.py",
-      "sha256": "dd36962d902ed964733fef81e1c24d22b223cf66be6b9c368e684dcebce80c83",
-      "size": 1114
+      "sha256": "e67ff467c5cbceae23e5fb4d75a446290e5d1420bc71270223be5654032469bc",
+      "size": 1175
     },
     {
       "path": "tests/test_kong_canonical_route_contract.py",
@@ -447,7 +447,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "4a8a3ec1fa2bcaf8442aa24bb8e78d4a8a9e5e3a3feb0f2c28b7fbfc287a81d5",
+  "manifest_generation_id": "0e39fab61e1cf0daa9e4fb597cf67b7ce4a9bdb7b792cd56f8adcdd36cafd5e5",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
