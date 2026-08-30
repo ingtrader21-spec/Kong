@@ -123,6 +123,8 @@ def verify_control_plane(admin: str, declared: dict, routes: list[dict], service
                 require_equal(sorted(route.get(field) or []), sorted(expected.get(field) or []), f"{expected['name']}.{field}")
             for field in ("strip_path", "preserve_host", "path_handling", "https_redirect_status_code", "request_buffering", "response_buffering", "regex_priority"):
                 require_equal(route.get(field), expected[field], f"{expected['name']}.{field}")
+            for field, empty in (("headers", {}), ("snis", []), ("sources", []), ("destinations", [])):
+                require_equal(route.get(field) or empty, expected.get(field) or empty, f"{expected['name']}.{field}")
             require_equal(route.get("service", {}).get("id"), service["id"], f"{expected['name']}.service")
             route_plugins = enabled_plugins(admin, route["id"])
             expected_route_plugins = {plugin["name"] for plugin in expected.get("plugins", [])}
@@ -214,7 +216,7 @@ def verify_security_plugins(root: Path, authority_path: Path, manifest: dict, au
     campaign.require_plugin(plugins["post-function"], {"access": [campaign.claim_guard(manifest, authority_route["scope"])]}, f"{expected['name']}.claim_guard")
     campaign.require_plugin(plugins["request-size-limiting"], {"allowed_payload_size": authority_route["max_body_mb"]}, f"{expected['name']}.body_limit")
     campaign.require_plugin(plugins["rate-limiting"], {"minute": authority_route["rate_per_minute"], "policy": "local", "limit_by": "consumer"}, f"{expected['name']}.rate_limit")
-    campaign.require_plugin(plugins["correlation-id"], {"header_name": "X-Correlation-ID", "generator": "uuid", "echo_downstream": True}, f"{expected['name']}.correlation_id")
+    campaign.require_plugin(plugins["correlation-id"].get("config", {}) if False else plugins["correlation-id"], {"header_name": "X-Correlation-ID", "generator": "uuid", "echo_downstream": True}, f"{expected['name']}.correlation_id")
 
 
 def verify_contract_route(admin: str, root: Path, expected: dict, routes: list[dict], services: dict[str, dict]) -> dict:
