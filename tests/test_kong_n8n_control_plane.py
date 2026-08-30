@@ -2,6 +2,7 @@ import importlib.util
 import json
 import sys
 from pathlib import Path
+from urllib.parse import parse_qs
 
 import pytest
 
@@ -29,6 +30,33 @@ def _plugin_set(module, spec, route):
     return {
         name: {"name": name, "enabled": True, "config": config}
         for name, config in module.expected_plugin_configs(spec, route).items()
+    }
+
+
+def test_admin_form_encoding_uses_lowercase_kong_booleans(monkeypatch):
+    module = _load(RECONCILER_PATH, "reconcile_kong_n8n_control_plane_boolean_form")
+    captured = {}
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def read(self):
+            return b"{}"
+
+    def fake_urlopen(request, timeout):
+        captured["form"] = parse_qs(request.data.decode())
+        captured["timeout"] = timeout
+        return Response()
+
+    monkeypatch.setattr(module, "urlopen", fake_urlopen)
+    module.request("http://kong-admin", "POST", "/services", {"enabled": True, "flag": False})
+    assert captured == {
+        "form": {"enabled": ["true"], "flag": ["false"]},
+        "timeout": 15,
     }
 
 
