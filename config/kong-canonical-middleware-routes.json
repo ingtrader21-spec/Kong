@@ -13,6 +13,19 @@
   ],
   "contractRoutes": [
     {
+      "name": "codestra-intake-leads",
+      "hosts": ["api.codestra.co"],
+      "paths": ["/v1/intake/leads"],
+      "methods": ["POST"],
+      "protocols": ["http"],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "codestra-middleware-integration-api-1",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-intake-routes.json",
+      "requiredPlugins": ["jwt", "openid-connect", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting", "request-termination"]
+    },
+    {
       "name": "codestra-callback-read",
       "hosts": ["api.codestra.co"],
       "paths": ["/api/v1/callbacks"],
