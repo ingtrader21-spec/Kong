@@ -14,6 +14,16 @@ def load_collector():
     return module
 
 
+def candidate(identity: str, *addresses: str):
+    return {
+        "container_id_sha256": identity * 64,
+        "configured_image": "kong:3.14",
+        "image_id": "sha256:" + identity * 64,
+        "networks": ["codestra-kong"],
+        "ipv4": list(addresses),
+    }
+
+
 def test_community_n8n_route_is_https_and_fail_closed():
     data = json.loads((ROOT / "config/kong-community-n8n-egress.v1.json").read_text())
     assert data["schema_version"] == "1.1"
@@ -50,6 +60,7 @@ def test_topology_collector_is_read_only_and_sanitized():
     for required in (
         "git",
         "rev-parse",
+        "--porcelain=v1",
         "docker",
         "inspect",
         "getent",
@@ -57,6 +68,8 @@ def test_topology_collector_is_read_only_and_sanitized():
         "curl",
         '"secrets_captured": False',
         '"runtime_mutations_performed": False',
+        "tls_targets_exclusively_match_current_runtime",
+        "validated_kong_container",
     ):
         assert required in source
     for forbidden in (
@@ -82,20 +95,128 @@ def test_topology_helpers_reject_ip_literals_and_parse_ipv4():
     assert len(collector.container_id_hash("container-id")) == 64
 
 
-def test_source_sha_verification_fails_closed(monkeypatch):
+def test_source_sha_verification_requires_exact_clean_checkout(monkeypatch):
     collector = load_collector()
 
     class Result:
-        stdout = "1" * 40
+        def __init__(self, stdout):
+            self.stdout = stdout
 
-    monkeypatch.setattr(collector, "run", lambda *args, **kwargs: Result())
+    responses = iter([Result("1" * 40), Result("")])
+    monkeypatch.setattr(
+        collector, "run", lambda *args, **kwargs: next(responses)
+    )
     assert collector.verified_source_sha("1" * 40) == "1" * 40
+
+    responses = iter([Result("1" * 40), Result("")])
+    monkeypatch.setattr(
+        collector, "run", lambda *args, **kwargs: next(responses)
+    )
     try:
         collector.verified_source_sha("2" * 40)
     except collector.EvidenceError:
         pass
     else:
         raise AssertionError("mismatched source SHA must fail closed")
+
+    responses = iter([Result("1" * 40), Result(" M tracked-file")])
+    monkeypatch.setattr(
+        collector, "run", lambda *args, **kwargs: next(responses)
+    )
+    try:
+        collector.verified_source_sha("1" * 40)
+    except collector.EvidenceError:
+        pass
+    else:
+        raise AssertionError("modified checkout must fail closed")
+
+
+def test_explicit_container_must_be_a_running_kong_gateway(monkeypatch):
+    collector = load_collector()
+    kong_id = "a" * 64
+
+    kong_row = {
+        "Id": kong_id,
+        "Name": "/codestra-kong",
+        "State": {"Running": True},
+        "Config": {
+            "Image": "kong:3.14",
+            "Labels": {"com.docker.compose.service": "kong"},
+        },
+    }
+    monkeypatch.setattr(collector, "inspect_one_container", lambda value: kong_row)
+    assert collector.validated_kong_container("selected") == kong_id
+
+    unrelated_row = {
+        "Id": "b" * 64,
+        "Name": "/redis",
+        "State": {"Running": True},
+        "Config": {"Image": "redis:7", "Labels": {}},
+    }
+    monkeypatch.setattr(
+        collector, "inspect_one_container", lambda value: unrelated_row
+    )
+    try:
+        collector.validated_kong_container("selected")
+    except collector.EvidenceError:
+        pass
+    else:
+        raise AssertionError("non-Kong container must be rejected")
+
+    stopped_row = {
+        "Id": "c" * 64,
+        "Name": "/codestra-kong",
+        "State": {"Running": False},
+        "Config": {
+            "Image": "kong:3.14",
+            "Labels": {"com.docker.compose.service": "kong"},
+        },
+    }
+    monkeypatch.setattr(collector, "inspect_one_container", lambda value: stopped_row)
+    try:
+        collector.validated_kong_container("selected")
+    except collector.EvidenceError:
+        pass
+    else:
+        raise AssertionError("stopped Kong container must be rejected")
+
+
+def test_every_tls_target_must_exclusively_match_current_runtime():
+    collector = load_collector()
+    current = [candidate("a", "10.0.0.2")]
+    same_runtime_alias = [candidate("a", "10.0.0.3")]
+    legacy_runtime_alias = [candidate("b", "10.0.0.4")]
+
+    assert collector.tls_targets_exclusively_match_current_runtime(
+        current_ips=["10.0.0.2"],
+        current_candidates=current,
+        tls_ips=["10.0.0.2"],
+        tls_candidates=[],
+    )
+    assert collector.tls_targets_exclusively_match_current_runtime(
+        current_ips=["10.0.0.2"],
+        current_candidates=current,
+        tls_ips=["10.0.0.3"],
+        tls_candidates=same_runtime_alias,
+    )
+    assert not collector.tls_targets_exclusively_match_current_runtime(
+        current_ips=["10.0.0.2"],
+        current_candidates=current,
+        tls_ips=["10.0.0.3", "10.0.0.4"],
+        tls_candidates=same_runtime_alias,
+    )
+    assert not collector.tls_targets_exclusively_match_current_runtime(
+        current_ips=["10.0.0.2"],
+        current_candidates=current,
+        tls_ips=["10.0.0.4"],
+        tls_candidates=legacy_runtime_alias,
+    )
+    assert not collector.tls_targets_exclusively_match_current_runtime(
+        current_ips=["10.0.0.2"],
+        current_candidates=current,
+        tls_ips=["10.0.0.3", "10.0.0.4"],
+        tls_candidates=same_runtime_alias + legacy_runtime_alias,
+    )
 
 
 def test_topology_evidence_schema_forbids_secret_and_runtime_mutation_claims():
