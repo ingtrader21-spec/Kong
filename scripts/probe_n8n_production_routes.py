@@ -34,7 +34,11 @@ def is_framework_404(status: int, body: str) -> bool:
     if status != 404:
         return False
     lowered = body.lower()
-    return '"detail":"not found"' in lowered or "404 page not found" in lowered
+    return any(marker in lowered for marker in (
+        '"detail":"not found"',
+        "404 page not found",
+        "no route matched with those values",
+    ))
 
 
 def main() -> int:

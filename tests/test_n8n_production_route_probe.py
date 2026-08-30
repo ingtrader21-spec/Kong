@@ -11,5 +11,6 @@ def test_probe_uses_exact_registered_endpoint_shapes():
 
 def test_framework_404_is_blocking_but_domain_not_found_is_reachable():
     assert probe.is_framework_404(404, '{"detail":"Not Found"}') is True
+    assert probe.is_framework_404(404, '{"message":"no Route matched with those values"}') is True
     assert probe.is_framework_404(404, '{"error":{"code":"command_not_found"}}') is False
     assert probe.is_framework_404(401, '{"detail":"Not Found"}') is False
