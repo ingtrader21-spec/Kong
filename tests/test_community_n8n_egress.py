@@ -12,6 +12,7 @@ def test_community_n8n_route_is_https_and_fail_closed():
     assert data["service"]["tls_verify"] is True
     assert data["route"]["protocols"] == ["https"]
     assert data["route"]["methods"] == ["GET", "POST"]
+    assert data["identity"]["client_id"] == "n8n-automation"
     assert data["safety"]["external_effects_enabled"] is False
 
 

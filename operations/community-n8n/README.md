@@ -5,6 +5,9 @@ Middleware authority at `https://api.codestra.co/v1/integrations/n8n`, requires
 an HTTPS/443 DNS upstream with certificate verification, and retains Middleware
 token revalidation.
 
+The service subject is the existing Keycloak-managed `n8n-automation` client;
+this source must not introduce a parallel `n8n-runtime` identity.
+
 `enforce-docker-egress.sh check` validates explicit IPv4 destination CIDRs,
 finds all active Kong container-network addresses, and requires every
 non-internal Kong network to carry the `codestra.egress.scope=kong` label. Rules
