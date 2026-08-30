@@ -37,7 +37,6 @@ DNS_NAME = re.compile(
     r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\Z"
 )
 SHA40 = re.compile(r"[0-9a-f]{40}\Z")
-DOCKER_ID = re.compile(r"[0-9a-f]{64}\Z")
 NON_KONG_IDENTITY_TOKENS = {"postgres", "database", "backup"}
 
 
@@ -103,104 +102,103 @@ def parse_ipv4(text: str) -> list[str]:
 
 
 def verified_source_sha(expected: str) -> str:
-    actual = run(["git", "rev-parse", "HEAD"], cwd=ROOT).stdout.strip()
+    """Bind evidence to the exact, clean repository checkout being executed."""
+    top_level_text = run(
+        ["git", "rev-parse", "--show-toplevel"], cwd=ROOT
+    ).stdout.strip()
+    try:
+        top_level = Path(top_level_text).resolve(strict=True)
+    except (OSError, RuntimeError) as exc:
+        raise EvidenceError("checked-out repository root cannot be resolved") from exc
+    if top_level != ROOT.resolve():
+        raise EvidenceError("collector is not running from its repository root")
+
+    actual = run(["git", "rev-parse", "HEAD^{commit}"], cwd=ROOT).stdout.strip()
     if not SHA40.fullmatch(actual) or actual != expected:
         raise EvidenceError("supplied source SHA does not match the checked-out repository")
+
     status = run(
-        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
-        cwd=ROOT,
+        ["git", "status", "--porcelain=v1", "--untracked-files=all"], cwd=ROOT
     ).stdout.strip()
     if status:
         raise EvidenceError("checked-out repository has uncommitted or untracked changes")
+
+    tracked_flags = run(["git", "ls-files", "-v"], cwd=ROOT).stdout.splitlines()
+    if any(line and (line[0].islower() or line[0] == "S") for line in tracked_flags):
+        raise EvidenceError("checked-out repository uses hidden or skipped tracked-file state")
+
     return actual
 
 
-def inspect_one_container(container: str) -> dict[str, Any]:
+def inspect_container(container: str) -> dict[str, Any]:
     result = run(["docker", "inspect", container], check=False)
     if result.returncode != 0:
         raise EvidenceError("requested container does not exist")
     try:
         decoded = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
-        raise EvidenceError("docker inspect returned invalid JSON") from exc
+        raise EvidenceError("docker inspect returned invalid container metadata") from exc
     if not isinstance(decoded, list) or len(decoded) != 1 or not isinstance(decoded[0], dict):
         raise EvidenceError("docker inspect did not identify exactly one container")
     return decoded[0]
 
 
-def canonical_container_id(row: dict[str, Any]) -> str:
-    container_id = str(row.get("Id") or "")
-    if not DOCKER_ID.fullmatch(container_id):
-        raise EvidenceError("container does not have a canonical Docker ID")
-    return container_id
-
-
-def is_kong_container(row: dict[str, Any]) -> bool:
-    state = row.get("State") or {}
-    if not isinstance(state, dict) or state.get("Running") is not True:
-        return False
+def metadata_identifies_kong(row: dict[str, Any]) -> bool:
     config = row.get("Config") or {}
-    if not isinstance(config, dict):
-        return False
     labels = config.get("Labels") or {}
-    if not isinstance(labels, dict):
-        labels = {}
-    compose_service = str(labels.get("com.docker.compose.service") or "").strip().casefold()
-    if compose_service == "kong":
-        return True
-    name = str(row.get("Name") or "").lstrip("/")
-    image = str(config.get("Image") or "")
-    identity = f"{name} {image}".casefold()
-    return "kong" in identity and not any(
-        token in identity for token in NON_KONG_IDENTITY_TOKENS
-    )
-
-
-def validated_kong_container(container: str) -> str:
-    row = inspect_one_container(container)
-    if not is_kong_container(row):
-        raise EvidenceError("selected container is not a running Kong gateway")
-    return canonical_container_id(row)
+    service_label = str(labels.get("com.docker.compose.service") or "").casefold()
+    name = str(row.get("Name") or "").casefold()
+    image = str(config.get("Image") or "").casefold()
+    combined = " ".join((service_label, name, image))
+    if any(token in combined for token in NON_KONG_IDENTITY_TOKENS):
+        return False
+    return "kong" in service_label or "kong" in name or "kong" in image
 
 
 def find_kong_container(requested: str | None) -> str:
     if requested:
-        return validated_kong_container(requested)
+        row = inspect_container(requested)
+        if (row.get("State") or {}).get("Running") is not True:
+            raise EvidenceError("requested Kong container is not running")
+        if not metadata_identifies_kong(row):
+            raise EvidenceError("requested container is not identified as Kong")
+        return requested
 
-    labeled = [
+    container_ids = [
         line.strip()
-        for line in run(
-            [
-                "docker",
-                "ps",
-                "--filter",
-                "label=com.docker.compose.service=kong",
-                "--format",
-                "{{.ID}}",
-            ]
-        ).stdout.splitlines()
+        for line in run(["docker", "ps", "--format", "{{.ID}}"])
+        .stdout.splitlines()
         if line.strip()
     ]
-    if len(labeled) == 1:
-        return validated_kong_container(labeled[0])
-    if len(labeled) > 1:
-        raise EvidenceError("multiple Kong containers found; pass --kong-container")
-
-    candidates: list[str] = []
-    for line in run(
-        ["docker", "ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Image}}"]
-    ).stdout.splitlines():
-        parts = line.split("\t")
-        if len(parts) != 3:
-            continue
-        identity = " ".join(parts[1:]).casefold()
-        if "kong" in identity and not any(
-            token in identity for token in NON_KONG_IDENTITY_TOKENS
-        ):
-            candidates.append(parts[0])
+    if not container_ids:
+        raise EvidenceError("one running Kong container was not identified")
+    result = run(["docker", "inspect", *container_ids])
+    try:
+        decoded = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise EvidenceError("docker inspect returned invalid container metadata") from exc
+    if not isinstance(decoded, list):
+        raise EvidenceError("docker inspect returned an invalid document")
+    candidates = [
+        str(row.get("Id") or "")
+        for row in decoded
+        if isinstance(row, dict)
+        and (row.get("State") or {}).get("Running") is True
+        and metadata_identifies_kong(row)
+    ]
+    candidates = [value for value in candidates if re.fullmatch(r"[0-9a-f]{64}", value)]
     if len(candidates) != 1:
         raise EvidenceError("one running Kong container was not identified")
-    return validated_kong_container(candidates[0])
+    return candidates[0]
+
+
+def exact_container_id(container: str) -> str:
+    container_id = run(
+        ["docker", "inspect", container, "--format", "{{.Id}}"]
+    ).stdout.strip()
+    if not re.fullmatch(r"[0-9a-f]{64}", container_id):
+        raise EvidenceError("Kong container does not have a canonical Docker ID")
+    return container_id
 
 
 def resolve_from_kong(kong_container: str, hostname: str) -> list[str]:
@@ -255,7 +253,7 @@ def alias_candidates(
                 matched_ips.append(str(address))
         if not matched_networks:
             continue
-        container_id = canonical_container_id(row)
+        container_id = str(row.get("Id") or "")
         configured_image = str((row.get("Config") or {}).get("Image") or "")
         image_id = str(row.get("Image") or "")
         candidates.append(
@@ -353,7 +351,7 @@ def identity_hashes(candidates: list[dict[str, Any]]) -> set[str]:
     return {str(row["container_id_sha256"]) for row in candidates}
 
 
-def candidate_ipv4s(candidates: list[dict[str, Any]]) -> set[str]:
+def candidate_ipv4(candidates: list[dict[str, Any]]) -> set[str]:
     addresses: set[str] = set()
     for row in candidates:
         for value in row.get("ipv4") or []:
@@ -371,8 +369,10 @@ def current_runtime_is_unique(
 ) -> bool:
     if len(current_candidates) != 1 or not current_ips:
         return False
-    candidate_addresses = candidate_ipv4s(current_candidates)
-    return bool(candidate_addresses) and set(current_ips) <= candidate_addresses
+    hashes = identity_hashes(current_candidates)
+    return len(hashes) == 1 and set(current_ips).issubset(
+        candidate_ipv4(current_candidates)
+    )
 
 
 def tls_targets_exclusively_match_current_runtime(
@@ -382,19 +382,20 @@ def tls_targets_exclusively_match_current_runtime(
     tls_ips: list[str],
     tls_candidates: list[dict[str, Any]],
 ) -> bool:
-    """Require every TLS address and candidate to belong to the current runtime."""
+    """Require every TLS address/candidate to belong to the one current runtime."""
     if not current_runtime_is_unique(current_ips, current_candidates) or not tls_ips:
         return False
 
     current_hashes = identity_hashes(current_candidates)
-    tls_hashes = identity_hashes(tls_candidates)
-    if tls_candidates and (not tls_hashes or not tls_hashes <= current_hashes):
-        return False
-
-    authorized_addresses = set(current_ips) | candidate_ipv4s(current_candidates)
+    tls_resolved = set(tls_ips)
     if tls_candidates:
-        authorized_addresses |= candidate_ipv4s(tls_candidates)
-    return set(tls_ips) <= authorized_addresses
+        if identity_hashes(tls_candidates) != current_hashes:
+            return False
+        return tls_resolved.issubset(candidate_ipv4(tls_candidates))
+
+    # A non-Docker private DNS name may have no alias candidate. In that case
+    # every resolved address must still be an address of the verified runtime.
+    return tls_resolved.issubset(candidate_ipv4(current_candidates))
 
 
 def build_evidence(
@@ -416,11 +417,11 @@ def build_evidence(
     tls_result = tls_probe(kong_container, tls_host)
     readiness = readiness_probe(kong_container, tls_host)
 
-    current_unique = current_runtime_is_unique(current_ips, current_candidates)
     ambiguous_not_current = not (
         set(current_ips) & set(ambiguous_ips)
         or current_hashes & ambiguous_hashes
     )
+    current_unique = current_runtime_is_unique(current_ips, current_candidates)
     tls_same_runtime = tls_targets_exclusively_match_current_runtime(
         current_ips=current_ips,
         current_candidates=current_candidates,
@@ -444,7 +445,9 @@ def build_evidence(
         "status": "CANDIDATE_PASS" if all(gates.values()) else "CANDIDATE_BLOCKED",
         "captured_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "source_sha": source_sha,
-        "kong_container_id_sha256": container_id_hash(kong_container),
+        "kong_container_id_sha256": container_id_hash(
+            exact_container_id(kong_container)
+        ),
         "current_runtime": {
             "host": CURRENT_RUNTIME_HOST,
             "resolved_ipv4": current_ips,
