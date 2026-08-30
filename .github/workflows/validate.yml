@@ -37,6 +37,7 @@ jobs:
               yaml.safe_load(path.read_text())
           PY
           python3 -m compileall -q deploy operations scripts tests tools
+          python3 scripts/validate_community_n8n_egress.py
           luac -p deploy/kong/scope-policy.lua
           /tmp/deck file validate deploy/kong/control-plane.yml
       - name: Validate shell and source policies
@@ -58,6 +59,7 @@ jobs:
             tests/test_oidc_auth.py \
             tests/test_kong_database_operations.py \
             tests/test_kong_change_authority.py
+          pytest -q tests/test_community_n8n_egress.py
           python3 tools/generate_migration_manifests.py --check
           python3 tools/verify_migration_manifest.py
           git diff --exit-code

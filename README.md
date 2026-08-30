@@ -27,6 +27,7 @@ published to the public Internet. Host Caddy remains outside Docker.
 - `operations/kong-database/` — PostgreSQL roles, HBA, TLS, backup, PITR, HA,
   monitoring, approvals, and systemd units.
 - `operations/runbooks/` — bounded production activation and rollback procedures.
+- `operations/community-n8n/` — proposed fail-closed HTTPS and Docker egress enforcement for the community n8n boundary.
 - `tests/` — standalone route and database authority tests.
 - `reports/` — Kong-specific historical evidence retained for traceability.
 

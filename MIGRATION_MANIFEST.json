@@ -12,8 +12,8 @@
     },
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "6e357acc481513234a991b5e475922f733c21cb4997677dbec31a81942dcfb9a",
-      "size": 4998
+      "sha256": "74ae2f47630c235dcb13bd639f68bfe67dddbd8452ffa0588f2ad5fe7524b7bf",
+      "size": 5112
     },
     {
       "path": ".gitignore",
@@ -22,8 +22,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "95df7f59a4957b185026a0f2716de895c0dc4d54b598aaf9c756bdb460d178e1",
-      "size": 1545
+      "sha256": "ddd76dac882d7cd7e4087a15d39870466a31db4a1ea5f34077d3d073bd285bb9",
+      "size": 1668
     },
     {
       "path": "SECURITY.md",
@@ -44,6 +44,11 @@
       "path": "config/kong-canonical-middleware-routes.json",
       "sha256": "551597dddb2c6970d53166a1d63f39c120b20cbe6adbde7edcda8ed37698c491",
       "size": 4314
+    },
+    {
+      "path": "config/kong-community-n8n-egress.v1.json",
+      "sha256": "ccc02816e3f9581910b9c95cec207493a718914e546b06b9bc5accfa9cf30406",
+      "size": 1130
     },
     {
       "path": "config/kong-n8n-control-plane-routes.json",
@@ -139,6 +144,16 @@
       "path": "docs/migration/from-codestra-production-platform.md",
       "sha256": "d60890efc390f77f8ec93c92df157efb50e623af5b13b451470aba50145ae577",
       "size": 589
+    },
+    {
+      "path": "operations/community-n8n/README.md",
+      "sha256": "452ddbef94525f1cc5791dcbd4adeadf8f57e00ea9760cb8fba052269c205d36",
+      "size": 961
+    },
+    {
+      "path": "operations/community-n8n/enforce-docker-egress.sh",
+      "sha256": "4014d3ef65a6fa566e4550d923ea207ee0a909d26383bf0effb7caebd1c13ea6",
+      "size": 3907
     },
     {
       "path": "operations/kong-database/README.md",
@@ -366,6 +381,11 @@
       "size": 4750
     },
     {
+      "path": "scripts/validate_community_n8n_egress.py",
+      "sha256": "71a503c0bd6fa4b3439d0d2b911781083ea2f6df3ad505d2a1a4af406508786e",
+      "size": 1305
+    },
+    {
       "path": "scripts/validate_kong_production_standby.py",
       "sha256": "a33d3937b02067660c72fe7cc55e7d78a649c66c643d62f62bb82f10d860cc28",
       "size": 2952
@@ -374,6 +394,11 @@
       "path": "scripts/validate_marketing_routes.py",
       "sha256": "30744bbea3b8d9aa03f1f60c685375ac76a25c0e7210c460849606d7ff54f67d",
       "size": 1313
+    },
+    {
+      "path": "tests/test_community_n8n_egress.py",
+      "sha256": "dd36962d902ed964733fef81e1c24d22b223cf66be6b9c368e684dcebce80c83",
+      "size": 1114
     },
     {
       "path": "tests/test_kong_canonical_route_contract.py",
@@ -422,7 +447,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "c974ac49e0305f2648b8156f05982c832adcb2946b716a615b94d0ab6d79d96f",
+  "manifest_generation_id": "4a8a3ec1fa2bcaf8442aa24bb8e78d4a8a9e5e3a3feb0f2c28b7fbfc287a81d5",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
