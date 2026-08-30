@@ -74,6 +74,7 @@ def test_topology_collector_is_read_only_and_sanitized():
         '"runtime_mutations_performed": False',
         "tls_targets_exclusively_match_current_runtime",
         "metadata_identifies_kong",
+        'EXPECTED_KONG_SERVICE_LABEL = "kong-gateway"',
     ):
         assert required in source
     for forbidden in (
@@ -145,7 +146,7 @@ def test_source_sha_verification_requires_exact_clean_checkout(monkeypatch):
         collector.verified_source_sha("1" * 40)
 
 
-def test_explicit_container_must_be_verified_as_kong(monkeypatch):
+def test_explicit_container_must_be_exact_gateway_service(monkeypatch):
     collector = load_collector()
     base = {
         "Id": "a" * 64,
@@ -173,6 +174,22 @@ def test_explicit_container_must_be_verified_as_kong(monkeypatch):
     database["Config"]["Image"] = "postgres:16"
     database["Config"]["Labels"]["com.docker.compose.service"] = "kong-database"
     monkeypatch.setattr(collector, "inspect_container", lambda value: database)
+    with pytest.raises(collector.EvidenceError, match="not identified as Kong"):
+        collector.find_kong_container("selected")
+
+    sidecar = json.loads(json.dumps(base))
+    sidecar["Name"] = "/kong-metrics-1"
+    sidecar["Config"]["Image"] = "example/kongaroo:1"
+    sidecar["Config"]["Labels"]["com.docker.compose.service"] = "kong-metrics"
+    monkeypatch.setattr(collector, "inspect_container", lambda value: sidecar)
+    with pytest.raises(collector.EvidenceError, match="not identified as Kong"):
+        collector.find_kong_container("selected")
+
+    unlabeled = json.loads(json.dumps(base))
+    unlabeled["Name"] = "/kong-gateway-lookalike"
+    unlabeled["Config"]["Image"] = "kong:3.14"
+    unlabeled["Config"]["Labels"] = {}
+    monkeypatch.setattr(collector, "inspect_container", lambda value: unlabeled)
     with pytest.raises(collector.EvidenceError, match="not identified as Kong"):
         collector.find_kong_container("selected")
 
