@@ -219,8 +219,8 @@ files:
   sha256: a33d3937b02067660c72fe7cc55e7d78a649c66c643d62f62bb82f10d860cc28
   size: 2952
 - path: scripts/validate_marketing_routes.py
-  sha256: 1b109afd6acab87a69897f9997df387ca83b143e814a7ec38ac602e09c850948
-  size: 1188
+  sha256: 19fb3addf40246610351f8ee4e80ab308e8f4b635a7ff8b211c94580461b8161
+  size: 1189
 - path: tests/test_kong_canonical_route_contract.py
   sha256: 298d9729ba239f49acaec0f7f7ab9dbe95faa15ca7d37096005261e29c21f63f
   size: 4109
@@ -249,7 +249,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: b4508dddf9966b072d58fdfe1f3e535ba324c03ffbca591657d44233f5c54935
+manifest_generation_id: a1aaead3b1c6f01ec48dca7d22e34f2f03eaa970b6b961cb99f70d36fe78640d
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
