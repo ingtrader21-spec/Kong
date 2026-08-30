@@ -1,7 +1,7 @@
 files:
 - path: .github/workflows/marketing-manifest-sync.yml
-  sha256: 485d7cdd18523c780c3f4d33982d6f990236100f85624368b303ecabc576dfd9
-  size: 1735
+  sha256: 712cdd0aa4aca142da5859acc2ad5b28ff3063b584e1b1da32970e22885e7c2f
+  size: 1823
 - path: .github/workflows/marketing-stage5-certification.yml
   sha256: bdb44561e90bc0b8a897039018eed25aebbb96c793ae64bb66b81bb4fcc7d663
   size: 1159
@@ -24,17 +24,20 @@ files:
   sha256: d01b006ad8de7b3e93561eb976ef21789f3e3db8fbf70069225b728c3e81d22a
   size: 869
 - path: config/kong-canonical-middleware-routes.json
-  sha256: a33d01cef9b911cf4c1a6fe01906881d8aee9a2bc70267ef57634bdc155b4747
-  size: 4298
+  sha256: 551597dddb2c6970d53166a1d63f39c120b20cbe6adbde7edcda8ed37698c491
+  size: 4314
 - path: config/kong-community-n8n-egress.v1.json
   sha256: 89fd62644f90fc38001254bff62a0a2390ceb5ce8ced442dfc75b4d960a06a9c
   size: 1133
 - path: config/kong-n8n-control-plane-routes.json
-  sha256: 3d3fe2d148b816638b54ef05f96fc887e164a856f85e27b24813df6ca6cf68cb
-  size: 1957
+  sha256: c52869fd98c92ea029341a3ce3a07a402d7da1ea369dbff9c760f197c5d5d4f7
+  size: 1965
 - path: config/marketing-stage4-routes.yaml
   sha256: d03766281ac015edb9d22949e8d91ea3286d4e895a8dc520dd97c354c8007d40
   size: 1063
+- path: config/staging/marketing-platform-edge-bindings.v1.yaml
+  sha256: 65d3c5e4bad9e7da1c6deb3662d5f8d46e3f8a8e4aa09322f71bf457e47bb4b1
+  size: 1258
 - path: deploy/kong-production-standby/README.md
   sha256: 4362f876f1a94480f48a5618c41f607de7f50ee1a532f4760bee524346a956fa
   size: 583
@@ -207,8 +210,8 @@ files:
   sha256: 90e987bc0ad0d4e4567106617a20a2d63f44b7c186d164dad9fda4b1b6fad557
   size: 8790
 - path: scripts/probe_n8n_production_routes.py
-  sha256: 5aa73ea6e94326227daefc34cde4dafa52932ee02990e9af6f7e4972d9d60fb6
-  size: 1986
+  sha256: 10aa8dc945108439d5ec45fc0b1834ab0d01c7455cd974cc63d947f452e606a0
+  size: 1991
 - path: scripts/reconcile_kong_callback_routes.py
   sha256: b2e8ae3080c6a59d772768b481b1dab32c4fdb95b548a93719ec4b4d6b654d1a
   size: 20182
@@ -240,8 +243,8 @@ files:
   sha256: e67ff467c5cbceae23e5fb4d75a446290e5d1420bc71270223be5654032469bc
   size: 1175
 - path: tests/test_kong_canonical_route_contract.py
-  sha256: 87631751f206f2489bd5a85705f3cd7736da40e253f9274668e0b17c9abd7a25
-  size: 4093
+  sha256: 298d9729ba239f49acaec0f7f7ab9dbe95faa15ca7d37096005261e29c21f63f
+  size: 4109
 - path: tests/test_kong_change_authority.py
   sha256: f33f5cde8fea444db729bad54a0412973a4cbd068ba95f32b265574ae1c08948
   size: 30646
@@ -249,14 +252,14 @@ files:
   sha256: 250603155faf3033a2171cae10eba8222fa4cb2ad4c800dcd42c14d438b924e4
   size: 6697
 - path: tests/test_kong_n8n_control_plane.py
-  sha256: d1841444d2c5d74984c2eb4323321ef3b6291269a6afaa5abf9429e4a1b18888
-  size: 8447
+  sha256: 65104ac6bcb5d5d06d6e8ff491909d802bb44e135acf802df0bc70633992b18a
+  size: 8452
 - path: tests/test_kong_route_authority_hardening.py
-  sha256: 5131dc1cd202984733fb5c896164bfcb49a1338127ab500799dd4c48ec9b2b05
-  size: 17921
+  sha256: bb3e3bc9cba1152849bd5fe1c603bc7b39135f44ea9bc3a24f99c478b36298e0
+  size: 17929
 - path: tests/test_n8n_production_route_probe.py
-  sha256: 1468cc8f97b382020d15ce24aa00f68d01e6de1681fb18ca3035de820744dec1
-  size: 941
+  sha256: 1998e2b12976bd381baedb27489b813846534b7906b6864beab6d495783fcc40
+  size: 767
 - path: tests/test_oidc_auth.py
   sha256: 34198ab171d17b171ba0008267be5eb30cef466f91ccc4ca25119557581aa767
   size: 2656
@@ -267,7 +270,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 453a20ea58b0203f9a4fb849b0500876aef64b272e6632607e509ea24d25dafc
+manifest_generation_id: 677ce6ab7f70ccfe89b3d2659fc19ea350c8b677f0b2973e8ce9d1f190b5f139
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:

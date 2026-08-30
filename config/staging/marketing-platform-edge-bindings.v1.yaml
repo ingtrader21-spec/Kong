@@ -1,0 +1,44 @@
+schema_version: '1.0'
+environment: staging
+status: PLAN_DEFINED_NOT_APPLIED
+source_revision: 95bb6308ed33704fc2d01d171c27a82552e73c9e
+routes:
+  /v1/marketing/*:
+    upstream: codestra-marketing
+    auth: required
+  /v1/ai/*:
+    upstream: codestra-ai
+    auth: required
+  /v1/communications/*:
+    upstream: codestra-communication
+    auth: required
+  /v1/social/*:
+    upstream: codestra-social
+    auth: required
+  /v1/integrations/*:
+    upstream: codestra-middleware
+    auth: service-identity-required
+policies:
+  keycloak_oidc_required: true
+  scopes_required: true
+  correlation_id_required: true
+  tenant_context_required: true
+  rate_limits_required: true
+  request_size_limits_required: true
+  connect_timeout_required: true
+  read_timeout_required: true
+  retry_policy_bounded: true
+  cors_default_deny: true
+  upstream_health_required: true
+staging_apply:
+  mode: validate_then_apply_then_readback
+  required_evidence:
+    - declarative configuration validates
+    - route collision test passes
+    - every route maps to intended staging upstream
+    - unauthenticated requests are denied
+    - insufficient scopes are denied
+    - correlation ID is preserved
+    - health checks succeed
+    - rollback manifest validates
+production_apply: false
