@@ -1,0 +1,42 @@
+name: Cert exact-head Kong validation
+
+on:
+  push:
+    branches:
+      - cert2/intake-gateway-exact-ci
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify exact pushed SHA
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - name: Install validation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends shellcheck lua5.4
+          python3 -m pip install --disable-pip-version-check pytest PyYAML
+          DECK_VERSION=1.55.0
+          DECK_SHA256=22958ee3a34fc91a41fb215c0f8f81c08e29d363bd5c41dc8287ce9bcd89bc11
+          curl --fail --location --silent --show-error --output /tmp/deck.tar.gz "https://github.com/Kong/deck/releases/download/v${DECK_VERSION}/deck_${DECK_VERSION}_linux_amd64.tar.gz"
+          echo "${DECK_SHA256}  /tmp/deck.tar.gz" | sha256sum --check
+          tar -xzf /tmp/deck.tar.gz -C /tmp deck
+      - name: Validate exact source authority
+        run: |
+          python3 -m compileall -q deploy operations scripts tests tools
+          luac -p deploy/kong/scope-policy.lua
+          /tmp/deck file validate deploy/kong/control-plane.yml
+          find operations deploy scripts -type f -name '*.sh' -print0 | xargs -0 -r -n1 bash -n
+          find operations deploy scripts -type f -name '*.sh' -print0 | xargs -0 -r shellcheck -x
+          pytest -q tests/test_kong_canonical_route_contract.py tests/test_kong_route_authority_hardening.py tests/test_kong_n8n_control_plane.py tests/test_oidc_auth.py tests/test_kong_database_operations.py tests/test_kong_change_authority.py
+          python3 tools/generate_migration_manifests.py --check
+          python3 tools/verify_migration_manifest.py
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
