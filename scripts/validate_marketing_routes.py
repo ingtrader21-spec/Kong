@@ -1,7 +1,7 @@
 from pathlib import Path
 
 CONFIG = Path('config/marketing-stage4-routes.yaml')
-REQUIRED = ['/v1/marketing', '/v1/ai', '/v1/communication', '/v1/social']
+REQUIRED = ['/v1/marketing', '/v1/ai', '/v1/communications', '/v1/social']
 REQUIRED_SERVICES = ['codestra-marketing', 'codestra-ai', 'codestra-communication', 'codestra-social']
 
 
