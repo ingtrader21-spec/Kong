@@ -93,8 +93,8 @@ files:
   sha256: d57aeeecc705cdf762af7d3c92b960e9516aa8f910fa58b77dbadd7947b6664e
   size: 3927
 - path: operations/community-n8n/collect_topology_evidence.py
-  sha256: bc245cdb866a731d7348e8f2deb0f59d3bba2b4973124071388c6dd1eb4f2c63
-  size: 17724
+  sha256: a62fee08b0de2e2156c580f6b58a8854312567b95cf7652ed45978dff1342bfb
+  size: 18389
 - path: operations/community-n8n/enforce-docker-egress.sh
   sha256: 4014d3ef65a6fa566e4550d923ea207ee0a909d26383bf0effb7caebd1c13ea6
   size: 3907
@@ -237,8 +237,8 @@ files:
   sha256: 80a33b2a6b7286c3b42952b0e03502bfe8ae77ee4460ee3277d2de1912633cad
   size: 4750
 - path: scripts/validate_community_n8n_egress.py
-  sha256: 4f4643104a7e07f6ed45e0afb459ce2fa885378cfcddcef8ce5f2bab7b1bae93
-  size: 4965
+  sha256: 89ea54c08fb41d525e73fd4989f5dd5b240038179bc4907b7ffd467777c8e43e
+  size: 5073
 - path: scripts/validate_kong_production_standby.py
   sha256: a33d3937b02067660c72fe7cc55e7d78a649c66c643d62f62bb82f10d860cc28
   size: 2952
@@ -246,8 +246,8 @@ files:
   sha256: 30744bbea3b8d9aa03f1f60c685375ac76a25c0e7210c460849606d7ff54f67d
   size: 1313
 - path: tests/test_community_n8n_egress.py
-  sha256: de4118f003c48d66b707ceb5e4396080cb411c56ffde05c62ca57c0e663d2cef
-  size: 8803
+  sha256: 5ad70dda0fc3658c9065f281c4df8d9b94ac6ae1f0ab5803b1a81169bfb69856
+  size: 9473
 - path: tests/test_kong_canonical_route_contract.py
   sha256: 298d9729ba239f49acaec0f7f7ab9dbe95faa15ca7d37096005261e29c21f63f
   size: 4109
@@ -276,7 +276,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: fa837aa5ae10d6f8397f2abece044c3c338dbb4f827f7230e7c26fe31549d8ad
+manifest_generation_id: 2331fffb2057c1d0ce356266c2a8c23b7c9bb9bfc20870d014dd95450cc20d9c
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
