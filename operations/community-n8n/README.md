@@ -23,7 +23,7 @@ route, reconcile Kong, or apply a firewall.
 ## Required topology evidence
 
 Before `PROPOSED_NOT_APPLIED` can change, run the read-only collector from an
-exact checkout of the reviewed Kong SHA:
+exact, clean checkout of the reviewed Kong SHA:
 
 ```bash
 python3 operations/community-n8n/collect_topology_evidence.py \
@@ -32,13 +32,19 @@ python3 operations/community-n8n/collect_topology_evidence.py \
   --output /secure/evidence/community-n8n-topology.json
 ```
 
-The collector first checks `git rev-parse HEAD` and refuses a supplied SHA that
-does not match the checkout. It then:
+The collector checks both `git rev-parse HEAD` and `git status --porcelain`; it
+refuses a mismatched SHA, modified tracked file, staged change, or untracked
+file. It then:
 
-- identifies exactly one running Kong container and hashes its canonical Docker
-  ID rather than a caller-supplied name or abbreviated ID;
+- identifies exactly one running Kong gateway and hashes its canonical Docker ID
+  rather than a caller-supplied name or abbreviated ID;
+- applies the same Kong identity verification when `--kong-container` is used,
+  rejecting an unrelated or stopped container;
 - resolves the unique current runtime, denied generic alias, and proposed TLS
-  hostname from inside that Kong network namespace;
+  hostname from inside that verified Kong network namespace;
+- requires every resolved TLS address and every Docker alias candidate to map
+  exclusively to the verified Appolon Middleware runtime; one matching address
+  cannot hide another legacy or unrelated target;
 - maps only Docker network aliases, IPs, configured image references, image IDs,
   network names, and hashed container IDs;
 - verifies the TLS certificate and requested DNS hostname when `openssl` is
@@ -56,10 +62,11 @@ file written. The schema therefore records
 that no evidence file was created.
 
 The emitted document must validate against
-`topology-evidence.schema.json`, its source SHA must be verified, every promotion
-result must be true, and an independent reviewer must confirm that the proposed
-TLS hostname represents the same signed Middleware runtime from every active
-Kong network. A rollback rehearsal and exact-head CI are also mandatory.
+`topology-evidence.schema.json`, its source SHA and clean checkout must be
+verified, every promotion result must be true, and an independent reviewer must
+confirm that every proposed TLS target represents the same signed Middleware
+runtime from every active Kong network. A rollback rehearsal and exact-head CI
+are also mandatory.
 
 ## Egress enforcement
 
