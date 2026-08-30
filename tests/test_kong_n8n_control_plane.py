@@ -170,6 +170,16 @@ def test_reconciler_stages_routes_inertly_before_plugin_installation():
     assert inert < plugins < activation
 
 
+def test_reconciler_removes_obsolete_plugins_only_while_applying_inert_route():
+    source = RECONCILER_PATH.read_text()
+    inert = source.index('"hosts[]": ["staged.invalid"]')
+    obsolete = source.index("obsolete = {", inert)
+    delete = source.index('request(admin, "DELETE", f"/plugins/{plugin[\'id\']}")', obsolete)
+    activation = source.index('request(admin, "PATCH", f"/routes/{route[\'id\']}", payload)', delete)
+    assert "if apply:" in source[inert:obsolete]
+    assert inert < obsolete < delete < activation
+
+
 def test_reconciler_requires_middleware_identity_revalidation():
     source = RECONCILER_PATH.read_text()
     assert 'get("middleware_revalidates_identity") is not True' in source

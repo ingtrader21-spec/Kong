@@ -267,6 +267,14 @@ def ensure_route(admin: str, spec: dict, service: dict, expected: dict, apply: b
     if route.get("service", {}).get("id") != service["id"]:
         raise RuntimeError(f"{expected['name']} service binding drift")
     plugin_configs = expected_plugin_configs(spec, expected)
+    if apply:
+        obsolete = {
+            name: plugin
+            for name, plugin in enabled_plugins(admin, route["id"]).items()
+            if name not in plugin_configs
+        }
+        for plugin in obsolete.values():
+            request(admin, "DELETE", f"/plugins/{plugin['id']}")
     for name, config in plugin_configs.items():
         ensure_plugin(admin, route["id"], name, config, apply)
     verify_plugins(enabled_plugins(admin, route["id"]), expected, spec)

@@ -327,8 +327,8 @@
     },
     {
       "path": "scripts/reconcile_kong_n8n_control_plane.py",
-      "sha256": "9c93273e9030ed2cd744b244d0070d2b18466224ce9e68dd6e378b1088ee4635",
-      "size": 15669
+      "sha256": "1490164d22efe8040a6f49c4102cc78c9083bf79c4ab80202ec07274624e7301",
+      "size": 15963
     },
     {
       "path": "scripts/rollback_kong_standby.py",
@@ -362,8 +362,8 @@
     },
     {
       "path": "tests/test_kong_n8n_control_plane.py",
-      "sha256": "587af986872ebb957bab5d5b78d957da30c76fcb4ce0937c032e7d6f32e60faf",
-      "size": 7897
+      "sha256": "28bd22a82106c54eb4af53df2cb9e102a16b2fbd1a693748013fe2c7cfac9ff4",
+      "size": 8424
     },
     {
       "path": "tests/test_kong_route_authority_hardening.py",
@@ -392,7 +392,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "37d5c6534cfa8f91f09436850003a5d129b4e3a3fb575018daabfc36faf03b7f",
+  "manifest_generation_id": "5445d1808004984bc28149c63e9ec7b7f528527f312ca374f66c5f1e4205c48d",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
