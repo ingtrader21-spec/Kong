@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.codestra.co/kong/community-n8n-topology-evidence.v1.json",
+  "title": "Codestra community n8n topology evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "captured_at",
+    "source_sha",
+    "kong_container_id_sha256",
+    "current_runtime",
+    "ambiguous_alias",
+    "tls_candidate",
+    "gates",
+    "secrets_captured",
+    "mutations_performed"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "status": {"enum": ["CANDIDATE_PASS", "CANDIDATE_BLOCKED"]},
+    "captured_at": {"type": "string", "format": "date-time"},
+    "source_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "kong_container_id_sha256": {"$ref": "#/$defs/sha256"},
+    "current_runtime": {"$ref": "#/$defs/runtimeResolution"},
+    "ambiguous_alias": {"$ref": "#/$defs/runtimeResolution"},
+    "tls_candidate": {
+      "allOf": [
+        {"$ref": "#/$defs/runtimeResolution"},
+        {
+          "type": "object",
+          "required": ["port", "tls", "readiness"],
+          "properties": {
+            "port": {"const": 443},
+            "tls": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["tool_available", "certificate_verified", "hostname_verified"],
+              "properties": {
+                "tool_available": {"type": "boolean"},
+                "certificate_verified": {"type": "boolean"},
+                "hostname_verified": {"type": "boolean"}
+              }
+            },
+            "readiness": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["tool_available", "http_status", "fail_closed"],
+              "properties": {
+                "tool_available": {"type": "boolean"},
+                "http_status": {
+                  "anyOf": [
+                    {"type": "integer", "minimum": 100, "maximum": 599},
+                    {"type": "null"}
+                  ]
+                },
+                "fail_closed": {"type": "boolean"}
+              }
+            }
+          }
+        }
+      ]
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_runtime_unique",
+        "ambiguous_alias_not_current_runtime",
+        "tls_candidate_resolves",
+        "tls_candidate_same_runtime",
+        "tls_certificate_verified",
+        "tls_hostname_verified",
+        "readiness_response_fail_closed",
+        "no_mutations_performed"
+      ],
+      "properties": {
+        "current_runtime_unique": {"type": "boolean"},
+        "ambiguous_alias_not_current_runtime": {"type": "boolean"},
+        "tls_candidate_resolves": {"type": "boolean"},
+        "tls_candidate_same_runtime": {"type": "boolean"},
+        "tls_certificate_verified": {"type": "boolean"},
+        "tls_hostname_verified": {"type": "boolean"},
+        "readiness_response_fail_closed": {"type": "boolean"},
+        "no_mutations_performed": {"const": true}
+      }
+    },
+    "secrets_captured": {"const": false},
+    "mutations_performed": {"const": false}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "ipv4": {
+      "type": "string",
+      "pattern": "^(?:25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})(?:\\.(?:25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})){3}$"
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["container_id_sha256", "configured_image", "image_id", "networks", "ipv4"],
+      "properties": {
+        "container_id_sha256": {"$ref": "#/$defs/sha256"},
+        "configured_image": {"type": "string", "minLength": 1},
+        "image_id": {"type": "string", "minLength": 1},
+        "networks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "ipv4": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/ipv4"}
+        }
+      }
+    },
+    "runtimeResolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "resolved_ipv4", "candidates"],
+      "properties": {
+        "host": {
+          "type": "string",
+          "pattern": "^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        },
+        "resolved_ipv4": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/ipv4"}
+        },
+        "candidates": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/candidate"}
+        }
+      }
+    }
+  }
+}
