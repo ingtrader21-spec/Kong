@@ -42,8 +42,8 @@
     },
     {
       "path": "config/kong-canonical-middleware-routes.json",
-      "sha256": "551597dddb2c6970d53166a1d63f39c120b20cbe6adbde7edcda8ed37698c491",
-      "size": 4314
+      "sha256": "a33d01cef9b911cf4c1a6fe01906881d8aee9a2bc70267ef57634bdc155b4747",
+      "size": 4298
     },
     {
       "path": "config/kong-community-n8n-egress.v1.json",
@@ -52,8 +52,8 @@
     },
     {
       "path": "config/kong-n8n-control-plane-routes.json",
-      "sha256": "c52869fd98c92ea029341a3ce3a07a402d7da1ea369dbff9c760f197c5d5d4f7",
-      "size": 1965
+      "sha256": "3d3fe2d148b816638b54ef05f96fc887e164a856f85e27b24813df6ca6cf68cb",
+      "size": 1957
     },
     {
       "path": "config/marketing-stage4-routes.yaml",
@@ -347,8 +347,8 @@
     },
     {
       "path": "scripts/probe_n8n_production_routes.py",
-      "sha256": "10aa8dc945108439d5ec45fc0b1834ab0d01c7455cd974cc63d947f452e606a0",
-      "size": 1991
+      "sha256": "5aa73ea6e94326227daefc34cde4dafa52932ee02990e9af6f7e4972d9d60fb6",
+      "size": 1986
     },
     {
       "path": "scripts/reconcile_kong_callback_routes.py",
@@ -402,8 +402,8 @@
     },
     {
       "path": "tests/test_kong_canonical_route_contract.py",
-      "sha256": "298d9729ba239f49acaec0f7f7ab9dbe95faa15ca7d37096005261e29c21f63f",
-      "size": 4109
+      "sha256": "87631751f206f2489bd5a85705f3cd7736da40e253f9274668e0b17c9abd7a25",
+      "size": 4093
     },
     {
       "path": "tests/test_kong_change_authority.py",
@@ -417,18 +417,18 @@
     },
     {
       "path": "tests/test_kong_n8n_control_plane.py",
-      "sha256": "65104ac6bcb5d5d06d6e8ff491909d802bb44e135acf802df0bc70633992b18a",
-      "size": 8452
+      "sha256": "d1841444d2c5d74984c2eb4323321ef3b6291269a6afaa5abf9429e4a1b18888",
+      "size": 8447
     },
     {
       "path": "tests/test_kong_route_authority_hardening.py",
-      "sha256": "bb3e3bc9cba1152849bd5fe1c603bc7b39135f44ea9bc3a24f99c478b36298e0",
-      "size": 17929
+      "sha256": "5131dc1cd202984733fb5c896164bfcb49a1338127ab500799dd4c48ec9b2b05",
+      "size": 17921
     },
     {
       "path": "tests/test_n8n_production_route_probe.py",
-      "sha256": "1998e2b12976bd381baedb27489b813846534b7906b6864beab6d495783fcc40",
-      "size": 767
+      "sha256": "1468cc8f97b382020d15ce24aa00f68d01e6de1681fb18ca3035de820744dec1",
+      "size": 941
     },
     {
       "path": "tests/test_oidc_auth.py",
@@ -447,7 +447,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "0e39fab61e1cf0daa9e4fb597cf67b7ce4a9bdb7b792cd56f8adcdd36cafd5e5",
+  "manifest_generation_id": "453a20ea58b0203f9a4fb849b0500876aef64b272e6632607e509ea24d25dafc",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
