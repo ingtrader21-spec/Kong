@@ -2,8 +2,8 @@
   "files": [
     {
       "path": ".github/workflows/marketing-manifest-sync.yml",
-      "sha256": "485d7cdd18523c780c3f4d33982d6f990236100f85624368b303ecabc576dfd9",
-      "size": 1735
+      "sha256": "712cdd0aa4aca142da5859acc2ad5b28ff3063b584e1b1da32970e22885e7c2f",
+      "size": 1823
     },
     {
       "path": ".github/workflows/marketing-stage5-certification.yml",
@@ -59,6 +59,11 @@
       "path": "config/marketing-stage4-routes.yaml",
       "sha256": "d03766281ac015edb9d22949e8d91ea3286d4e895a8dc520dd97c354c8007d40",
       "size": 1063
+    },
+    {
+      "path": "config/staging/marketing-platform-edge-bindings.v1.yaml",
+      "sha256": "65d3c5e4bad9e7da1c6deb3662d5f8d46e3f8a8e4aa09322f71bf457e47bb4b1",
+      "size": 1258
     },
     {
       "path": "deploy/kong-production-standby/README.md",
@@ -447,7 +452,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "0e39fab61e1cf0daa9e4fb597cf67b7ce4a9bdb7b792cd56f8adcdd36cafd5e5",
+  "manifest_generation_id": "677ce6ab7f70ccfe89b3d2659fc19ea350c8b677f0b2973e8ce9d1f190b5f139",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
