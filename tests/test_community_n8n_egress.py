@@ -48,13 +48,15 @@ def test_topology_collector_is_read_only_and_sanitized():
         ROOT / "operations/community-n8n/collect_topology_evidence.py"
     ).read_text()
     for required in (
+        "git",
+        "rev-parse",
         "docker",
         "inspect",
         "getent",
         "openssl",
         "curl",
         '"secrets_captured": False',
-        '"mutations_performed": False',
+        '"runtime_mutations_performed": False',
     ):
         assert required in source
     for forbidden in (
@@ -80,14 +82,31 @@ def test_topology_helpers_reject_ip_literals_and_parse_ipv4():
     assert len(collector.container_id_hash("container-id")) == 64
 
 
-def test_topology_evidence_schema_forbids_secret_and_mutation_claims():
+def test_source_sha_verification_fails_closed(monkeypatch):
+    collector = load_collector()
+
+    class Result:
+        stdout = "1" * 40
+
+    monkeypatch.setattr(collector, "run", lambda *args, **kwargs: Result())
+    assert collector.verified_source_sha("1" * 40) == "1" * 40
+    try:
+        collector.verified_source_sha("2" * 40)
+    except collector.EvidenceError:
+        pass
+    else:
+        raise AssertionError("mismatched source SHA must fail closed")
+
+
+def test_topology_evidence_schema_forbids_secret_and_runtime_mutation_claims():
     schema = json.loads(
         (ROOT / "operations/community-n8n/topology-evidence.schema.json").read_text()
     )
     assert schema["properties"]["secrets_captured"] == {"const": False}
-    assert schema["properties"]["mutations_performed"] == {"const": False}
+    assert schema["properties"]["runtime_mutations_performed"] == {"const": False}
     required_gates = set(schema["properties"]["gates"]["required"])
     assert required_gates == {
+        "source_sha_verified",
         "current_runtime_unique",
         "ambiguous_alias_not_current_runtime",
         "tls_candidate_resolves",
@@ -95,7 +114,7 @@ def test_topology_evidence_schema_forbids_secret_and_mutation_claims():
         "tls_certificate_verified",
         "tls_hostname_verified",
         "readiness_response_fail_closed",
-        "no_mutations_performed",
+        "no_runtime_mutations_performed",
     }
 
 
