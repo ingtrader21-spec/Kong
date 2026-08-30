@@ -72,7 +72,7 @@
       "protocols": ["http"],
       "stripPath": false,
       "preserveHost": false,
-      "serviceHost": "middleware-integration-api",
+      "serviceHost": "appolon-middleware-integration-api",
       "servicePort": 8080,
       "securityAuthority": "config/kong-n8n-control-plane-routes.json",
       "requiredPlugins": ["openid-connect", "jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
@@ -85,7 +85,7 @@
       "protocols": ["http"],
       "stripPath": false,
       "preserveHost": false,
-      "serviceHost": "middleware-integration-api",
+      "serviceHost": "appolon-middleware-integration-api",
       "servicePort": 8080,
       "securityAuthority": "config/kong-n8n-control-plane-routes.json",
       "requiredPlugins": ["openid-connect", "jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]

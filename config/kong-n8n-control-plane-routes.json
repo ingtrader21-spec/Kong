@@ -3,7 +3,7 @@
   "status": "APPROVED_PRODUCTION",
   "service": {
     "name": "codestra-middleware-n8n-control-plane",
-    "host": "middleware-integration-api",
+    "host": "appolon-middleware-integration-api",
     "port": 8080,
     "protocol": "http",
     "enabled": true,
