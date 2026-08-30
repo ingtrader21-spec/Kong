@@ -198,8 +198,8 @@ files:
   sha256: a62514a4ff3288acf6bc6472a87477d661853710e566c3df21b0ef2c6af96227
   size: 13031
 - path: scripts/reconcile_kong_canonical_routes.py
-  sha256: 2769a34d0023c2dd74829e47062bc8819a0c3ff4e9a7ef5c26820ad82aba5167
-  size: 20917
+  sha256: 9e892436c273e8c3fb79976f7db94d1e03908da96ee91b7488dd62002c80c7b7
+  size: 21197
 - path: scripts/reconcile_kong_n8n_control_plane.py
   sha256: 67e8b43fd0533005c67f1143a6b39797a0b5d262dbbed419b25b01673ee6ed9c
   size: 15626
@@ -240,7 +240,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 077b5709b3f5bbfcd711ae97cc31218b39af444d67a68679dccc11233aa3c046
+manifest_generation_id: 180c156452a898dcc5df11abb934cb50656db1b6cbf840f20a282a2e4ea50bff
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
