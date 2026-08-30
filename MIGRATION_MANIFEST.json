@@ -47,8 +47,8 @@
     },
     {
       "path": "config/marketing-stage4-routes.yaml",
-      "sha256": "b89f449970d3819ee7863c731632273c8751ca5396136934c26f957a3eb85f73",
-      "size": 1061
+      "sha256": "d03766281ac015edb9d22949e8d91ea3286d4e895a8dc520dd97c354c8007d40",
+      "size": 1063
     },
     {
       "path": "deploy/kong-production-standby/README.md",
@@ -417,7 +417,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "ea0af38039c43d5f5a92e7410444b3fa71bbf8c298ed93edeab5cda02f9c2f4b",
+  "manifest_generation_id": "b4508dddf9966b072d58fdfe1f3e535ba324c03ffbca591657d44233f5c54935",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
