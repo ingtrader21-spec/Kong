@@ -195,8 +195,8 @@ files:
   sha256: a67168d903c9632445a4e0bea875cb62244b54b1bbd86a1ae996dd1c23176cc1
   size: 20189
 - path: scripts/reconcile_kong_n8n_control_plane.py
-  sha256: 8b551e5549e707eaa7b031392f8768cd2fbffb1dfadd57138475ae49f1a201d2
-  size: 15408
+  sha256: 67e8b43fd0533005c67f1143a6b39797a0b5d262dbbed419b25b01673ee6ed9c
+  size: 15626
 - path: scripts/rollback_kong_standby.py
   sha256: 47878ef1417bc8c4efb241853bdefd3b1f60e811887f8e817ffc60537d7908d3
   size: 824
@@ -216,8 +216,8 @@ files:
   sha256: 250603155faf3033a2171cae10eba8222fa4cb2ad4c800dcd42c14d438b924e4
   size: 6697
 - path: tests/test_kong_n8n_control_plane.py
-  sha256: 8cff9d57ba6903afc9f0e2c7177c81c47f33aaee63331c648d87c4445207e63c
-  size: 7124
+  sha256: 4b2c686d87773a0fa5ad1766a60538f277c4059c711b9c6eec31e1d059abc481
+  size: 7949
 - path: tests/test_kong_route_authority_hardening.py
   sha256: bb3e3bc9cba1152849bd5fe1c603bc7b39135f44ea9bc3a24f99c478b36298e0
   size: 17929
@@ -234,7 +234,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 7e2f78587453d18b3a295b4b44cad43555cac6f0379bab1e6b815a42eefa77c1
+manifest_generation_id: fdf6c60c06e6010afbfd94688cb05985f37a1c37345444b901f525e5ec3186af
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
