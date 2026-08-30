@@ -50,6 +50,7 @@
     "direct_provider_routes": false,
     "middleware_revalidates_identity": true,
     "oidc_required": true,
+    "oidc_enforcement": "jwt-rs256-plus-claim-guard",
     "legacy_jwt_validation_retained": true
   },
   "legacy_contract_items": [

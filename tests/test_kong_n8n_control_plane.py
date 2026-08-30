@@ -183,15 +183,13 @@ def test_canonical_reconciler_dispatches_n8n_security_authority():
     assert 'n8n.verify_plugins' in source
 
 
-def test_n8n_reconciler_requires_keycloak_openid_connect():
+def test_n8n_reconciler_uses_supported_fail_closed_oidc_chain():
     module = _load(RECONCILER_PATH, "reconcile_kong_n8n_control_plane_oidc")
     spec = json.loads(SPEC_PATH.read_text())
     route = spec["routes"][0]
     expected = module.expected_plugin_configs(spec, route)
-    assert expected["openid-connect"] == {
-        "issuer": spec["oidc_discovery"],
-        "auth_methods": ["bearer"],
-        "audience": ["middleware-api"],
-        "consumer_claim": ["azp"],
-    }
-    assert "jwt" in expected  # retained as second validation layer until staging certification
+    assert "openid-connect" not in expected
+    assert "jwt" in expected
+    assert "post-function" in expected
+    assert spec["safety"]["oidc_required"] is True
+    assert spec["safety"]["oidc_enforcement"] == "jwt-rs256-plus-claim-guard"
