@@ -2,6 +2,8 @@ import importlib.util
 import json
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -16,10 +18,10 @@ def load_collector():
 
 def candidate(identity: str, *addresses: str):
     return {
-        "container_id_sha256": identity * 64,
-        "configured_image": "kong:3.14",
-        "image_id": "sha256:" + identity * 64,
-        "networks": ["codestra-kong"],
+        "container_id_sha256": identity,
+        "configured_image": "middleware@sha256:" + "a" * 64,
+        "image_id": "sha256:" + "b" * 64,
+        "networks": ["backend"],
         "ipv4": list(addresses),
     }
 
@@ -60,7 +62,9 @@ def test_topology_collector_is_read_only_and_sanitized():
     for required in (
         "git",
         "rev-parse",
+        "--show-toplevel",
         "--porcelain=v1",
+        "ls-files",
         "docker",
         "inspect",
         "getent",
@@ -69,7 +73,7 @@ def test_topology_collector_is_read_only_and_sanitized():
         '"secrets_captured": False',
         '"runtime_mutations_performed": False',
         "tls_targets_exclusively_match_current_runtime",
-        "validated_kong_container",
+        "metadata_identifies_kong",
     ):
         assert required in source
     for forbidden in (
@@ -99,123 +103,119 @@ def test_source_sha_verification_requires_exact_clean_checkout(monkeypatch):
     collector = load_collector()
 
     class Result:
-        def __init__(self, stdout):
+        def __init__(self, stdout: str = "", returncode: int = 0):
             self.stdout = stdout
+            self.returncode = returncode
 
-    responses = iter([Result("1" * 40), Result("")])
-    monkeypatch.setattr(
-        collector, "run", lambda *args, **kwargs: next(responses)
-    )
+    def clean_run(command, **kwargs):
+        del kwargs
+        if command == ["git", "rev-parse", "--show-toplevel"]:
+            return Result(str(collector.ROOT))
+        if command == ["git", "rev-parse", "HEAD^{commit}"]:
+            return Result("1" * 40)
+        if command[:2] == ["git", "status"]:
+            return Result("")
+        if command == ["git", "ls-files", "-v"]:
+            return Result("H tracked-file\n")
+        raise AssertionError(command)
+
+    monkeypatch.setattr(collector, "run", clean_run)
     assert collector.verified_source_sha("1" * 40) == "1" * 40
-
-    responses = iter([Result("1" * 40), Result("")])
-    monkeypatch.setattr(
-        collector, "run", lambda *args, **kwargs: next(responses)
-    )
-    try:
+    with pytest.raises(collector.EvidenceError):
         collector.verified_source_sha("2" * 40)
-    except collector.EvidenceError:
-        pass
-    else:
-        raise AssertionError("mismatched source SHA must fail closed")
 
-    responses = iter([Result("1" * 40), Result(" M tracked-file")])
-    monkeypatch.setattr(
-        collector, "run", lambda *args, **kwargs: next(responses)
-    )
-    try:
+    def dirty_run(command, **kwargs):
+        result = clean_run(command, **kwargs)
+        if command[:2] == ["git", "status"]:
+            return Result(" M operations/community-n8n/collect_topology_evidence.py\n")
+        return result
+
+    monkeypatch.setattr(collector, "run", dirty_run)
+    with pytest.raises(collector.EvidenceError, match="uncommitted"):
         collector.verified_source_sha("1" * 40)
-    except collector.EvidenceError:
-        pass
-    else:
-        raise AssertionError("modified checkout must fail closed")
+
+    def hidden_run(command, **kwargs):
+        result = clean_run(command, **kwargs)
+        if command == ["git", "ls-files", "-v"]:
+            return Result("h hidden-file\n")
+        return result
+
+    monkeypatch.setattr(collector, "run", hidden_run)
+    with pytest.raises(collector.EvidenceError, match="hidden or skipped"):
+        collector.verified_source_sha("1" * 40)
 
 
-def test_explicit_container_must_be_a_running_kong_gateway(monkeypatch):
+def test_explicit_container_must_be_verified_as_kong(monkeypatch):
     collector = load_collector()
-    kong_id = "a" * 64
-
-    kong_row = {
-        "Id": kong_id,
-        "Name": "/codestra-kong",
+    base = {
+        "Id": "a" * 64,
+        "Name": "/codestra-kong-gateway-1",
+        "Image": "sha256:" + "b" * 64,
         "State": {"Running": True},
         "Config": {
             "Image": "kong:3.14",
-            "Labels": {"com.docker.compose.service": "kong"},
+            "Labels": {"com.docker.compose.service": "kong-gateway"},
         },
     }
-    monkeypatch.setattr(collector, "inspect_one_container", lambda value: kong_row)
-    assert collector.validated_kong_container("selected") == kong_id
+    monkeypatch.setattr(collector, "inspect_container", lambda value: base)
+    assert collector.find_kong_container("selected") == "selected"
 
-    unrelated_row = {
-        "Id": "b" * 64,
-        "Name": "/redis",
-        "State": {"Running": True},
-        "Config": {"Image": "redis:7", "Labels": {}},
-    }
-    monkeypatch.setattr(
-        collector, "inspect_one_container", lambda value: unrelated_row
-    )
-    try:
-        collector.validated_kong_container("selected")
-    except collector.EvidenceError:
-        pass
-    else:
-        raise AssertionError("non-Kong container must be rejected")
+    unrelated = json.loads(json.dumps(base))
+    unrelated["Name"] = "/redis-1"
+    unrelated["Config"]["Image"] = "redis:7"
+    unrelated["Config"]["Labels"]["com.docker.compose.service"] = "redis"
+    monkeypatch.setattr(collector, "inspect_container", lambda value: unrelated)
+    with pytest.raises(collector.EvidenceError, match="not identified as Kong"):
+        collector.find_kong_container("selected")
 
-    stopped_row = {
-        "Id": "c" * 64,
-        "Name": "/codestra-kong",
-        "State": {"Running": False},
-        "Config": {
-            "Image": "kong:3.14",
-            "Labels": {"com.docker.compose.service": "kong"},
-        },
-    }
-    monkeypatch.setattr(collector, "inspect_one_container", lambda value: stopped_row)
-    try:
-        collector.validated_kong_container("selected")
-    except collector.EvidenceError:
-        pass
-    else:
-        raise AssertionError("stopped Kong container must be rejected")
+    database = json.loads(json.dumps(base))
+    database["Name"] = "/kong-postgres-1"
+    database["Config"]["Image"] = "postgres:16"
+    database["Config"]["Labels"]["com.docker.compose.service"] = "kong-database"
+    monkeypatch.setattr(collector, "inspect_container", lambda value: database)
+    with pytest.raises(collector.EvidenceError, match="not identified as Kong"):
+        collector.find_kong_container("selected")
 
 
 def test_every_tls_target_must_exclusively_match_current_runtime():
     collector = load_collector()
-    current = [candidate("a", "10.0.0.2")]
-    same_runtime_alias = [candidate("a", "10.0.0.3")]
-    legacy_runtime_alias = [candidate("b", "10.0.0.4")]
+    current_identity = "1" * 64
+    legacy_identity = "2" * 64
+    current = [candidate(current_identity, "10.0.0.10", "10.0.1.10")]
 
     assert collector.tls_targets_exclusively_match_current_runtime(
-        current_ips=["10.0.0.2"],
+        current_ips=["10.0.0.10"],
         current_candidates=current,
-        tls_ips=["10.0.0.2"],
-        tls_candidates=[],
+        tls_ips=["10.0.1.10"],
+        tls_candidates=[candidate(current_identity, "10.0.1.10")],
     )
     assert collector.tls_targets_exclusively_match_current_runtime(
-        current_ips=["10.0.0.2"],
+        current_ips=["10.0.0.10"],
         current_candidates=current,
-        tls_ips=["10.0.0.3"],
-        tls_candidates=same_runtime_alias,
+        tls_ips=["10.0.0.10"],
+        tls_candidates=[],
+    )
+
+    assert not collector.tls_targets_exclusively_match_current_runtime(
+        current_ips=["10.0.0.10"],
+        current_candidates=current,
+        tls_ips=["10.0.1.10", "10.0.9.9"],
+        tls_candidates=[
+            candidate(current_identity, "10.0.1.10"),
+            candidate(legacy_identity, "10.0.9.9"),
+        ],
     )
     assert not collector.tls_targets_exclusively_match_current_runtime(
-        current_ips=["10.0.0.2"],
+        current_ips=["10.0.0.10"],
         current_candidates=current,
-        tls_ips=["10.0.0.3", "10.0.0.4"],
-        tls_candidates=same_runtime_alias,
+        tls_ips=["10.0.9.9"],
+        tls_candidates=[candidate(legacy_identity, "10.0.9.9")],
     )
     assert not collector.tls_targets_exclusively_match_current_runtime(
-        current_ips=["10.0.0.2"],
+        current_ips=["10.0.0.10"],
         current_candidates=current,
-        tls_ips=["10.0.0.4"],
-        tls_candidates=legacy_runtime_alias,
-    )
-    assert not collector.tls_targets_exclusively_match_current_runtime(
-        current_ips=["10.0.0.2"],
-        current_candidates=current,
-        tls_ips=["10.0.0.3", "10.0.0.4"],
-        tls_candidates=same_runtime_alias + legacy_runtime_alias,
+        tls_ips=["10.0.0.10", "10.0.9.9"],
+        tls_candidates=[],
     )
 
 
