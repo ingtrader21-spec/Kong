@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Collect sanitized, read-only Kong-to-Middleware topology evidence.
 
-The collector never changes containers, networks, routes, firewall rules, files,
-or services. It resolves the current, ambiguous, and proposed TLS hostnames from
-inside the selected Kong container, records only approved Docker metadata, and
-performs anonymous TLS/readiness probes. No environment values, credentials,
-request bodies, response bodies, logs, or decrypted secrets are emitted.
+The collector never changes containers, networks, routes, firewall rules,
+configuration files, or services. It resolves the current, ambiguous, and
+proposed TLS hostnames from inside the selected Kong container, records only
+approved Docker metadata, and performs anonymous TLS/readiness probes. No
+environment values, credentials, request bodies, response bodies, logs, or
+decrypted secrets are emitted. When ``--output`` is supplied, the only file
+write is the explicitly requested evidence artifact.
 """
 
 from __future__ import annotations
@@ -22,6 +24,7 @@ import sys
 from pathlib import Path
 from typing import Any, Sequence
 
+ROOT = Path(__file__).resolve().parents[2]
 CURRENT_RUNTIME_HOST = "appolon-middleware-integration-api"
 AMBIGUOUS_ALIAS = "middleware-integration-api"
 PROBE_PATH = (
@@ -60,6 +63,7 @@ def run(
     timeout: int = 15,
     check: bool = True,
     stdin: str | None = None,
+    cwd: Path | None = None,
 ) -> subprocess.CompletedProcess[str]:
     try:
         result = subprocess.run(
@@ -69,6 +73,7 @@ def run(
             text=True,
             timeout=timeout,
             input=stdin,
+            cwd=cwd,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise EvidenceError(f"command unavailable or timed out: {command[0]}") from exc
@@ -84,7 +89,8 @@ def container_id_hash(container_id: str) -> str:
 def parse_ipv4(text: str) -> list[str]:
     addresses: set[str] = set()
     for line in text.splitlines():
-        first = line.split(maxsplit=1)[0] if line.split() else ""
+        parts = line.split(maxsplit=1)
+        first = parts[0] if parts else ""
         try:
             address = ipaddress.ip_address(first)
         except ValueError:
@@ -92,6 +98,13 @@ def parse_ipv4(text: str) -> list[str]:
         if address.version == 4:
             addresses.add(str(address))
     return sorted(addresses, key=ipaddress.ip_address)
+
+
+def verified_source_sha(expected: str) -> str:
+    actual = run(["git", "rev-parse", "HEAD"], cwd=ROOT).stdout.strip()
+    if not SHA40.fullmatch(actual) or actual != expected:
+        raise EvidenceError("supplied source SHA does not match the checked-out repository")
+    return actual
 
 
 def find_kong_container(requested: str | None) -> str:
@@ -140,6 +153,15 @@ def find_kong_container(requested: str | None) -> str:
     if len(candidates) != 1:
         raise EvidenceError("one running Kong container was not identified")
     return candidates[0]
+
+
+def exact_container_id(container: str) -> str:
+    container_id = run(
+        ["docker", "inspect", container, "--format", "{{.Id}}"]
+    ).stdout.strip()
+    if not re.fullmatch(r"[0-9a-f]{64}", container_id):
+        raise EvidenceError("Kong container does not have a canonical Docker ID")
+    return container_id
 
 
 def resolve_from_kong(kong_container: str, hostname: str) -> list[str]:
@@ -245,12 +267,11 @@ def tls_probe(kong_container: str, hostname: str) -> dict[str, Any]:
         check=False,
         stdin="",
     )
-    combined = f"{result.stdout}\n{result.stderr}"
+    verified = result.returncode == 0
     return {
         "tool_available": True,
-        "certificate_verified": result.returncode == 0,
-        "hostname_verified": result.returncode == 0
-        and "Verification: OK" in combined,
+        "certificate_verified": verified,
+        "hostname_verified": verified,
     }
 
 
@@ -321,6 +342,7 @@ def build_evidence(
         set(current_ips) & set(tls_ips) or current_hashes & tls_hashes
     )
     gates = {
+        "source_sha_verified": True,
         "current_runtime_unique": len(current_candidates) == 1
         and bool(current_ips),
         "ambiguous_alias_not_current_runtime": ambiguous_not_current,
@@ -329,7 +351,7 @@ def build_evidence(
         "tls_certificate_verified": tls_result["certificate_verified"],
         "tls_hostname_verified": tls_result["hostname_verified"],
         "readiness_response_fail_closed": readiness["fail_closed"],
-        "no_mutations_performed": True,
+        "no_runtime_mutations_performed": True,
     }
 
     return {
@@ -337,7 +359,9 @@ def build_evidence(
         "status": "CANDIDATE_PASS" if all(gates.values()) else "CANDIDATE_BLOCKED",
         "captured_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "source_sha": source_sha,
-        "kong_container_id_sha256": container_id_hash(kong_container),
+        "kong_container_id_sha256": container_id_hash(
+            exact_container_id(kong_container)
+        ),
         "current_runtime": {
             "host": CURRENT_RUNTIME_HOST,
             "resolved_ipv4": current_ips,
@@ -358,7 +382,7 @@ def build_evidence(
         },
         "gates": gates,
         "secrets_captured": False,
-        "mutations_performed": False,
+        "runtime_mutations_performed": False,
     }
 
 
@@ -391,9 +415,10 @@ def main() -> int:
         return 2
 
     try:
+        exact_sha = verified_source_sha(args.source_sha)
         kong_container = find_kong_container(args.kong_container)
         evidence = build_evidence(
-            source_sha=args.source_sha,
+            source_sha=exact_sha,
             kong_container=kong_container,
             tls_host=args.tls_host,
         )
