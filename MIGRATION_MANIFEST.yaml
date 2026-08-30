@@ -18,11 +18,11 @@ files:
   sha256: d01b006ad8de7b3e93561eb976ef21789f3e3db8fbf70069225b728c3e81d22a
   size: 869
 - path: config/kong-canonical-middleware-routes.json
-  sha256: 2cf0fa676f6a6eea206a912f9ca1b3e34082f0ba0285b1c33ea5897a39600fd8
-  size: 4334
+  sha256: 01d10e19bf539c302013b5095ef3866986b5a24e6bda9673b5795d8b490a9f89
+  size: 4350
 - path: config/kong-n8n-control-plane-routes.json
-  sha256: 6668028d934991980f7b28f36efcbaed454f93221aeb642bad2050468eb18eeb
-  size: 1903
+  sha256: d0206cbcbe809f2f907f31cbe4be27883e4299818097ce0c7b450d66404deb64
+  size: 1911
 - path: deploy/kong-production-standby/README.md
   sha256: 4362f876f1a94480f48a5618c41f607de7f50ee1a532f4760bee524346a956fa
   size: 583
@@ -207,8 +207,8 @@ files:
   sha256: a33d3937b02067660c72fe7cc55e7d78a649c66c643d62f62bb82f10d860cc28
   size: 2952
 - path: tests/test_kong_canonical_route_contract.py
-  sha256: 00d4aefad30d906ea0e13a6cfd5869cb8647b13cd53010897d974146e4271509
-  size: 4006
+  sha256: 47ea55855f89e6b73af735c9cf9a5176fd93aff3216981de80324259288d2546
+  size: 4022
 - path: tests/test_kong_change_authority.py
   sha256: f33f5cde8fea444db729bad54a0412973a4cbd068ba95f32b265574ae1c08948
   size: 30646
@@ -216,11 +216,11 @@ files:
   sha256: 250603155faf3033a2171cae10eba8222fa4cb2ad4c800dcd42c14d438b924e4
   size: 6697
 - path: tests/test_kong_n8n_control_plane.py
-  sha256: 0e21ae034ab09ff6e2aa0c1e3c3bc22a9ae476fa8e5ac97fff2b5b8af93b54e5
-  size: 6916
+  sha256: 8cff9d57ba6903afc9f0e2c7177c81c47f33aaee63331c648d87c4445207e63c
+  size: 7124
 - path: tests/test_kong_route_authority_hardening.py
-  sha256: 5131dc1cd202984733fb5c896164bfcb49a1338127ab500799dd4c48ec9b2b05
-  size: 17921
+  sha256: bb3e3bc9cba1152849bd5fe1c603bc7b39135f44ea9bc3a24f99c478b36298e0
+  size: 17929
 - path: tests/test_n8n_production_route_probe.py
   sha256: 1998e2b12976bd381baedb27489b813846534b7906b6864beab6d495783fcc40
   size: 767
@@ -234,7 +234,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: b932fcc4cac235f30771d3fd22e5e38517370142c6998609764f76359f7683f1
+manifest_generation_id: 7e2f78587453d18b3a295b4b44cad43555cac6f0379bab1e6b815a42eefa77c1
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
