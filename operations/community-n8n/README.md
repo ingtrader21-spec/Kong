@@ -1,12 +1,59 @@
 # Community n8n gateway and egress gate
 
-This change is source-only and `PROPOSED_NOT_APPLIED`. It fixes the public n8n
-Middleware authority at `https://api.codestra.co/v1/integrations/n8n`, requires
-an HTTPS/443 DNS upstream with certificate verification, and retains Middleware
-token revalidation.
+This source remains `PROPOSED_NOT_APPLIED`. The public n8n Middleware authority
+is fixed at `https://api.codestra.co/v1/integrations/n8n`; the proposed future
+Kong-to-Middleware hop requires a DNS upstream on HTTPS/443 with certificate and
+hostname verification. Middleware continues to revalidate the original
+`n8n-automation` token.
 
-The service subject is the existing Keycloak-managed `n8n-automation` client;
-this source must not introduce a parallel `n8n-runtime` identity.
+## Current production authority stays unchanged
+
+The currently reviewed production route remains:
+
+```text
+appolon-middleware-integration-api:8080
+```
+
+That unique Docker DNS name was selected after read-only runtime evidence proved
+that the generic `middleware-integration-api` alias resolved to a different,
+legacy runtime. The generic alias is therefore explicitly denied by the source
+contract. The proposed HTTPS design is not permission to change the current
+route, reconcile Kong, or apply a firewall.
+
+## Required topology evidence
+
+Before `PROPOSED_NOT_APPLIED` can change, run the read-only collector from the
+Kong host against the exact reviewed source SHA:
+
+```bash
+python3 operations/community-n8n/collect_topology_evidence.py \
+  --source-sha <exact-40-character-reviewed-sha> \
+  --tls-host <private-middleware-tls-dns-name> \
+  --output /secure/evidence/community-n8n-topology.json
+```
+
+The collector:
+
+- identifies exactly one running Kong container;
+- resolves the unique current runtime, denied generic alias, and proposed TLS
+  hostname from inside that Kong network namespace;
+- maps only Docker network aliases, IPs, configured image references, image IDs,
+  network names, and hashed container IDs;
+- verifies the TLS certificate and requested DNS hostname when `openssl` is
+  available inside the Kong container;
+- sends one anonymous read-only operation probe when `curl` is available and
+  accepts only `401`, `403`, or domain-level `404` as fail-closed evidence;
+- emits no environment dump, credentials, request/response body, logs, or secret
+  values;
+- performs no container, network, route, file, service, or firewall mutation.
+
+The emitted document must validate against
+`topology-evidence.schema.json`, every promotion result must be true, and an
+independent reviewer must verify that the proposed TLS hostname resolves to the
+same signed Middleware runtime from every active Kong network. A rollback
+rehearsal and exact-head CI are also mandatory.
+
+## Egress enforcement
 
 `enforce-docker-egress.sh check` validates explicit IPv4 destination CIDRs,
 finds all active Kong container-network addresses, and requires every
