@@ -75,8 +75,8 @@ files:
   sha256: ac0bcced3a0aaa3c08046dbac3fd074cab6a0b478459d14ac86c6c412eb8a42c
   size: 3198
 - path: docs/MARKETING-PLATFORM-EDGE-RESPONSIBILITIES.md
-  sha256: e878f2829b8a5cce68c2ba70b3d3aab94ace273d4f74d282479641451f38409a
-  size: 1122
+  sha256: 30aae02a42e87c7869f8c024fec15ecaa43c9e0c388883a5ab0faee2f0debd12
+  size: 1436
 - path: docs/MARKETING_EDGE_CONTRACT.md
   sha256: 72d1bc657556e32f8bfecdb9a20a90dbb62a131805170db1109103f98c2d0c3b
   size: 909
@@ -252,7 +252,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 70fd07fbb9a17e8f56e08120624c5884396688743f991690c22d3c37e6ddb020
+manifest_generation_id: c974ac49e0305f2648b8156f05982c832adcb2946b716a615b94d0ab6d79d96f
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
