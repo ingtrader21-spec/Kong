@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - feat/marketing-edge-foundation-20260830
+      - release/staging-marketing-edge-bindings-v1-20260830
     paths:
       - '.github/workflows/marketing-stage5-certification.yml'
       - '.github/workflows/marketing-manifest-sync.yml'
       - 'config/marketing-stage4-routes.yaml'
+      - 'config/staging/**'
       - 'docs/MARKETING_EDGE_CONTRACT.md'
       - 'docs/MARKETING-PLATFORM-EDGE-RESPONSIBILITIES.md'
       - 'scripts/validate_marketing_routes.py'
