@@ -3,8 +3,8 @@
   "status": "APPROVED_PRODUCTION",
   "service": {
     "name": "codestra-middleware-n8n-control-plane",
-    "host": "codestra-middleware-integration-api-1",
-    "port": 8095,
+    "host": "middleware-integration-api",
+    "port": 8080,
     "protocol": "http",
     "enabled": true,
     "retries": 1,
@@ -51,5 +51,12 @@
     "middleware_revalidates_identity": true,
     "oidc_required": true,
     "legacy_jwt_validation_retained": true
-  }
+  },
+  "legacy_contract_items": [
+    {
+      "path": "/webhooks/vicidial/call-result/",
+      "owner": "legacy-vicidial-ingress",
+      "included_in_n8n_control_plane_gate": false
+    }
+  ]
 }
