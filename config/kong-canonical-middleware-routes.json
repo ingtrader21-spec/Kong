@@ -75,7 +75,7 @@
       "serviceHost": "appolon-middleware-integration-api",
       "servicePort": 8080,
       "securityAuthority": "config/kong-n8n-control-plane-routes.json",
-      "requiredPlugins": ["openid-connect", "jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
     },
     {
       "name": "codestra-n8n-command-read",
@@ -88,7 +88,7 @@
       "serviceHost": "appolon-middleware-integration-api",
       "servicePort": 8080,
       "securityAuthority": "config/kong-n8n-control-plane-routes.json",
-      "requiredPlugins": ["openid-connect", "jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
     }
   ],
   "routes": [

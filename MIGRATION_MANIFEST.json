@@ -32,13 +32,13 @@
     },
     {
       "path": "config/kong-canonical-middleware-routes.json",
-      "sha256": "01d10e19bf539c302013b5095ef3866986b5a24e6bda9673b5795d8b490a9f89",
-      "size": 4350
+      "sha256": "551597dddb2c6970d53166a1d63f39c120b20cbe6adbde7edcda8ed37698c491",
+      "size": 4314
     },
     {
       "path": "config/kong-n8n-control-plane-routes.json",
-      "sha256": "d0206cbcbe809f2f907f31cbe4be27883e4299818097ce0c7b450d66404deb64",
-      "size": 1911
+      "sha256": "c52869fd98c92ea029341a3ce3a07a402d7da1ea369dbff9c760f197c5d5d4f7",
+      "size": 1965
     },
     {
       "path": "deploy/kong-production-standby/README.md",
@@ -327,8 +327,8 @@
     },
     {
       "path": "scripts/reconcile_kong_n8n_control_plane.py",
-      "sha256": "67e8b43fd0533005c67f1143a6b39797a0b5d262dbbed419b25b01673ee6ed9c",
-      "size": 15626
+      "sha256": "1490164d22efe8040a6f49c4102cc78c9083bf79c4ab80202ec07274624e7301",
+      "size": 15963
     },
     {
       "path": "scripts/rollback_kong_standby.py",
@@ -347,8 +347,8 @@
     },
     {
       "path": "tests/test_kong_canonical_route_contract.py",
-      "sha256": "47ea55855f89e6b73af735c9cf9a5176fd93aff3216981de80324259288d2546",
-      "size": 4022
+      "sha256": "298d9729ba239f49acaec0f7f7ab9dbe95faa15ca7d37096005261e29c21f63f",
+      "size": 4109
     },
     {
       "path": "tests/test_kong_change_authority.py",
@@ -362,8 +362,8 @@
     },
     {
       "path": "tests/test_kong_n8n_control_plane.py",
-      "sha256": "4b2c686d87773a0fa5ad1766a60538f277c4059c711b9c6eec31e1d059abc481",
-      "size": 7949
+      "sha256": "28bd22a82106c54eb4af53df2cb9e102a16b2fbd1a693748013fe2c7cfac9ff4",
+      "size": 8424
     },
     {
       "path": "tests/test_kong_route_authority_hardening.py",
@@ -377,8 +377,8 @@
     },
     {
       "path": "tests/test_oidc_auth.py",
-      "sha256": "83ab0940696503b2084a85f187aba5927dec6d1d7557ee5d254a113b0fb24844",
-      "size": 2578
+      "sha256": "34198ab171d17b171ba0008267be5eb30cef466f91ccc4ca25119557581aa767",
+      "size": 2656
     },
     {
       "path": "tools/generate_migration_manifests.py",
@@ -392,7 +392,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "fdf6c60c06e6010afbfd94688cb05985f37a1c37345444b901f525e5ec3186af",
+  "manifest_generation_id": "5445d1808004984bc28149c63e9ec7b7f528527f312ca374f66c5f1e4205c48d",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

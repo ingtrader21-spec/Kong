@@ -68,7 +68,8 @@ def test_n8n_control_plane_preserves_identity_for_middleware_revalidation():
     assert PLATFORM_CONTRACT["safety"]["deployment_permitted_by_contract"] is True
     canonical = {route["name"]: route for route in MANIFEST["contractRoutes"]}
     for name in ("codestra-n8n-command-submit", "codestra-n8n-command-read"):
-        assert "openid-connect" in canonical[name]["requiredPlugins"]
+        assert "openid-connect" not in canonical[name]["requiredPlugins"]
+        assert {"jwt", "post-function"} <= set(canonical[name]["requiredPlugins"])
 
 
 def test_every_managed_route_has_explicit_security_controls():

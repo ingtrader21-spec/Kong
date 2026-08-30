@@ -46,6 +46,7 @@ def test_n8n_authority_is_bound_to_same_keycloak_realm():
     assert spec["audience"] == "middleware-api"
     assert spec["client_id"] == "n8n-automation"
     assert spec["safety"]["oidc_required"] is True
+    assert spec["safety"]["oidc_enforcement"] == "jwt-rs256-plus-claim-guard"
     assert spec["safety"]["legacy_jwt_validation_retained"] is True
     assert spec["preserve_authorization_header"] is True
     assert spec["token_exchange"] is False

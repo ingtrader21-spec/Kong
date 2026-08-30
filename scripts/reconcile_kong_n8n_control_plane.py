@@ -90,12 +90,6 @@ def claim_guard(spec: dict, route: dict) -> str:
 
 def expected_plugin_configs(spec: dict, route: dict) -> dict[str, dict]:
     return {
-        "openid-connect": {
-            "issuer": spec["oidc_discovery"],
-            "auth_methods": ["bearer"],
-            "audience": [spec["audience"]],
-            "consumer_claim": ["azp"],
-        },
         "jwt": {
             "key_claim_name": "azp",
             "claims_to_verify": ["exp"],
@@ -273,6 +267,14 @@ def ensure_route(admin: str, spec: dict, service: dict, expected: dict, apply: b
     if route.get("service", {}).get("id") != service["id"]:
         raise RuntimeError(f"{expected['name']} service binding drift")
     plugin_configs = expected_plugin_configs(spec, expected)
+    if apply:
+        obsolete = {
+            name: plugin
+            for name, plugin in enabled_plugins(admin, route["id"]).items()
+            if name not in plugin_configs
+        }
+        for plugin in obsolete.values():
+            request(admin, "DELETE", f"/plugins/{plugin['id']}")
     for name, config in plugin_configs.items():
         ensure_plugin(admin, route["id"], name, config, apply)
     verify_plugins(enabled_plugins(admin, route["id"]), expected, spec)
@@ -329,6 +331,10 @@ def main() -> int:
         raise RuntimeError("N8N bearer token must be preserved for Middleware revalidation")
     if spec.get("safety", {}).get("middleware_revalidates_identity") is not True:
         raise RuntimeError("Middleware identity revalidation must be explicitly required")
+    if spec.get("safety", {}).get("oidc_required") is not True or spec.get("safety", {}).get(
+        "oidc_enforcement"
+    ) != "jwt-rs256-plus-claim-guard":
+        raise RuntimeError("N8N OIDC enforcement mode must be JWT RS256 plus claim guard")
     if args.apply and (
         spec.get("status") not in {"APPROVED_STAGING", "APPROVED_PRODUCTION"}
         or spec.get("safety", {}).get("reconciliation_apply") is not True
