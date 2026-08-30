@@ -72,8 +72,8 @@
       "protocols": ["http"],
       "stripPath": false,
       "preserveHost": false,
-      "serviceHost": "codestra-middleware-integration-api-1",
-      "servicePort": 8095,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8080,
       "securityAuthority": "config/kong-n8n-control-plane-routes.json",
       "requiredPlugins": ["openid-connect", "jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
     },
@@ -85,8 +85,8 @@
       "protocols": ["http"],
       "stripPath": false,
       "preserveHost": false,
-      "serviceHost": "codestra-middleware-integration-api-1",
-      "servicePort": 8095,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8080,
       "securityAuthority": "config/kong-n8n-control-plane-routes.json",
       "requiredPlugins": ["openid-connect", "jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
     }

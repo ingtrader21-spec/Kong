@@ -91,8 +91,12 @@ def test_contract_routes_bind_exact_dedicated_security_authority():
         authority = ROOT / route["securityAuthority"]
         assert authority.is_file()
         assert route["hosts"] == ["api.codestra.co"]
-        assert route["serviceHost"] == "codestra-middleware-integration-api-1"
-        assert route["servicePort"] == 8095
+        if route["securityAuthority"] == "config/kong-n8n-control-plane-routes.json":
+            assert route["serviceHost"] == "middleware-integration-api"
+            assert route["servicePort"] == 8080
+        else:
+            assert route["serviceHost"] == "codestra-middleware-integration-api-1"
+            assert route["servicePort"] == 8095
         assert {"jwt", "correlation-id", "rate-limiting", "request-size-limiting"} <= set(
             route["requiredPlugins"]
         )

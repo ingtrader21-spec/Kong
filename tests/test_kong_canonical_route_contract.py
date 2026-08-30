@@ -35,10 +35,11 @@ def test_authenticated_middleware_contract_routes_are_canonical():
         "/v1/integrations/n8n/commands",
         "/v1/integrations/n8n/operations",
     }
-    for route in routes.values():
+    for name, route in routes.items():
         assert route["hosts"] == ["api.codestra.co"]
-        assert route["serviceHost"] == "codestra-middleware-integration-api-1"
-        assert route["servicePort"] == 8095
+        if name.startswith("codestra-n8n-command-"):
+            assert route["serviceHost"] == "middleware-integration-api"
+            assert route["servicePort"] == 8080
         assert route["securityAuthority"].startswith("config/kong-")
         assert {
             "jwt",
@@ -56,6 +57,8 @@ def test_n8n_control_plane_preserves_identity_for_middleware_revalidation():
     assert N8N_AUTHORITY["client_id"] == "n8n-automation"
     assert N8N_AUTHORITY["preserve_authorization_header"] is True
     assert N8N_AUTHORITY["token_exchange"] is False
+    assert N8N_AUTHORITY["service"]["host"] == "middleware-integration-api"
+    assert N8N_AUTHORITY["service"]["port"] == 8080
     routes = {route["name"]: route for route in N8N_AUTHORITY["routes"]}
     assert routes["codestra-n8n-command-submit"]["scope"] == "middleware.request.forward"
     assert routes["codestra-n8n-command-read"]["scope"] == "middleware.status.read"

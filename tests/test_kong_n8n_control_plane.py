@@ -95,10 +95,34 @@ def test_canonical_manifest_uses_exact_n8n_security_authority():
     }
     for route in routes:
         assert route["hosts"] == ["api.codestra.co"]
-        assert route["serviceHost"] == "codestra-middleware-integration-api-1"
-        assert route["servicePort"] == 8095
+        assert route["serviceHost"] == "middleware-integration-api"
+        assert route["servicePort"] == 8080
+        assert "codestra-middleware-integration-api-1" not in json.dumps(route)
         assert "post-function" in route["requiredPlugins"]
         assert "pre-function" not in route["requiredPlugins"]
+
+
+def test_operations_uuid_path_matches_the_canonical_prefix_route():
+    canonical = json.loads(CANONICAL_PATH.read_text())
+    route = next(
+        item for item in canonical["contractRoutes"]
+        if item["name"] == "codestra-n8n-command-read"
+    )
+    sample = "/v1/integrations/n8n/operations/00000000-0000-0000-0000-000000000000"
+    assert any(sample.startswith(prefix + "/") for prefix in route["paths"])
+
+
+def test_n8n_authority_has_no_direct_provider_or_legacy_repository_reference():
+    serialized = SPEC_PATH.read_text().lower()
+    assert "codestra-srl" not in serialized
+    assert "odoo" not in json.dumps(json.loads(SPEC_PATH.read_text())["service"]).lower()
+    assert "vicidial" not in json.dumps(json.loads(SPEC_PATH.read_text())["service"]).lower()
+    legacy = json.loads(SPEC_PATH.read_text())["legacy_contract_items"]
+    assert legacy == [{
+        "path": "/webhooks/vicidial/call-result/",
+        "owner": "legacy-vicidial-ingress",
+        "included_in_n8n_control_plane_gate": False,
+    }]
 
 
 def test_reconciler_requires_explicit_approved_status_and_apply_gate():
