@@ -1,6 +1,11 @@
 {
   "files": [
     {
+      "path": ".github/workflows/cert-exact-head.yml",
+      "sha256": "125efcdcc53a3d91073f3007c8aade5f5e35b17ba86f194f2b11fd5a536de22d",
+      "size": 1991
+    },
+    {
       "path": ".github/workflows/sync-migration-manifests.yml",
       "sha256": "94f6e6e4f06566ca1418a89f1894929b6f4dda9c061b46fce04c528ea95bd0dc",
       "size": 1683
@@ -377,7 +382,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "447cb3d11228c069f8fe430bcaefa06062cfb83c6c592dfce8682908521dd142",
+  "manifest_generation_id": "8c828c83144e4c24648c2d9924c9219d3b6e8523b23eac2a954d924946e66979",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
