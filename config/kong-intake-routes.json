@@ -1,0 +1,50 @@
+{
+  "schema": "codestra.kong.intake-routes.v1",
+  "host": "api.codestra.co",
+  "service": {
+    "name": "codestra-middleware-intake",
+    "host": "codestra-middleware-integration-api-1",
+    "port": 8095,
+    "protocol": "http"
+  },
+  "routes": [
+    {
+      "name": "codestra-intake-leads",
+      "paths": ["/v1/intake/leads"],
+      "methods": ["POST"],
+      "stripPath": false,
+      "preserveHost": true,
+      "requiredClientId": "sdk-intake",
+      "requiredScope": "leads.write",
+      "requiredHeaders": ["Authorization", "X-Tenant-ID", "X-Correlation-ID", "Idempotency-Key"],
+      "maxBodyMb": 1,
+      "ratePerMinute": 120,
+      "requiredPlugins": ["jwt", "openid-connect", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting", "request-termination"]
+    },
+    {
+      "name": "codestra-intake-survey-responses",
+      "paths": ["/v1/intake/surveys/responses"],
+      "methods": ["POST"],
+      "stripPath": false,
+      "preserveHost": true,
+      "requiredClientId": "sdk-intake",
+      "requiredScope": "surveys.write",
+      "requiredHeaders": ["Authorization", "X-Tenant-ID", "X-Correlation-ID", "Idempotency-Key"],
+      "maxBodyMb": 1,
+      "ratePerMinute": 120,
+      "requiredPlugins": ["jwt", "openid-connect", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting", "request-termination"]
+    }
+  ],
+  "security": {
+    "browserTokensForbidden": true,
+    "serviceTokenOnly": true,
+    "sameOriginBffRequired": true,
+    "directOdooRoutingForbidden": true,
+    "directMiddlewarePublicBypassForbidden": true
+  },
+  "activation": {
+    "runtimeApplyAuthorized": false,
+    "requiresExactHeadCI": true,
+    "requiresKeycloakClient": "sdk-intake"
+  }
+}
