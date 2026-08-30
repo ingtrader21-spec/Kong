@@ -95,7 +95,6 @@ def expected_plugin_configs(spec: dict, route: dict) -> dict[str, dict]:
             "claims_to_verify": ["exp"],
             "header_names": ["authorization"],
             "run_on_preflight": True,
-            "hide_credentials": False,
         },
         "post-function": {"access": [claim_guard(spec, route)]},
         "request-size-limiting": {"allowed_payload_size": route["max_body_mb"]},

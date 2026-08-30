@@ -94,21 +94,21 @@ def test_exact_plugin_verifier_accepts_contract_and_rejects_scope_drift():
     spec = json.loads(SPEC_PATH.read_text())
     route = spec["routes"][0]
     plugins = _plugin_set(module, spec, route)
-    assert plugins["jwt"]["config"]["hide_credentials"] is False
+    assert "hide_credentials" not in plugins["jwt"]["config"]
     module.verify_plugins(plugins, route, spec)
     plugins["post-function"]["config"]["access"] = ["return true"]
     with pytest.raises(RuntimeError):
         module.verify_plugins(plugins, route, spec)
 
 
-def test_exact_plugin_verifier_rejects_authorization_header_stripping():
+def test_supported_jwt_schema_preserves_bearer_for_middleware_revalidation():
     module = _load(RECONCILER_PATH, "reconcile_kong_n8n_control_plane_bearer_preservation")
     spec = json.loads(SPEC_PATH.read_text())
     route = spec["routes"][0]
     plugins = _plugin_set(module, spec, route)
-    plugins["jwt"]["config"]["hide_credentials"] = True
-    with pytest.raises(RuntimeError):
-        module.verify_plugins(plugins, route, spec)
+    assert "hide_credentials" not in plugins["jwt"]["config"]
+    assert "authorization" in module.claim_guard(spec, route)
+    module.verify_plugins(plugins, route, spec)
 
 
 def test_canonical_manifest_uses_exact_n8n_security_authority():
