@@ -1,0 +1,1 @@
+Certification trigger only. Not part of Kong migration authority inventory or runtime configuration.
