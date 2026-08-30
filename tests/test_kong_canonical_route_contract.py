@@ -9,6 +9,9 @@ SOURCE = Path("scripts/reconcile_kong_canonical_routes.py").read_text()
 N8N_AUTHORITY = json.loads(
     Path("config/kong-n8n-control-plane-routes.json").read_text()
 )
+PLATFORM_CONTRACT = json.loads(
+    Path("contracts/platform-control-plane.v1.json").read_text()
+)
 
 
 def test_only_proven_middleware_routes_are_managed_public_routes():
@@ -47,7 +50,7 @@ def test_authenticated_middleware_contract_routes_are_canonical():
 
 
 def test_n8n_control_plane_preserves_identity_for_middleware_revalidation():
-    assert N8N_AUTHORITY["status"] == "PREPARED_DISABLED"
+    assert N8N_AUTHORITY["status"] == "APPROVED_PRODUCTION"
     assert N8N_AUTHORITY["issuer"] == "https://auth.codestra.co/realms/codestra"
     assert N8N_AUTHORITY["audience"] == "middleware-api"
     assert N8N_AUTHORITY["client_id"] == "n8n-automation"
@@ -57,7 +60,12 @@ def test_n8n_control_plane_preserves_identity_for_middleware_revalidation():
     assert routes["codestra-n8n-command-submit"]["scope"] == "middleware.request.forward"
     assert routes["codestra-n8n-command-read"]["scope"] == "middleware.status.read"
     assert N8N_AUTHORITY["safety"]["direct_provider_routes"] is False
-    assert N8N_AUTHORITY["safety"]["reconciliation_apply"] is False
+    assert N8N_AUTHORITY["safety"]["reconciliation_apply"] is True
+    assert PLATFORM_CONTRACT["status"] == "APPROVED_PRODUCTION"
+    assert PLATFORM_CONTRACT["safety"]["deployment_permitted_by_contract"] is True
+    canonical = {route["name"]: route for route in MANIFEST["contractRoutes"]}
+    for name in ("codestra-n8n-command-submit", "codestra-n8n-command-read"):
+        assert "openid-connect" in canonical[name]["requiredPlugins"]
 
 
 def test_every_managed_route_has_explicit_security_controls():

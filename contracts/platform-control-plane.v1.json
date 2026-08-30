@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "contract_id": "codestra.platform-control-plane",
-  "status": "PREPARED_DISABLED",
+  "status": "APPROVED_PRODUCTION",
   "repositories": {
     "orchestration": "appolon1908-hue/N8N",
     "write_authority": "appolon1908-hue/Middleware-",
@@ -41,6 +41,6 @@
     "ENABLE_EXTERNAL_DELIVERY": false,
     "LIVE_WRITE": false,
     "secrets_in_git": false,
-    "deployment_permitted_by_contract": false
+    "deployment_permitted_by_contract": true
   }
 }

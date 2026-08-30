@@ -32,13 +32,13 @@
     },
     {
       "path": "config/kong-canonical-middleware-routes.json",
-      "sha256": "e0e2dc75fc1cf9588c2cc21f67c05b54acb09d2587a8247b563e251c38f553ca",
-      "size": 4320
+      "sha256": "1783b5ed460c51bcad76da0dcbfe8de83c1d5592bbbf7ada5b2070892afc7fa9",
+      "size": 4356
     },
     {
       "path": "config/kong-n8n-control-plane-routes.json",
-      "sha256": "28372694a87623a36e6a247ab0b3e13d4f3e8d36aba41f07749920e035da426b",
-      "size": 1726
+      "sha256": "aeca624978ecebdcaf0899768d7ce998fb3d34318adbc3070346f5d18d3ea49b",
+      "size": 1727
     },
     {
       "path": "deploy/kong-production-standby/README.md",
@@ -342,8 +342,8 @@
     },
     {
       "path": "tests/test_kong_canonical_route_contract.py",
-      "sha256": "68e732fdb4066c9689a7a00a2df3cd93ca7d73701a291f3a92ec88f91d902915",
-      "size": 3349
+      "sha256": "a30f3ae89509ce1bc699ab8c9779c172e46db40575c681bfd76889170b166f69",
+      "size": 3823
     },
     {
       "path": "tests/test_kong_change_authority.py",
@@ -357,8 +357,8 @@
     },
     {
       "path": "tests/test_kong_n8n_control_plane.py",
-      "sha256": "a07baa61c0fbda1ffb794810e2cb3c7270fed6e38e9ce76ea29a969eb7be544d",
-      "size": 5827
+      "sha256": "7c06c53954bd43389da51a9caf6512fd11dd51b03d53a16ac911e172b987db83",
+      "size": 5821
     },
     {
       "path": "tests/test_kong_route_authority_hardening.py",
@@ -382,7 +382,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "8543772f2720aed0f8d9dd057b7f048e558396c6037398a8848a755d664280dc",
+  "manifest_generation_id": "d7d56abff2db8cb9f3a6581f5326508c759adf0f0c16fd005046752e089ff9cf",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

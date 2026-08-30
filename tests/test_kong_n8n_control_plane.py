@@ -32,10 +32,10 @@ def _plugin_set(module, spec, route):
     }
 
 
-def test_n8n_authority_is_prepared_disabled_and_identity_exact():
+def test_n8n_authority_is_production_approved_and_identity_exact():
     spec = json.loads(SPEC_PATH.read_text())
-    assert spec["status"] == "PREPARED_DISABLED"
-    assert spec["safety"]["reconciliation_apply"] is False
+    assert spec["status"] == "APPROVED_PRODUCTION"
+    assert spec["safety"]["reconciliation_apply"] is True
     assert spec["client_id"] == "n8n-automation"
     assert spec["consumer"]["custom_id"] == "n8n-automation"
     assert spec["audience"] == "middleware-api"
@@ -101,7 +101,7 @@ def test_canonical_manifest_uses_exact_n8n_security_authority():
         assert "pre-function" not in route["requiredPlugins"]
 
 
-def test_reconciler_refuses_apply_while_source_authority_is_prepared_disabled():
+def test_reconciler_requires_explicit_approved_status_and_apply_gate():
     source = RECONCILER_PATH.read_text()
     assert 'spec.get("status") not in {"APPROVED_STAGING", "APPROVED_PRODUCTION"}' in source
     assert 'spec.get("safety", {}).get("reconciliation_apply") is not True' in source
