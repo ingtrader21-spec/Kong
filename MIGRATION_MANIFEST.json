@@ -42,8 +42,8 @@
     },
     {
       "path": "config/kong-intake-routes.json",
-      "sha256": "0fee6ddc8b364d19658b464914e9dd2dc51b09dea12b324168a3620cb9c99014",
-      "size": 1210
+      "sha256": "0638aaf3de901e835a37dfe081e097035f3360c67ac487ab6fffa15db63b0c77",
+      "size": 1717
     },
     {
       "path": "deploy/kong-production-standby/README.md",
@@ -372,7 +372,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "7085ab785e92b077450a1593c632817df435ef7c44a269dce8d66513d8edbf51",
+  "manifest_generation_id": "7b14933df17ee1aa8849617463204650862ac31cf7b61bd663066a5c364a9a61",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

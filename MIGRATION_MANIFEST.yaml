@@ -24,8 +24,8 @@ files:
   sha256: 9657e48d594b3e02e7d909b598c8ba218cc1fdb5188b31a1c195673670378dac
   size: 3804
 - path: config/kong-intake-routes.json
-  sha256: 0fee6ddc8b364d19658b464914e9dd2dc51b09dea12b324168a3620cb9c99014
-  size: 1210
+  sha256: 0638aaf3de901e835a37dfe081e097035f3360c67ac487ab6fffa15db63b0c77
+  size: 1717
 - path: deploy/kong-production-standby/README.md
   sha256: 4362f876f1a94480f48a5618c41f607de7f50ee1a532f4760bee524346a956fa
   size: 583
@@ -222,7 +222,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 7085ab785e92b077450a1593c632817df435ef7c44a269dce8d66513d8edbf51
+manifest_generation_id: 7b14933df17ee1aa8849617463204650862ac31cf7b61bd663066a5c364a9a61
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
