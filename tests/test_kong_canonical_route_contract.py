@@ -9,6 +9,9 @@ SOURCE = Path("scripts/reconcile_kong_canonical_routes.py").read_text()
 N8N_AUTHORITY = json.loads(
     Path("config/kong-n8n-control-plane-routes.json").read_text()
 )
+INTAKE_AUTHORITY = json.loads(
+    Path("config/kong-intake-routes.json").read_text()
+)
 PLATFORM_CONTRACT = json.loads(
     Path("contracts/platform-control-plane.v1.json").read_text()
 )
@@ -34,12 +37,16 @@ def test_authenticated_middleware_contract_routes_are_canonical():
         "/api/v1/integrations/n8n/results",
         "/v1/integrations/n8n/commands",
         "/v1/integrations/n8n/operations",
+        "/v1/intake/leads",
     }
     for name, route in routes.items():
         assert route["hosts"] == ["api.codestra.co"]
         if name.startswith("codestra-n8n-command-"):
             assert route["serviceHost"] == "middleware-integration-api"
             assert route["servicePort"] == 8080
+        else:
+            assert route["serviceHost"] == "codestra-middleware-integration-api-1"
+            assert route["servicePort"] == 8095
         assert route["securityAuthority"].startswith("config/kong-")
         assert {
             "jwt",
@@ -48,6 +55,44 @@ def test_authenticated_middleware_contract_routes_are_canonical():
             "request-size-limiting",
         } <= set(route["requiredPlugins"])
         assert {"pre-function", "post-function"} & set(route["requiredPlugins"])
+
+    intake = routes["codestra-intake-leads"]
+    assert intake["methods"] == ["POST"]
+    assert intake["securityAuthority"] == "config/kong-intake-routes.json"
+    assert "openid-connect" in intake["requiredPlugins"]
+    assert "request-termination" in intake["requiredPlugins"]
+
+
+def test_intake_gateway_policy_is_fail_closed():
+    assert INTAKE_AUTHORITY["host"] == "api.codestra.co"
+    assert INTAKE_AUTHORITY["service"]["host"] == "codestra-middleware-integration-api-1"
+    assert INTAKE_AUTHORITY["service"]["port"] == 8095
+    routes = {route["name"]: route for route in INTAKE_AUTHORITY["routes"]}
+    assert routes["codestra-intake-leads"]["requiredClientId"] == "sdk-intake"
+    assert routes["codestra-intake-leads"]["requiredScope"] == "leads.write"
+    assert routes["codestra-intake-survey-responses"]["requiredClientId"] == "sdk-intake"
+    assert routes["codestra-intake-survey-responses"]["requiredScope"] == "surveys.write"
+    for route in routes.values():
+        assert route["requiredHeaders"] == [
+            "Authorization",
+            "X-Tenant-ID",
+            "X-Correlation-ID",
+            "Idempotency-Key",
+        ]
+        assert route["maxBodyMb"] == 1
+        assert route["ratePerMinute"] == 120
+        assert "openid-connect" in route["requiredPlugins"]
+        assert "request-termination" in route["requiredPlugins"]
+    safety = INTAKE_AUTHORITY["security"]
+    assert safety["browserTokensForbidden"] is True
+    assert safety["serviceTokenOnly"] is True
+    assert safety["sameOriginBffRequired"] is True
+    assert safety["directOdooRoutingForbidden"] is True
+    assert safety["directMiddlewarePublicBypassForbidden"] is True
+    activation = INTAKE_AUTHORITY["activation"]
+    assert activation["runtimeApplyAuthorized"] is False
+    assert activation["requiresExactHeadCI"] is True
+    assert activation["requiresKeycloakClient"] == "sdk-intake"
 
 
 def test_n8n_control_plane_preserves_identity_for_middleware_revalidation():
