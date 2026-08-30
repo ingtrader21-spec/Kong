@@ -52,6 +52,7 @@ assert route_authority["client_id"] == contract["identity"]["client_id"]
 assert route_authority["audience"] == contract["identity"]["audience"]
 
 required_results = {
+    "source_sha_verified",
     "current_runtime_unique",
     "ambiguous_alias_not_current_runtime",
     "tls_candidate_resolves",
@@ -59,7 +60,7 @@ required_results = {
     "tls_certificate_verified",
     "tls_hostname_verified",
     "readiness_response_fail_closed",
-    "no_mutations_performed",
+    "no_runtime_mutations_performed",
 }
 assert set(promotion["required_results"]) == required_results
 assert promotion["promotion_authorized"] is False
@@ -72,18 +73,21 @@ schema_path = root / promotion["topology_evidence_schema"]
 assert collector_path.is_file() and schema_path.is_file()
 schema = json.loads(schema_path.read_text())
 assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
-assert schema["properties"]["mutations_performed"]["const"] is False
+assert schema["properties"]["runtime_mutations_performed"]["const"] is False
 assert schema["properties"]["secrets_captured"]["const"] is False
+assert schema["properties"]["gates"]["properties"]["source_sha_verified"]["const"] is True
 
 collector_source = collector_path.read_text()
 for required_token in (
+    "git",
+    "rev-parse",
     "docker",
     "inspect",
     "getent",
     "openssl",
     "curl",
     "CANDIDATE_BLOCKED",
-    "mutations_performed",
+    "runtime_mutations_performed",
     "secrets_captured",
 ):
     assert required_token in collector_source
