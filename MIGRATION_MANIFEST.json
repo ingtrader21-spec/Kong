@@ -1,6 +1,11 @@
 {
   "files": [
     {
+      "path": ".github/workflows/marketing-stage5-certification.yml",
+      "sha256": "1b316e529c4953da1c03591c79d39c8351c8ef7f59dea31142fe10e468d2e265",
+      "size": 1714
+    },
+    {
       "path": ".github/workflows/validate.yml",
       "sha256": "6e357acc481513234a991b5e475922f733c21cb4997677dbec31a81942dcfb9a",
       "size": 4998
@@ -39,6 +44,11 @@
       "path": "config/kong-n8n-control-plane-routes.json",
       "sha256": "c52869fd98c92ea029341a3ce3a07a402d7da1ea369dbff9c760f197c5d5d4f7",
       "size": 1965
+    },
+    {
+      "path": "config/marketing-stage4-routes.yaml",
+      "sha256": "b89f449970d3819ee7863c731632273c8751ca5396136934c26f957a3eb85f73",
+      "size": 1061
     },
     {
       "path": "deploy/kong-production-standby/README.md",
@@ -109,6 +119,16 @@
       "path": "deploy/kong/scope-policy.lua",
       "sha256": "ac0bcced3a0aaa3c08046dbac3fd074cab6a0b478459d14ac86c6c412eb8a42c",
       "size": 3198
+    },
+    {
+      "path": "docs/MARKETING-PLATFORM-EDGE-RESPONSIBILITIES.md",
+      "sha256": "e878f2829b8a5cce68c2ba70b3d3aab94ace273d4f74d282479641451f38409a",
+      "size": 1122
+    },
+    {
+      "path": "docs/MARKETING_EDGE_CONTRACT.md",
+      "sha256": "24750959a7779cdf69f5edb117e9e85828f38963a395bc940b87e4c0a89b3f12",
+      "size": 699
     },
     {
       "path": "docs/migration/from-codestra-production-platform.md",
@@ -346,6 +366,11 @@
       "size": 2952
     },
     {
+      "path": "scripts/validate_marketing_routes.py",
+      "sha256": "1b109afd6acab87a69897f9997df387ca83b143e814a7ec38ac602e09c850948",
+      "size": 1188
+    },
+    {
       "path": "tests/test_kong_canonical_route_contract.py",
       "sha256": "298d9729ba239f49acaec0f7f7ab9dbe95faa15ca7d37096005261e29c21f63f",
       "size": 4109
@@ -392,7 +417,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "d6fc7d0b531d097f1e57a6bf2508b873a8e51d8d7218dd842e45745a901bc1e0",
+  "manifest_generation_id": "ea0af38039c43d5f5a92e7410444b3fa71bbf8c298ed93edeab5cda02f9c2f4b",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
