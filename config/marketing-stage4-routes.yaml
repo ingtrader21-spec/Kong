@@ -1,0 +1,37 @@
+_format_version: "3.0"
+services:
+  - name: codestra-marketing
+    url: http://codestra-marketing:8000
+    routes:
+      - name: marketing-v1
+        paths: [/v1/marketing]
+        strip_path: true
+    plugins:
+      - name: correlation-id
+      - name: request-size-limiting
+        config: {allowed_payload_size: 2}
+  - name: codestra-ai
+    url: http://codestra-ai:8000
+    routes:
+      - name: ai-v1
+        paths: [/v1/ai]
+        strip_path: true
+    plugins:
+      - name: correlation-id
+  - name: codestra-communication
+    url: http://codestra-communication:8000
+    routes:
+      - name: communications-v1
+        paths: [/v1/communications]
+        strip_path: true
+    plugins:
+      - name: correlation-id
+  - name: codestra-social
+    url: http://codestra-social:8000
+    routes:
+      - name: social-v1
+        paths: [/v1/social]
+        strip_path: true
+    plugins:
+      - name: correlation-id
+# Promotion requirement: OIDC/JWT auth, rate limits, upstream health, contract tests and rollback must be validated before this fragment is promoted.

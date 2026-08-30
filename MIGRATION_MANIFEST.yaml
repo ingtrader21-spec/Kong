@@ -1,4 +1,10 @@
 files:
+- path: .github/workflows/marketing-manifest-sync.yml
+  sha256: 485d7cdd18523c780c3f4d33982d6f990236100f85624368b303ecabc576dfd9
+  size: 1735
+- path: .github/workflows/marketing-stage5-certification.yml
+  sha256: bdb44561e90bc0b8a897039018eed25aebbb96c793ae64bb66b81bb4fcc7d663
+  size: 1159
 - path: .github/workflows/validate.yml
   sha256: 6e357acc481513234a991b5e475922f733c21cb4997677dbec31a81942dcfb9a
   size: 4998
@@ -23,6 +29,9 @@ files:
 - path: config/kong-n8n-control-plane-routes.json
   sha256: c52869fd98c92ea029341a3ce3a07a402d7da1ea369dbff9c760f197c5d5d4f7
   size: 1965
+- path: config/marketing-stage4-routes.yaml
+  sha256: d03766281ac015edb9d22949e8d91ea3286d4e895a8dc520dd97c354c8007d40
+  size: 1063
 - path: deploy/kong-production-standby/README.md
   sha256: 4362f876f1a94480f48a5618c41f607de7f50ee1a532f4760bee524346a956fa
   size: 583
@@ -65,6 +74,12 @@ files:
 - path: deploy/kong/scope-policy.lua
   sha256: ac0bcced3a0aaa3c08046dbac3fd074cab6a0b478459d14ac86c6c412eb8a42c
   size: 3198
+- path: docs/MARKETING-PLATFORM-EDGE-RESPONSIBILITIES.md
+  sha256: 30aae02a42e87c7869f8c024fec15ecaa43c9e0c388883a5ab0faee2f0debd12
+  size: 1436
+- path: docs/MARKETING_EDGE_CONTRACT.md
+  sha256: 72d1bc657556e32f8bfecdb9a20a90dbb62a131805170db1109103f98c2d0c3b
+  size: 909
 - path: docs/migration/from-codestra-production-platform.md
   sha256: d60890efc390f77f8ec93c92df157efb50e623af5b13b451470aba50145ae577
   size: 589
@@ -206,6 +221,9 @@ files:
 - path: scripts/validate_kong_production_standby.py
   sha256: a33d3937b02067660c72fe7cc55e7d78a649c66c643d62f62bb82f10d860cc28
   size: 2952
+- path: scripts/validate_marketing_routes.py
+  sha256: 30744bbea3b8d9aa03f1f60c685375ac76a25c0e7210c460849606d7ff54f67d
+  size: 1313
 - path: tests/test_kong_canonical_route_contract.py
   sha256: 298d9729ba239f49acaec0f7f7ab9dbe95faa15ca7d37096005261e29c21f63f
   size: 4109
@@ -234,7 +252,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: d6fc7d0b531d097f1e57a6bf2508b873a8e51d8d7218dd842e45745a901bc1e0
+manifest_generation_id: c974ac49e0305f2648b8156f05982c832adcb2946b716a615b94d0ab6d79d96f
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
