@@ -10,6 +10,7 @@ def main() -> None:
     lower = text.lower()
     for route in REQUIRED:
         assert route in text, f'missing_route:{route}'
+    assert '/v1/communication]' not in text and '/v1/communication/' not in text, 'singular_communications_route_forbidden'
     for service in REQUIRED_SERVICES:
         assert f'name: {service}' in text, f'missing_service:{service}'
     assert lower.count('name: correlation-id') >= 4, 'correlation_id_plugin_required_per_service'
