@@ -47,8 +47,8 @@
     },
     {
       "path": "config/kong-community-n8n-egress.v1.json",
-      "sha256": "89fd62644f90fc38001254bff62a0a2390ceb5ce8ced442dfc75b4d960a06a9c",
-      "size": 1133
+      "sha256": "54429854adae343d7242fd323ddcabd9993793909d99e282310f185920e28614",
+      "size": 2310
     },
     {
       "path": "config/kong-n8n-control-plane-routes.json",
@@ -152,13 +152,23 @@
     },
     {
       "path": "operations/community-n8n/README.md",
-      "sha256": "c8276eb528b7114dc294c916dd0f9a0a1f6f81a3cfb0193cd214bf20f1bc3b1c",
-      "size": 1106
+      "sha256": "d57aeeecc705cdf762af7d3c92b960e9516aa8f910fa58b77dbadd7947b6664e",
+      "size": 3927
+    },
+    {
+      "path": "operations/community-n8n/collect_topology_evidence.py",
+      "sha256": "ec4837c62331abaf8d58a6ffb1c37f9b13393124d32acb062082abae433657bf",
+      "size": 18184
     },
     {
       "path": "operations/community-n8n/enforce-docker-egress.sh",
       "sha256": "4014d3ef65a6fa566e4550d923ea207ee0a909d26383bf0effb7caebd1c13ea6",
       "size": 3907
+    },
+    {
+      "path": "operations/community-n8n/topology-evidence.schema.json",
+      "sha256": "0b4fe8e04c2ebc9ef8b317afe9d19ce99855405995e3f16f108d6cefee389da2",
+      "size": 5091
     },
     {
       "path": "operations/kong-database/README.md",
@@ -387,8 +397,8 @@
     },
     {
       "path": "scripts/validate_community_n8n_egress.py",
-      "sha256": "71a503c0bd6fa4b3439d0d2b911781083ea2f6df3ad505d2a1a4af406508786e",
-      "size": 1305
+      "sha256": "6d8203f876a054b40c689e773f0638a2aba8fc09b3328cde20b944e95a094b0d",
+      "size": 5201
     },
     {
       "path": "scripts/validate_kong_production_standby.py",
@@ -402,8 +412,8 @@
     },
     {
       "path": "tests/test_community_n8n_egress.py",
-      "sha256": "e67ff467c5cbceae23e5fb4d75a446290e5d1420bc71270223be5654032469bc",
-      "size": 1175
+      "sha256": "a189aa86cab419b91e420472d72624aab6bf540a9ab653a4a8c9a4cf1b9069ad",
+      "size": 10355
     },
     {
       "path": "tests/test_kong_canonical_route_contract.py",
@@ -452,7 +462,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "677ce6ab7f70ccfe89b3d2659fc19ea350c8b677f0b2973e8ce9d1f190b5f139",
+  "manifest_generation_id": "f003ebb71047d7f947424e76c5cee163551ee2e1d402f15ab04791868261b241",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
