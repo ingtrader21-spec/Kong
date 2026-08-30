@@ -17,7 +17,11 @@ def test_community_n8n_route_is_https_and_fail_closed():
 
 def test_firewall_rejects_default_routes_and_has_rollback():
     source = (ROOT / "operations/community-n8n/enforce-docker-egress.sh").read_text()
-    assert '"0.0.0.0/0"' in source and '"::/0"' in source
+    assert "n.prefixlen != 0" in source
+    assert "n.version == 4" in source
     assert "iptables -D DOCKER-USER" in source
     assert "iptables -X" in source
     assert "no active Kong source addresses detected" in source
+    assert "--ctstate ESTABLISHED,RELATED" in source
+    assert 'codestra.egress.scope=kong' in source
+    assert '-i "$interface" -j REJECT' in source
