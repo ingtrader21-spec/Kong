@@ -26,41 +26,48 @@
     "current_runtime": {"$ref": "#/$defs/runtimeResolution"},
     "ambiguous_alias": {"$ref": "#/$defs/runtimeResolution"},
     "tls_candidate": {
-      "allOf": [
-        {"$ref": "#/$defs/runtimeResolution"},
-        {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "port", "resolved_ipv4", "candidates", "tls", "readiness"],
+      "properties": {
+        "host": {"$ref": "#/$defs/dnsName"},
+        "port": {"const": 443},
+        "resolved_ipv4": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/ipv4"}
+        },
+        "candidates": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/candidate"}
+        },
+        "tls": {
           "type": "object",
-          "required": ["port", "tls", "readiness"],
+          "additionalProperties": false,
+          "required": ["tool_available", "certificate_verified", "hostname_verified"],
           "properties": {
-            "port": {"const": 443},
-            "tls": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["tool_available", "certificate_verified", "hostname_verified"],
-              "properties": {
-                "tool_available": {"type": "boolean"},
-                "certificate_verified": {"type": "boolean"},
-                "hostname_verified": {"type": "boolean"}
-              }
+            "tool_available": {"type": "boolean"},
+            "certificate_verified": {"type": "boolean"},
+            "hostname_verified": {"type": "boolean"}
+          }
+        },
+        "readiness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tool_available", "http_status", "fail_closed"],
+          "properties": {
+            "tool_available": {"type": "boolean"},
+            "http_status": {
+              "anyOf": [
+                {"type": "integer", "minimum": 100, "maximum": 599},
+                {"type": "null"}
+              ]
             },
-            "readiness": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["tool_available", "http_status", "fail_closed"],
-              "properties": {
-                "tool_available": {"type": "boolean"},
-                "http_status": {
-                  "anyOf": [
-                    {"type": "integer", "minimum": 100, "maximum": 599},
-                    {"type": "null"}
-                  ]
-                },
-                "fail_closed": {"type": "boolean"}
-              }
-            }
+            "fail_closed": {"type": "boolean"}
           }
         }
-      ]
+      }
     },
     "gates": {
       "type": "object",
@@ -95,6 +102,10 @@
       "type": "string",
       "pattern": "^(?:25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})(?:\\.(?:25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})){3}$"
     },
+    "dnsName": {
+      "type": "string",
+      "pattern": "^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+    },
     "candidate": {
       "type": "object",
       "additionalProperties": false,
@@ -121,10 +132,7 @@
       "additionalProperties": false,
       "required": ["host", "resolved_ipv4", "candidates"],
       "properties": {
-        "host": {
-          "type": "string",
-          "pattern": "^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
-        },
+        "host": {"$ref": "#/$defs/dnsName"},
         "resolved_ipv4": {
           "type": "array",
           "uniqueItems": true,
