@@ -68,6 +68,9 @@ files:
 - path: deploy/kong/scope-policy.lua
   sha256: ac0bcced3a0aaa3c08046dbac3fd074cab6a0b478459d14ac86c6c412eb8a42c
   size: 3198
+- path: docs/INTAKE-EXACT-HEAD-CERTIFICATION.md
+  sha256: c7937e0c995196b57818b52ac0536c94b1da5345575194d37bdf727dab51fdf8
+  size: 222
 - path: docs/migration/from-codestra-production-platform.md
   sha256: d60890efc390f77f8ec93c92df157efb50e623af5b13b451470aba50145ae577
   size: 589
@@ -222,7 +225,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 7b14933df17ee1aa8849617463204650862ac31cf7b61bd663066a5c364a9a61
+manifest_generation_id: 447cb3d11228c069f8fe430bcaefa06062cfb83c6c592dfce8682908521dd142
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
