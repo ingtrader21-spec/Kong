@@ -15,7 +15,7 @@
     "tls_candidate",
     "gates",
     "secrets_captured",
-    "mutations_performed"
+    "runtime_mutations_performed"
   ],
   "properties": {
     "schema_version": {"const": "1.0"},
@@ -73,6 +73,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "source_sha_verified",
         "current_runtime_unique",
         "ambiguous_alias_not_current_runtime",
         "tls_candidate_resolves",
@@ -80,9 +81,10 @@
         "tls_certificate_verified",
         "tls_hostname_verified",
         "readiness_response_fail_closed",
-        "no_mutations_performed"
+        "no_runtime_mutations_performed"
       ],
       "properties": {
+        "source_sha_verified": {"const": true},
         "current_runtime_unique": {"type": "boolean"},
         "ambiguous_alias_not_current_runtime": {"type": "boolean"},
         "tls_candidate_resolves": {"type": "boolean"},
@@ -90,11 +92,11 @@
         "tls_certificate_verified": {"type": "boolean"},
         "tls_hostname_verified": {"type": "boolean"},
         "readiness_response_fail_closed": {"type": "boolean"},
-        "no_mutations_performed": {"const": true}
+        "no_runtime_mutations_performed": {"const": true}
       }
     },
     "secrets_captured": {"const": false},
-    "mutations_performed": {"const": false}
+    "runtime_mutations_performed": {"const": false}
   },
   "$defs": {
     "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
