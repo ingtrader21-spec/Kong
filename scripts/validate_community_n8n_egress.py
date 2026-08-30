@@ -93,7 +93,8 @@ for required_token in (
     "curl",
     "verified_source_sha",
     "metadata_identifies_kong",
-    "NON_KONG_IDENTITY_TOKENS",
+    'EXPECTED_KONG_SERVICE_LABEL = "kong-gateway"',
+    "service_label == EXPECTED_KONG_SERVICE_LABEL",
     "tls_targets_exclusively_match_current_runtime",
     "tls_resolved.issubset",
     "CANDIDATE_BLOCKED",
@@ -109,6 +110,8 @@ for forbidden_token in (
     "docker rm",
     "iptables",
     "nft ",
+    'return "kong" in',
+    "NON_KONG_IDENTITY_TOKENS",
 ):
     assert forbidden_token not in collector_source
 
