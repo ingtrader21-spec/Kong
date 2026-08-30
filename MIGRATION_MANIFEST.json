@@ -1,9 +1,14 @@
 {
   "files": [
     {
+      "path": ".github/workflows/marketing-manifest-sync.yml",
+      "sha256": "485d7cdd18523c780c3f4d33982d6f990236100f85624368b303ecabc576dfd9",
+      "size": 1735
+    },
+    {
       "path": ".github/workflows/marketing-stage5-certification.yml",
-      "sha256": "1b316e529c4953da1c03591c79d39c8351c8ef7f59dea31142fe10e468d2e265",
-      "size": 1714
+      "sha256": "bdb44561e90bc0b8a897039018eed25aebbb96c793ae64bb66b81bb4fcc7d663",
+      "size": 1159
     },
     {
       "path": ".github/workflows/validate.yml",
@@ -127,8 +132,8 @@
     },
     {
       "path": "docs/MARKETING_EDGE_CONTRACT.md",
-      "sha256": "24750959a7779cdf69f5edb117e9e85828f38963a395bc940b87e4c0a89b3f12",
-      "size": 699
+      "sha256": "72d1bc657556e32f8bfecdb9a20a90dbb62a131805170db1109103f98c2d0c3b",
+      "size": 909
     },
     {
       "path": "docs/migration/from-codestra-production-platform.md",
@@ -367,8 +372,8 @@
     },
     {
       "path": "scripts/validate_marketing_routes.py",
-      "sha256": "19fb3addf40246610351f8ee4e80ab308e8f4b635a7ff8b211c94580461b8161",
-      "size": 1189
+      "sha256": "30744bbea3b8d9aa03f1f60c685375ac76a25c0e7210c460849606d7ff54f67d",
+      "size": 1313
     },
     {
       "path": "tests/test_kong_canonical_route_contract.py",
@@ -417,7 +422,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "a1aaead3b1c6f01ec48dca7d22e34f2f03eaa970b6b961cb99f70d36fe78640d",
+  "manifest_generation_id": "70fd07fbb9a17e8f56e08120624c5884396688743f991690c22d3c37e6ddb020",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
