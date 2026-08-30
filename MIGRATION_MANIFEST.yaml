@@ -1,7 +1,7 @@
 files:
 - path: .github/workflows/cert-exact-head.yml
-  sha256: 125efcdcc53a3d91073f3007c8aade5f5e35b17ba86f194f2b11fd5a536de22d
-  size: 1991
+  sha256: 018b4d04a6db07878b96cf8fb948a6b7d39d76f4d604297b63e530fe39306499
+  size: 1930
 - path: .github/workflows/sync-migration-manifests.yml
   sha256: 94f6e6e4f06566ca1418a89f1894929b6f4dda9c061b46fce04c528ea95bd0dc
   size: 1683
@@ -228,7 +228,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 8c828c83144e4c24648c2d9924c9219d3b6e8523b23eac2a954d924946e66979
+manifest_generation_id: 9856327d017752ca2b97172a571940977627047178497f537c0d3fc67b7faf65
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
