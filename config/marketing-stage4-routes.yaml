@@ -21,8 +21,8 @@ services:
   - name: codestra-communication
     url: http://codestra-communication:8000
     routes:
-      - name: communication-v1
-        paths: [/v1/communication]
+      - name: communications-v1
+        paths: [/v1/communications]
         strip_path: true
     plugins:
       - name: correlation-id
