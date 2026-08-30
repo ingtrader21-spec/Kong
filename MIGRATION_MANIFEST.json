@@ -332,8 +332,8 @@
     },
     {
       "path": "scripts/reconcile_kong_canonical_routes.py",
-      "sha256": "a67168d903c9632445a4e0bea875cb62244b54b1bbd86a1ae996dd1c23176cc1",
-      "size": 20189
+      "sha256": "2769a34d0023c2dd74829e47062bc8819a0c3ff4e9a7ef5c26820ad82aba5167",
+      "size": 20917
     },
     {
       "path": "scripts/reconcile_kong_n8n_control_plane.py",
@@ -402,7 +402,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "dd83e630b884c39fa53ed32d09d6657d55c7fd74503ba8012c03b875dd385aed",
+  "manifest_generation_id": "077b5709b3f5bbfcd711ae97cc31218b39af444d67a68679dccc11233aa3c046",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
