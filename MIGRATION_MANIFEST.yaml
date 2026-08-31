@@ -6,8 +6,8 @@ files:
   sha256: bdb44561e90bc0b8a897039018eed25aebbb96c793ae64bb66b81bb4fcc7d663
   size: 1159
 - path: .github/workflows/validate.yml
-  sha256: 74ae2f47630c235dcb13bd639f68bfe67dddbd8452ffa0588f2ad5fe7524b7bf
-  size: 5112
+  sha256: 01bec5e1b002ee8ba2194222d93c468d3b0d407c7d111c6fe3a753826d3b3e51
+  size: 5162
 - path: .gitignore
   sha256: 8c06027889bb245680b8a248468504a51ff8654fc6c800ea9ebd9f54213ddf9d
   size: 214
@@ -32,6 +32,9 @@ files:
 - path: config/kong-n8n-control-plane-routes.json
   sha256: c52869fd98c92ea029341a3ce3a07a402d7da1ea369dbff9c760f197c5d5d4f7
   size: 1965
+- path: config/kong-n8n-editor-routes.json
+  sha256: 650d9f88aa88fe1e27f6fb116ea6a8155efd4f36be8c5ea23d408703d0e1ae8c
+  size: 3727
 - path: config/marketing-stage4-routes.yaml
   sha256: d03766281ac015edb9d22949e8d91ea3286d4e895a8dc520dd97c354c8007d40
   size: 1063
@@ -260,6 +263,9 @@ files:
 - path: tests/test_kong_n8n_control_plane.py
   sha256: 65104ac6bcb5d5d06d6e8ff491909d802bb44e135acf802df0bc70633992b18a
   size: 8452
+- path: tests/test_kong_n8n_editor_route.py
+  sha256: 46c0924866d66145dd19ed7176503a4edbaab0c2b9efc4ab0903ae4bc499ab98
+  size: 5909
 - path: tests/test_kong_route_authority_hardening.py
   sha256: bb3e3bc9cba1152849bd5fe1c603bc7b39135f44ea9bc3a24f99c478b36298e0
   size: 17929
@@ -276,7 +282,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: f003ebb71047d7f947424e76c5cee163551ee2e1d402f15ab04791868261b241
+manifest_generation_id: 75e7b3baf0cc06c6eea08e2eb235575a7568b70e20375104e91da83ac650aa3d
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
