@@ -156,6 +156,102 @@ def test_callback_contract_rejects_security_plugin_config_drift():
         module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
 
 
+def _intake_plugins(route: dict) -> dict[str, dict]:
+    access = (
+        f"require {route['requiredClientId']} {route['requiredScope']} "
+        "X-Tenant-ID Idempotency-Key"
+    )
+    return {
+        "jwt": {
+            "config": {
+                "header_names": ["authorization"],
+                "claims_to_verify": ["exp"],
+                "key_claim_name": "azp",
+            }
+        },
+        "openid-connect": {
+            "config": {
+                "auth_methods": ["bearer"],
+                "consumer_claim": ["azp"],
+                "issuer": "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration",
+                "audience": [route["requiredClientId"]],
+                "scopes_required": [route["requiredScope"]],
+            }
+        },
+        "pre-function": {"config": {"access": [access]}},
+        "request-size-limiting": {
+            "config": {"allowed_payload_size": route["maxBodyMb"]}
+        },
+        "rate-limiting": {
+            "config": {"minute": route["ratePerMinute"], "policy": "local"}
+        },
+        "correlation-id": {
+            "config": {
+                "header_name": "X-Correlation-ID",
+                "generator": "uuid",
+                "echo_downstream": True,
+            }
+        },
+        "request-termination": {"config": {"status_code": 403}},
+    }
+
+
+def test_intake_contract_parser_and_plugins_are_verified_exactly():
+    module = _module()
+    canonical = json.loads(MANIFEST_PATH.read_text())
+    expected = next(
+        row for row in canonical["contractRoutes"] if row["name"] == "codestra-intake-leads"
+    )
+    authority_path, spec, route = module.security_authority(ROOT, expected)
+    plugins = _intake_plugins(route)
+
+    assert authority_path.name == "kong-intake-routes.json"
+    module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
+
+
+def test_intake_contract_rejects_identity_scope_and_header_drift():
+    module = _module()
+    canonical = json.loads(MANIFEST_PATH.read_text())
+    expected = next(
+        row for row in canonical["contractRoutes"] if row["name"] == "codestra-intake-leads"
+    )
+    authority_path, spec, route = module.security_authority(ROOT, expected)
+
+    plugins = _intake_plugins(route)
+    plugins["openid-connect"]["config"]["audience"] = ["wrong-client"]
+    with pytest.raises(RuntimeError, match="openid_connect.audience drift"):
+        module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
+
+    plugins = _intake_plugins(route)
+    plugins["openid-connect"]["config"]["scopes_required"] = ["wrong.scope"]
+    with pytest.raises(RuntimeError, match="openid_connect.scope drift"):
+        module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
+
+    plugins = _intake_plugins(route)
+    plugins["pre-function"]["config"]["access"] = ["return true"]
+    with pytest.raises(RuntimeError, match="pre_function missing"):
+        module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
+
+
+def test_intake_contract_cannot_authorize_runtime_apply():
+    module = _module()
+    canonical = json.loads(MANIFEST_PATH.read_text())
+    expected = next(
+        row for row in canonical["contractRoutes"] if row["name"] == "codestra-intake-leads"
+    )
+    authority_path, spec, route = module.security_authority(ROOT, expected)
+    spec["activation"]["runtimeApplyAuthorized"] = True
+    with pytest.raises(RuntimeError, match="runtime_apply_authority"):
+        module.verify_security_plugins(
+            ROOT,
+            authority_path,
+            spec,
+            route,
+            _intake_plugins(route),
+            expected,
+        )
+
+
 def test_campaign_contract_rejects_scope_guard_drift():
     module = _module()
     canonical = json.loads(MANIFEST_PATH.read_text())
