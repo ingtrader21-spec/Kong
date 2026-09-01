@@ -2,16 +2,26 @@ import json
 from pathlib import Path
 
 
-MANIFEST = json.loads(Path("config/kong-canonical-middleware-routes.json").read_text())
+MANIFEST = json.loads(
+    Path("config/kong-canonical-middleware-routes.json").read_text()
+)
 SOURCE = Path("scripts/reconcile_kong_canonical_routes.py").read_text()
-N8N_AUTHORITY = json.loads(Path("config/kong-n8n-control-plane-routes.json").read_text())
-PLATFORM_CONTRACT = json.loads(Path("contracts/platform-control-plane.v1.json").read_text())
+N8N_AUTHORITY = json.loads(
+    Path("config/kong-n8n-control-plane-routes.json").read_text()
+)
+PLATFORM_CONTRACT = json.loads(
+    Path("contracts/platform-control-plane.v1.json").read_text()
+)
 INTAKE_AUTHORITY = json.loads(Path("config/kong-intake-routes.json").read_text())
 
 
 def test_only_proven_middleware_routes_are_managed_public_routes():
     assert {route["path"] for route in MANIFEST["routes"]} == {
-        "/v1/crm", "/v1/email", "/v1/sms", "/v1/webhooks", "/v1/sms/dlr/telnexa",
+        "/v1/crm",
+        "/v1/email",
+        "/v1/sms",
+        "/v1/webhooks",
+        "/v1/sms/dlr/telnexa",
     }
     assert MANIFEST["legacyHostEnabled"] is False
 
@@ -37,7 +47,12 @@ def test_authenticated_middleware_contract_routes_are_canonical():
             assert route["serviceHost"] == "codestra-middleware-integration-api-1"
             assert route["servicePort"] == 8095
         assert route["securityAuthority"].startswith("config/kong-")
-        assert {"jwt", "correlation-id", "rate-limiting", "request-size-limiting"} <= set(route["requiredPlugins"])
+        assert {
+            "jwt",
+            "correlation-id",
+            "rate-limiting",
+            "request-size-limiting",
+        } <= set(route["requiredPlugins"])
         assert {"pre-function", "post-function"} & set(route["requiredPlugins"])
 
     for name in ("codestra-intake-leads", "codestra-intake-survey-responses"):
@@ -57,7 +72,12 @@ def test_intake_authority_is_service_only_and_fail_closed():
     assert routes["codestra-intake-leads"]["requiredScope"] == "leads.write"
     assert routes["codestra-intake-survey-responses"]["requiredScope"] == "surveys.write"
     for route in routes.values():
-        assert set(route["requiredHeaders"]) == {"Authorization", "X-Tenant-ID", "X-Correlation-ID", "Idempotency-Key"}
+        assert set(route["requiredHeaders"]) == {
+            "Authorization",
+            "X-Tenant-ID",
+            "X-Correlation-ID",
+            "Idempotency-Key",
+        }
         assert route["maxBodyMb"] == 1
         assert route["ratePerMinute"] > 0
     assert INTAKE_AUTHORITY["security"]["browserTokensForbidden"] is True
@@ -84,7 +104,8 @@ def test_n8n_control_plane_preserves_identity_for_middleware_revalidation():
     assert PLATFORM_CONTRACT["safety"]["deployment_permitted_by_contract"] is True
     canonical = {route["name"]: route for route in MANIFEST["contractRoutes"]}
     for name in ("codestra-n8n-command-submit", "codestra-n8n-command-read"):
-        assert "openid-connect" in canonical[name]["requiredPlugins"]
+        assert "openid-connect" not in canonical[name]["requiredPlugins"]
+        assert {"jwt", "post-function"} <= set(canonical[name]["requiredPlugins"])
 
 
 def test_every_managed_route_has_explicit_security_controls():

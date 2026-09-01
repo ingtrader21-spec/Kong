@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.1",
+  "status": "PROPOSED_UNVERIFIED",
+  "purpose": "Keycloak browser-flow protection for the n8n Community Edition editor host. n8n Community Edition has no enterprise SSO, so the gateway is the only place an OIDC check can be enforced before the editor is reached.",
+  "applies_to_repositories": [
+    "appolon1908-hue/Caddy",
+    "appolon1908-hue/N8N"
+  ],
+  "service": {
+    "name": "codestra-n8n-editor",
+    "host": "codestra-n8n-main",
+    "port": 5678,
+    "protocol": "http",
+    "enabled": false,
+    "retries": 0,
+    "connect_timeout": 3000,
+    "read_timeout": 60000,
+    "write_timeout": 60000
+  },
+  "issuer": "https://auth.codestra.co/realms/codestra",
+  "oidc_discovery": "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration",
+  "jwks_uri": "https://auth.codestra.co/realms/codestra/protocol/openid-connect/certs",
+  "client_id": "n8n-editor",
+  "host": "automation.codestra.co",
+  "preserve_authorization_header": false,
+  "token_exchange": false,
+  "browser_flow": {
+    "auth_methods": [
+      "authorization_code",
+      "session"
+    ],
+    "rejected_auth_methods": [
+      "bearer",
+      "introspection",
+      "kong_oauth2",
+      "client_credentials",
+      "password"
+    ],
+    "required_realm_role": "codestra-n8n-editor",
+    "session_cookie_name": "codestra_n8n_editor_session",
+    "session_cookie_secure": true,
+    "session_cookie_httponly": true,
+    "session_cookie_samesite": "Lax",
+    "session_absolute_timeout_seconds": 28800,
+    "session_idle_timeout_seconds": 1800,
+    "preserve_query_args_on_login": false,
+    "logout_path": "/codestra/logout",
+    "post_logout_redirect_uri": "https://automation.codestra.co/"
+  },
+  "routes": [
+    {
+      "name": "codestra-n8n-editor-ui",
+      "path": "/",
+      "methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "HEAD",
+        "OPTIONS"
+      ],
+      "strip_path": false,
+      "preserve_host": true,
+      "rate_per_minute": 600,
+      "max_body_mb": 4
+    }
+  ],
+  "safety": {
+    "reconciliation_apply": false,
+    "credentials_in_repository": false,
+    "direct_provider_routes": false,
+    "middleware_revalidates_identity": false,
+    "oidc_required": true,
+    "oidc_enforcement": "authorization-code-plus-session",
+    "bearer_only_methods_rejected": true,
+    "native_n8n_auth_required_behind_gateway": true,
+    "editor_publicly_routable": false,
+    "edge_admin_cidr_gate_required": true,
+    "legacy_jwt_validation_retained": false
+  },
+  "edge_boundary": {
+    "terminating_edge": "appolon1908-hue/Caddy",
+    "edge_host_file": "sites/automation.codestra.co.caddy",
+    "edge_admin_cidr_environment_variable": "CADDY_EDITOR_ADMIN_CIDRS",
+    "edge_authenticates": false,
+    "gateway_authenticates": true,
+    "n8n_native_auth_remains_enabled": true
+  },
+  "activation_requirements": [
+    "A Keycloak client named n8n-editor exists as a confidential browser client with the authorization-code flow enabled and its secret held outside Git.",
+    "The codestra-n8n-editor realm role exists and is granted only to people who may administer automation.",
+    "Promotion evidence proves that an otherwise valid editor user without the codestra-n8n-editor realm role receives HTTP 403 from Kong.",
+    "An unauthenticated request to the editor host is refused by the gateway before it reaches n8n, with evidence captured.",
+    "n8n native owner authentication remains enabled behind the gateway, so a gateway bypass alone grants no editor access.",
+    "Session lifetime, idle timeout, and cookie flags are observed in force and captured as the session-policy evidence recorded in appolon1908-hue/N8N config/n8n-policy.json."
+  ]
+}

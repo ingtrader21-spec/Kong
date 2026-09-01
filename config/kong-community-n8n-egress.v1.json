@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.1",
+  "status": "PROPOSED_NOT_APPLIED",
+  "public_endpoint": "https://api.codestra.co/v1/integrations/n8n",
+  "service": {
+    "name": "codestra-community-n8n-middleware",
+    "protocol": "https",
+    "host_source": "MIDDLEWARE_TLS_HOST",
+    "port": 443,
+    "tls_verify": true,
+    "ip_literal_allowed": false
+  },
+  "route": {
+    "host": "api.codestra.co",
+    "path": "/v1/integrations/n8n",
+    "protocols": ["https"],
+    "methods": ["GET", "POST"],
+    "http_redirect_status": 308,
+    "strip_path": false
+  },
+  "plugins": {
+    "bundled_only": true,
+    "names": ["correlation-id", "request-transformer", "request-size-limiting", "rate-limiting"],
+    "remove_request_headers": ["X-Authenticated-Client", "X-Authenticated-Tenant", "X-Authenticated-Role"]
+  },
+  "identity": {
+    "issuer": "https://auth.codestra.co/realms/codestra",
+    "client_id": "n8n-automation",
+    "audience": "middleware-api",
+    "middleware_revalidates_token": true
+  },
+  "current_runtime_authority": {
+    "status": "VERIFIED_UNCHANGED",
+    "authority_path": "config/kong-n8n-control-plane-routes.json",
+    "service_host": "appolon-middleware-integration-api",
+    "service_port": 8080,
+    "service_protocol": "http",
+    "ambiguous_aliases_denied": ["middleware-integration-api"],
+    "evidence_url": "https://github.com/appolon1908-hue/Kong/pull/30",
+    "mutation_authorized": false
+  },
+  "promotion_gates": {
+    "topology_collector": "operations/community-n8n/collect_topology_evidence.py",
+    "topology_evidence_schema": "operations/community-n8n/topology-evidence.schema.json",
+    "required_results": [
+      "source_sha_verified",
+      "current_runtime_unique",
+      "ambiguous_alias_not_current_runtime",
+      "tls_candidate_resolves",
+      "tls_candidate_same_runtime",
+      "tls_certificate_verified",
+      "tls_hostname_verified",
+      "readiness_response_fail_closed",
+      "no_runtime_mutations_performed"
+    ],
+    "exact_head_ci_required": true,
+    "independent_review_required": true,
+    "rollback_rehearsal_required": true,
+    "promotion_authorized": false
+  },
+  "safety": {
+    "credentials_in_repository": false,
+    "external_effects_enabled": false,
+    "firewall_apply_requires_explicit_flag": true,
+    "current_route_mutation_authorized": false
+  }
+}

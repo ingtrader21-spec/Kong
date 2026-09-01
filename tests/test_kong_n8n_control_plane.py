@@ -94,21 +94,21 @@ def test_exact_plugin_verifier_accepts_contract_and_rejects_scope_drift():
     spec = json.loads(SPEC_PATH.read_text())
     route = spec["routes"][0]
     plugins = _plugin_set(module, spec, route)
-    assert plugins["jwt"]["config"]["hide_credentials"] is False
+    assert "hide_credentials" not in plugins["jwt"]["config"]
     module.verify_plugins(plugins, route, spec)
     plugins["post-function"]["config"]["access"] = ["return true"]
     with pytest.raises(RuntimeError):
         module.verify_plugins(plugins, route, spec)
 
 
-def test_exact_plugin_verifier_rejects_authorization_header_stripping():
+def test_supported_jwt_schema_preserves_bearer_for_middleware_revalidation():
     module = _load(RECONCILER_PATH, "reconcile_kong_n8n_control_plane_bearer_preservation")
     spec = json.loads(SPEC_PATH.read_text())
     route = spec["routes"][0]
     plugins = _plugin_set(module, spec, route)
-    plugins["jwt"]["config"]["hide_credentials"] = True
-    with pytest.raises(RuntimeError):
-        module.verify_plugins(plugins, route, spec)
+    assert "hide_credentials" not in plugins["jwt"]["config"]
+    assert "authorization" in module.claim_guard(spec, route)
+    module.verify_plugins(plugins, route, spec)
 
 
 def test_canonical_manifest_uses_exact_n8n_security_authority():
@@ -170,6 +170,16 @@ def test_reconciler_stages_routes_inertly_before_plugin_installation():
     assert inert < plugins < activation
 
 
+def test_reconciler_removes_obsolete_plugins_only_while_applying_inert_route():
+    source = RECONCILER_PATH.read_text()
+    inert = source.index('"hosts[]": ["staged.invalid"]')
+    obsolete = source.index("obsolete = {", inert)
+    delete = source.index('request(admin, "DELETE", f"/plugins/{plugin[\'id\']}")', obsolete)
+    activation = source.index('request(admin, "PATCH", f"/routes/{route[\'id\']}", payload)', delete)
+    assert "if apply:" in source[inert:obsolete]
+    assert inert < obsolete < delete < activation
+
+
 def test_reconciler_requires_middleware_identity_revalidation():
     source = RECONCILER_PATH.read_text()
     assert 'get("middleware_revalidates_identity") is not True' in source
@@ -183,15 +193,13 @@ def test_canonical_reconciler_dispatches_n8n_security_authority():
     assert 'n8n.verify_plugins' in source
 
 
-def test_n8n_reconciler_requires_keycloak_openid_connect():
+def test_n8n_reconciler_uses_supported_fail_closed_oidc_chain():
     module = _load(RECONCILER_PATH, "reconcile_kong_n8n_control_plane_oidc")
     spec = json.loads(SPEC_PATH.read_text())
     route = spec["routes"][0]
     expected = module.expected_plugin_configs(spec, route)
-    assert expected["openid-connect"] == {
-        "issuer": spec["oidc_discovery"],
-        "auth_methods": ["bearer"],
-        "audience": ["middleware-api"],
-        "consumer_claim": ["azp"],
-    }
-    assert "jwt" in expected  # retained as second validation layer until staging certification
+    assert "openid-connect" not in expected
+    assert "jwt" in expected
+    assert "post-function" in expected
+    assert spec["safety"]["oidc_required"] is True
+    assert spec["safety"]["oidc_enforcement"] == "jwt-rs256-plus-claim-guard"

@@ -1,0 +1,50 @@
+name: Marketing manifest synchronization
+
+on:
+  push:
+    branches:
+      - feat/marketing-edge-foundation-20260830
+      - release/staging-marketing-edge-bindings-v1-20260830
+    paths:
+      - '.github/workflows/marketing-stage5-certification.yml'
+      - '.github/workflows/marketing-manifest-sync.yml'
+      - 'config/marketing-stage4-routes.yaml'
+      - 'config/staging/**'
+      - 'docs/MARKETING_EDGE_CONTRACT.md'
+      - 'docs/MARKETING-PLATFORM-EDGE-RESPONSIBILITIES.md'
+      - 'scripts/validate_marketing_routes.py'
+      - 'MIGRATION_MANIFEST.json'
+      - 'MIGRATION_MANIFEST.yaml'
+
+permissions:
+  contents: write
+
+jobs:
+  synchronize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check PyYAML
+      - name: Regenerate governed manifests
+        run: |
+          python tools/generate_migration_manifests.py
+          python tools/verify_migration_manifest.py
+      - name: Commit manifest-only synchronization
+        run: |
+          if git diff --quiet -- MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml; then
+            echo 'KONG_MANIFEST_SYNC=NO_CHANGE'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml
+          git commit -m 'chore: synchronize Kong migration manifests'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
