@@ -1,3 +1,4 @@
+import copy
 import importlib.util
 import json
 from pathlib import Path
@@ -14,6 +15,7 @@ CONTROL_PLANE_PATH = ROOT / "deploy/kong/control-plane.yml"
 SCOPE_POLICY_PATH = ROOT / "deploy/kong/scope-policy.lua"
 STANDBY_APPLIER_PATH = ROOT / "scripts/apply_kong_standby.py"
 CAMPAIGN_RECONCILER_PATH = ROOT / "scripts/reconcile_kong_campaign_automation.py"
+PROVIDER_CONTROL_VALIDATOR_PATH = ROOT / "scripts/validate_provider_control_routes.py"
 
 
 def _load(path: Path, name: str):
@@ -30,6 +32,54 @@ def _module():
 
 def _exporter():
     return _load(EXPORTER_PATH, "export_kong_public_route_contracts")
+
+
+def test_provider_control_authority_is_fail_closed_and_mutation_covered():
+    module = _load(PROVIDER_CONTROL_VALIDATOR_PATH, "validate_provider_control_routes")
+    contract = json.loads(module.CONTRACT.read_text())
+    module.validate(copy.deepcopy(contract))
+
+    mutations = []
+    enabled = copy.deepcopy(contract)
+    enabled["runtimeApplyAuthorized"] = True
+    mutations.append(enabled)
+    shared_key = copy.deepcopy(contract)
+    shared_key["security"]["sharedKeysAllowed"] = True
+    mutations.append(shared_key)
+    direct_provider = copy.deepcopy(contract)
+    direct_provider["security"]["directProviderRoutesAllowed"] = True
+    mutations.append(direct_provider)
+    wrong_client = copy.deepcopy(contract)
+    wrong_client["routes"][0]["clientId"] = "codestra-marketing"
+    mutations.append(wrong_client)
+    wrong_scope = copy.deepcopy(contract)
+    wrong_scope["routes"][0]["scope"] = "marketing.campaign.request"
+    mutations.append(wrong_scope)
+    wrong_name = copy.deepcopy(contract)
+    wrong_name["routes"][0]["name"] = "unreviewed-route-name"
+    mutations.append(wrong_name)
+    duplicate_name = copy.deepcopy(contract)
+    duplicate_name["routes"][1]["name"] = duplicate_name["routes"][0]["name"]
+    mutations.append(duplicate_name)
+    wrong_audience = copy.deepcopy(contract)
+    wrong_audience["audience"] = "ai-provider-adapter"
+    mutations.append(wrong_audience)
+    wrong_dependency = copy.deepcopy(contract)
+    wrong_dependency["dependencies"]["middlewarePullRequest"] = 999
+    mutations.append(wrong_dependency)
+    wrong_upstream = copy.deepcopy(contract)
+    wrong_upstream["service"]["host"] = "unreviewed-middleware"
+    mutations.append(wrong_upstream)
+    delete_legacy = copy.deepcopy(contract)
+    delete_legacy["legacyRetirement"]["runtimeDeletionAuthorized"] = True
+    mutations.append(delete_legacy)
+    weaken_retirement = copy.deepcopy(contract)
+    weaken_retirement["legacyRetirement"]["acceptance"] = "review later"
+    mutations.append(weaken_retirement)
+
+    for mutation in mutations:
+        with pytest.raises(ValueError):
+            module.validate(mutation)
 
 
 def test_standby_apply_refuses_unowned_name_collisions(monkeypatch):
