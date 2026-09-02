@@ -1,0 +1,92 @@
+{
+  "schema": "codestra.kong.provider-control-routes.v1",
+  "status": "PREPARED_DISABLED",
+  "runtimeApplyAuthorized": false,
+  "dependencies": {
+    "middlewareRepository": "appolon1908-hue/Middleware-",
+    "middlewarePullRequest": 82,
+    "keycloakRepository": "appolon1908-hue/Keycloak",
+    "keycloakPullRequest": 60
+  },
+  "issuer": "https://auth.codestra.co/realms/codestra",
+  "audience": "middleware-api",
+  "service": {
+    "host": "appolon-middleware-integration-api",
+    "port": 8080,
+    "protocol": "http"
+  },
+  "security": {
+    "grantType": "client_credentials",
+    "oidcEnforcement": "jwt-rs256-plus-claim-guard",
+    "preserveAuthorizationHeader": true,
+    "middlewareRevalidatesIdentity": true,
+    "fullScopeAllowed": false,
+    "wildcardScopesAllowed": false,
+    "sharedKeysAllowed": false,
+    "directProviderRoutesAllowed": false,
+    "maximumTokenLifetimeSeconds": 300,
+    "requiredClaims": ["iss", "sub", "aud", "azp", "iat", "exp", "jti", "scope"]
+  },
+  "routes": [
+    {
+      "name": "codestra-ai-inference-request",
+      "method": "POST",
+      "path": "/api/v1/control/ai/inference-requests",
+      "clientId": "codestra-ai",
+      "scope": "ai.inference.request",
+      "externalEffect": true
+    },
+    {
+      "name": "codestra-communication-email-request",
+      "method": "POST",
+      "path": "/api/v1/control/communications/email",
+      "clientId": "codestra-communication",
+      "scope": "communication.email.request",
+      "externalEffect": true
+    },
+    {
+      "name": "codestra-communication-sms-request",
+      "method": "POST",
+      "path": "/api/v1/control/communications/sms",
+      "clientId": "codestra-communication",
+      "scope": "communication.sms.request",
+      "externalEffect": true
+    },
+    {
+      "name": "codestra-marketing-campaign-request",
+      "method": "POST",
+      "path": "/api/v1/control/marketing/campaigns",
+      "clientId": "codestra-marketing",
+      "scope": "marketing.campaign.request",
+      "externalEffect": true
+    },
+    {
+      "name": "codestra-odoo-event-publish",
+      "method": "POST",
+      "path": "/api/v1/odoo/events",
+      "clientId": "odoo-integration",
+      "scope": "odoo.events.publish",
+      "externalEffect": false
+    },
+    {
+      "name": "codestra-social-publication-request",
+      "method": "POST",
+      "path": "/api/v1/control/social/publications",
+      "clientId": "codestra-social",
+      "scope": "social.publish.request",
+      "externalEffect": true
+    }
+  ],
+  "legacySharedKeyRoutes": [
+    "/v1/crm",
+    "/v1/email",
+    "/v1/sms",
+    "/v1/sms/dlr/telnexa",
+    "/v1/webhooks"
+  ],
+  "legacyRetirement": {
+    "state": "BLOCKED_PENDING_CONSUMER_MIGRATION",
+    "runtimeDeletionAuthorized": false,
+    "acceptance": "zero runtime consumers and reviewed replacement ownership"
+  }
+}

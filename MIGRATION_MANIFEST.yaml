@@ -38,6 +38,9 @@ files:
 - path: config/kong-n8n-editor-routes.json
   sha256: 650d9f88aa88fe1e27f6fb116ea6a8155efd4f36be8c5ea23d408703d0e1ae8c
   size: 3727
+- path: config/kong-provider-control-routes.v1.json
+  sha256: a85b01190d4ed98f395b37ca6c125fc6ceb5eb4f1ea2a27105f971e45c650d7e
+  size: 2823
 - path: config/marketing-stage4-routes.yaml
   sha256: d03766281ac015edb9d22949e8d91ea3286d4e895a8dc520dd97c354c8007d40
   size: 1063
@@ -92,6 +95,9 @@ files:
 - path: docs/MARKETING_EDGE_CONTRACT.md
   sha256: 72d1bc657556e32f8bfecdb9a20a90dbb62a131805170db1109103f98c2d0c3b
   size: 909
+- path: docs/PROVIDER_CONTROL_SERVICE_IDENTITY.md
+  sha256: 15fe8056aaee9f2983aef798177dbd7953512fa04d0b787aa05f21f907070293
+  size: 1188
 - path: docs/migration/from-codestra-production-platform.md
   sha256: d60890efc390f77f8ec93c92df157efb50e623af5b13b451470aba50145ae577
   size: 589
@@ -251,6 +257,9 @@ files:
 - path: scripts/validate_marketing_routes.py
   sha256: 30744bbea3b8d9aa03f1f60c685375ac76a25c0e7210c460849606d7ff54f67d
   size: 1313
+- path: scripts/validate_provider_control_routes.py
+  sha256: 4d1023ae0b53bdb0b76e5a0d9e435104066701d6250270e07cd21fa3700ca664
+  size: 4635
 - path: tests/test_community_n8n_egress.py
   sha256: a189aa86cab419b91e420472d72624aab6bf540a9ab653a4a8c9a4cf1b9069ad
   size: 10355
@@ -270,8 +279,8 @@ files:
   sha256: 46c0924866d66145dd19ed7176503a4edbaab0c2b9efc4ab0903ae4bc499ab98
   size: 5909
 - path: tests/test_kong_route_authority_hardening.py
-  sha256: 42e7db7370a5ec1b5079ada82f42756fbd23d4651ba578e4b66c0e1e0df15c99
-  size: 21630
+  sha256: ff3a5723d33212eb5e1df46bfff82c328f31379fe7e577dd95a5e24cfa8135dc
+  size: 23856
 - path: tests/test_n8n_production_route_probe.py
   sha256: 1998e2b12976bd381baedb27489b813846534b7906b6864beab6d495783fcc40
   size: 767
@@ -285,7 +294,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 68a9051432ed839167ecf161bd20b48c81f9c72c7e1f09c6e1c3190ed355a5df
+manifest_generation_id: 380f4bd7635cf3e41f616f0d6b859edf64eab00713ec935d83d6697159963b58
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
