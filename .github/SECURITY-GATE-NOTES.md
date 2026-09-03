@@ -8,6 +8,11 @@ for inspection. This avoids treating an unavailable GitHub upload endpoint as a
 successful scan while preserving Gitleaks, dependency audit, Trivy, and SBOM
 gates.
 
+The local transport grants only `actions: read` plus `contents: read`, writes
+SARIF below the checked-out workspace, and uploads only that bounded evidence.
+It does not grant code, release, package, deployment, environment, or runtime
+write permission.
+
 This file is operational documentation only. It is outside the Kong migration
 authority inventory and does not change routes, plugins, services, consumers,
 upstreams, images, runtime state, or traffic.
