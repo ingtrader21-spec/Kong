@@ -61,6 +61,7 @@ docker exec -i "$db_name" pg_restore -U kong -d kong \
 
 kong_inventory() {
   local origin="$1" collection="$2" next page records
+  local -A seen=()
   next="$origin/$collection?size=1000"
   records="$(mktemp "$work_dir/.${collection}.XXXXXX")"
   while [[ -n "$next" ]]; do
@@ -69,6 +70,11 @@ kong_inventory() {
       /*) next="$origin$next" ;;
       *) echo "unsafe Kong pagination URL: $next" >&2; return 1 ;;
     esac
+    if [[ -n "${seen[$next]:-}" ]]; then
+      echo "Kong pagination loop detected: $next" >&2
+      return 1
+    fi
+    seen["$next"]=1
     page="$(curl -fsS "$next")"
     jq -c '.data[] | {id, name}' <<<"$page" >>"$records"
     next="$(jq -r '.next // empty' <<<"$page")"
