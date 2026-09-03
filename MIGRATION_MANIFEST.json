@@ -47,8 +47,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "ddd76dac882d7cd7e4087a15d39870466a31db4a1ea5f34077d3d073bd285bb9",
-      "size": 1668
+      "sha256": "fe3a63d44add128b5c7d4e4f0227235eb9ad98d5e0c85ecbdaa2117a023de979",
+      "size": 3661
     },
     {
       "path": "SECURITY.md",
@@ -171,9 +171,19 @@
       "size": 2609
     },
     {
+      "path": "deploy/kong/compose.kong.yaml",
+      "sha256": "30bab49b1837caf7bf65969ee516d7b43fa25e0f13c26e5456ac3d8217317e0a",
+      "size": 4917
+    },
+    {
       "path": "deploy/kong/control-plane.yml",
-      "sha256": "726fe0bb011ad14ef561804db76d91a254da05fbca473c8c73b208d00dbc2920",
-      "size": 8276
+      "sha256": "6b411b299061d5d437be95ce2f8cf6c5d01a90909f2096106edc52066f308bf3",
+      "size": 12716
+    },
+    {
+      "path": "deploy/kong/kong.conf.example",
+      "sha256": "fc7a717f43b55e4dc19de6d3a0dc5f04adde698cce9b65055d5dc00952d18ff8",
+      "size": 4276
     },
     {
       "path": "deploy/kong/observability.env.example",
@@ -181,9 +191,14 @@
       "size": 329
     },
     {
+      "path": "deploy/kong/runtime.env.example",
+      "sha256": "25626843913f7b6ee482ba0a7c097829acdc39057a42d40caf292441a16d0ee2",
+      "size": 2381
+    },
+    {
       "path": "deploy/kong/scope-policy.lua",
-      "sha256": "ac0bcced3a0aaa3c08046dbac3fd074cab6a0b478459d14ac86c6c412eb8a42c",
-      "size": 3198
+      "sha256": "45620478af72076e36997f5e641e82b720864556e948cd125db6ba2a6a1f3513",
+      "size": 5998
     },
     {
       "path": "docs/MARKETING-PLATFORM-EDGE-RESPONSIBILITIES.md",
@@ -517,8 +532,8 @@
     },
     {
       "path": "tests/test_kong_route_authority_hardening.py",
-      "sha256": "ff3a5723d33212eb5e1df46bfff82c328f31379fe7e577dd95a5e24cfa8135dc",
-      "size": 23856
+      "sha256": "06db521bb05a2411939669c187343b62776dc7f9a1f39ea06687aad5d06f0e20",
+      "size": 26505
     },
     {
       "path": "tests/test_n8n_production_route_probe.py",
@@ -552,7 +567,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "3b6b38558038998bed602154962defbd65e924da0f3eda4ac2f9ad0c080c4aa0",
+  "manifest_generation_id": "bd562d830807c5192edcd8c33180b1d4319452cfeca80717b19e905a6459380b",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
