@@ -15,8 +15,8 @@ files:
   sha256: a7d47ab20fb2da8ad3263331480d8ee408ea7e7203bceb711de45d53f0d47bc6
   size: 1464
 - path: .github/workflows/security.yml
-  sha256: d02a6624049d6e4962e4330b3772c4cc6c448a4a1aeabe19ecc531c8281e1574
-  size: 2177
+  sha256: 48e53653f386cef82108f6f640b5bae5264c4f62a115e49073862e460d809f77
+  size: 4562
 - path: .github/workflows/server-drift.yml
   sha256: 863fe725259224a3ebff8f53f517a68986cdde6a08052b229dfbf6072139413e
   size: 629
@@ -333,7 +333,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 38976c641e5c4644c4517af110e9428a69ccf7c7389f11144c2596262ef4892e
+manifest_generation_id: 5ab0c30e872534d5a274cbee73261d2f29ded8253dc72d246f91d28e58339793
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
