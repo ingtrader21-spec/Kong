@@ -28,6 +28,8 @@ def test_restore_is_isolated_and_never_targets_production():
         assert f"restored_{topology}" in value
     assert "kong_inventory()" in value
     assert "while [[ -n \"$next\" ]]" in value
+    assert "Kong pagination loop detected" in value
+    assert '"$origin"/*)' in value
     assert "sha256sum" in value
     assert "restored_services_inventory" in value
     assert "?size=1000 | jq '.data|length'" not in value
