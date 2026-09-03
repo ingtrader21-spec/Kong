@@ -23,7 +23,7 @@ MANIFEST_ARTIFACTS = {YAML_MANIFEST, JSON_MANIFEST}
 AUTHORITY_ROOTS = (
     ".github/workflows", "config", "deploy", "docs", "operations", "scripts", "tests", "tools"
 )
-AUTHORITY_FILES = {".gitignore", "README.md", "SECURITY.md", "pytest.ini"}
+AUTHORITY_FILES = {".gitignore", "README.md", "SECURITY.md", "pytest.ini", "AUTOMATED_PRODUCTION_GATES.md"}
 EXCLUDED_PARTS = {".git", "__pycache__", ".pytest_cache"}
 EXCLUDED_SUFFIXES = {".pyc", ".pyo", ".swp", ".tmp", "~"}
 LOCK_NAME = ".migration-manifests.lock"

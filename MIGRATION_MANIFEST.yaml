@@ -11,6 +11,9 @@ files:
 - path: .gitignore
   sha256: 8c06027889bb245680b8a248468504a51ff8654fc6c800ea9ebd9f54213ddf9d
   size: 214
+- path: AUTOMATED_PRODUCTION_GATES.md
+  sha256: 2d0c7c1832b8d8e6b4af11998241ebe71702d2cd7dfbb2473d335d68ec45b14e
+  size: 1039
 - path: README.md
   sha256: ddd76dac882d7cd7e4087a15d39870466a31db4a1ea5f34077d3d073bd285bb9
   size: 1668
@@ -288,13 +291,13 @@ files:
   sha256: 34198ab171d17b171ba0008267be5eb30cef466f91ccc4ca25119557581aa767
   size: 2656
 - path: tools/generate_migration_manifests.py
-  sha256: 0559c486feeff5a6bdb10e304f86b19f49676e98b13f055252c4cc38c9ff5553
-  size: 21341
+  sha256: ae6114fada0b8bc68803edba8e8c116aeb8972b89fa028f48557eabbc1d3821e
+  size: 21374
 - path: tools/verify_migration_manifest.py
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 380f4bd7635cf3e41f616f0d6b859edf64eab00713ec935d83d6697159963b58
+manifest_generation_id: c2aa4513af46e0de465b40b0cfb94d8e786dd55ea030422e0bc73aaa9f674b00
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
