@@ -118,8 +118,71 @@ def test_campaign_reconciler_validates_manifest_consumer_identity():
 def _inline_scope_policy() -> str:
     document = yaml.safe_load(CONTROL_PLANE_PATH.read_text())
     plugins = document["services"][0]["plugins"]
-    pre_function = next(plugin for plugin in plugins if plugin["name"] == "pre-function")
-    return pre_function["config"]["access"][0].strip()
+    post_function = next(plugin for plugin in plugins if plugin["name"] == "post-function")
+    return post_function["config"]["access"][0].strip()
+
+
+def test_control_plane_scope_policy_runs_after_authentication():
+    """pre-function has priority 1000000 and executes before every auth plugin.
+
+    The policy reads verified claims, so attaching it there would leave it with
+    no credential and no claims on every request. post-function (priority -1000)
+    is the only serverless phase that observes the result of openid-connect.
+    """
+    document = yaml.safe_load(CONTROL_PLANE_PATH.read_text())
+    names = {plugin["name"] for plugin in document["services"][0]["plugins"]}
+    assert "post-function" in names
+    assert "pre-function" not in names
+
+
+def test_control_plane_scope_policy_uses_sandbox_safe_primitives():
+    """os.getenv is absent from Kong's Lua sandbox (only clock/date/difftime/time).
+
+    Reading the gateway secret through the env vault keeps untrusted_lua on
+    `sandbox`; os.getenv would force `untrusted_lua = on`, disabling the sandbox
+    for every serverless function on the node.
+    """
+    policy = SCOPE_POLICY_PATH.read_text()
+    code = "\n".join(
+        line for line in policy.splitlines() if not line.lstrip().startswith("--")
+    )
+    assert "os.getenv" not in code
+    assert 'kong.vault.get("{vault://env/kong-control-plane-gateway-secret}")' in code
+
+
+def test_control_plane_scope_policy_requires_a_verified_credential():
+    """The policy decodes the bearer token itself, so it must first prove that an
+    authentication plugin accepted the request."""
+    policy = SCOPE_POLICY_PATH.read_text()
+    guard = policy.index("kong.client.get_credential()")
+    claims = policy.index("local function verified_claims()")
+    assert guard < claims
+    assert 'error="unauthenticated"' in policy
+
+
+def test_control_plane_never_inherits_client_supplied_identity_headers():
+    policy = SCOPE_POLICY_PATH.read_text()
+    for header in (
+        "X-Authenticated-Client",
+        "X-Authenticated-Tenant",
+        "X-Authenticated-Role",
+        "X-Codestra-Gateway-Secret",
+    ):
+        assert header in policy
+    assert "kong.service.request.clear_header(name)" in policy
+    assert policy.index("clear_header(name)") < policy.index(
+        'kong.service.request.set_header("X-Authenticated-Client"'
+    )
+
+
+def test_control_plane_rate_limit_counts_across_every_node():
+    document = yaml.safe_load(CONTROL_PLANE_PATH.read_text())
+    plugins = {p["name"]: p for p in document["services"][0]["plugins"]}
+    config = plugins["rate-limiting"]["config"]
+    assert config["policy"] == "redis"
+    assert config["fault_tolerant"] is False
+    assert config["redis"]["port"] == 6379
+    assert config["redis"]["password"].startswith("{vault://env/")
 
 
 def test_public_route_manifest_disables_legacy_and_name_only_trust():
