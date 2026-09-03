@@ -6,11 +6,11 @@ files:
   sha256: 342851089c9e14a4a48f709c1e40dffee97f003efd473ab9cbc7733c1bb62353
   size: 1936
 - path: .github/workflows/marketing-stage5-certification.yml
-  sha256: bdb44561e90bc0b8a897039018eed25aebbb96c793ae64bb66b81bb4fcc7d663
-  size: 1159
+  sha256: e4b89f1903e190a767f95bf8a6dc0b1e0719c3aa69f382617a12b7d086565e49
+  size: 1737
 - path: .github/workflows/release.yml
-  sha256: a7d47ab20fb2da8ad3263331480d8ee408ea7e7203bceb711de45d53f0d47bc6
-  size: 1464
+  sha256: fc3f7960aae49a24e487ef33e2cff992e9267dc97576321bff69756d0896cd44
+  size: 6180
 - path: .github/workflows/security.yml
   sha256: 6f5b172ee32bf6f358bd6ea876eae2c2f1c71b771dc0b5192fd8c6fa9505f6cf
   size: 4569
@@ -84,8 +84,8 @@ files:
   sha256: 9a7989794835df300305668cc65a0874a4c9770fc52346330c4a9d86fa8fa4a4
   size: 4354
 - path: deploy/kong-production-standby/compose.standby.yaml
-  sha256: 9b085f0bc91819cd524008f76e0c802a9e56b644d1d80c1b9b19a63ff2614597
-  size: 1285
+  sha256: 4e9fa3e62ffee30f62a63796cca2ae08269ddbb5955570d32a967f1ad9e6abb8
+  size: 1543
 - path: deploy/kong-production-standby/identity-registry/001_certifier_scopes.sql
   sha256: 018ce9854338bad3a883e0a82c5a2adb4632668b89daf3e1b5965b2053ad9fe0
   size: 361
@@ -318,19 +318,19 @@ files:
   sha256: 34198ab171d17b171ba0008267be5eb30cef466f91ccc4ca25119557581aa767
   size: 2656
 - path: tests/test_release_governance.py
-  sha256: 44669324390a5e9364f595aa46c9d03e149848688b75cca0197a6701394b7e5a
-  size: 1157
+  sha256: a4da37a3cc942feb5f1ab3854061a5404320e1157c875ccd1977b4df4933103f
+  size: 2316
 - path: tools/generate_migration_manifests.py
   sha256: 0559c486feeff5a6bdb10e304f86b19f49676e98b13f055252c4cc38c9ff5553
   size: 21341
 - path: tools/generate_release_manifest.py
-  sha256: a348fe1c377d6bf9d9509c9fae13ece02b3df3101a881fe3d9905519d194cc51
-  size: 2559
+  sha256: 9e639ed69c3c9d1078f67bfc2eb81623562015035bf5891abef7bbc987c7d1b8
+  size: 3778
 - path: tools/verify_migration_manifest.py
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 1cf580b9bd8ceaafb37927cdef0502f3eb3d9d9d796cb8fe63ee6f6b43f4464d
+manifest_generation_id: 3b6b38558038998bed602154962defbd65e924da0f3eda4ac2f9ad0c080c4aa0
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
