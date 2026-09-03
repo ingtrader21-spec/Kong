@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   security:
@@ -17,6 +16,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Scan Git history for secrets
         run: |
           GITLEAKS_VERSION=8.30.1
@@ -35,8 +35,63 @@ jobs:
         uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938
         with:
           languages: python
-      - name: Analyze with CodeQL
+      - name: Analyze locally with CodeQL
         uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938
+        with:
+          output: ../codeql-results
+          upload: never
+          upload-database: false
+          wait-for-processing: false
+      - name: Enforce local CodeQL security findings
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          paths = sorted(Path("../codeql-results").glob("*.sarif"))
+          if not paths:
+              raise SystemExit("CodeQL produced no SARIF evidence")
+          blocking = []
+          result_count = 0
+          for path in paths:
+              document = json.loads(path.read_text())
+              for run in document.get("runs", []):
+                  rules = {
+                      rule.get("id"): rule
+                      for rule in run.get("tool", {}).get("driver", {}).get("rules", [])
+                  }
+                  for result in run.get("results", []):
+                      result_count += 1
+                      rule_id = result.get("ruleId", "unknown")
+                      rule = rules.get(rule_id, {})
+                      properties = rule.get("properties", {})
+                      raw_severity = properties.get("security-severity", "0")
+                      try:
+                          security_severity = float(raw_severity)
+                      except (TypeError, ValueError):
+                          security_severity = 0.0
+                      level = result.get("level", "warning")
+                      if security_severity >= 7.0 or level == "error":
+                          blocking.append(
+                              {
+                                  "rule": rule_id,
+                                  "level": level,
+                                  "security_severity": security_severity,
+                              }
+                          )
+          print(f"CODEQL_RESULTS={result_count}")
+          print(f"CODEQL_BLOCKING_FINDINGS={len(blocking)}")
+          if blocking:
+              print(json.dumps(blocking, sort_keys=True, indent=2))
+              raise SystemExit(1)
+          PY
+      - name: Upload local CodeQL evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: kong-codeql-sarif
+          path: ../codeql-results/*.sarif
+          if-no-files-found: error
       - name: Scan filesystem and container definitions
         uses: aquasecurity/trivy-action@d2a0b60797ff03db6132bd4e2b293f9b37081297
         with:
@@ -56,3 +111,4 @@ jobs:
         with:
           name: kong-source-sbom
           path: kong-source.spdx.json
+          if-no-files-found: error
