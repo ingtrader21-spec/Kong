@@ -7,8 +7,8 @@
     },
     {
       "path": ".github/workflows/manifest-sync.yml",
-      "sha256": "288a2a21335bb2f8d9dd67617618495ea4b20785006e49c4fb72a7018e4c994c",
-      "size": 2208
+      "sha256": "342851089c9e14a4a48f709c1e40dffee97f003efd473ab9cbc7733c1bb62353",
+      "size": 1936
     },
     {
       "path": ".github/workflows/marketing-stage5-certification.yml",
@@ -552,7 +552,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "1ad1bb8461df2357b4bd1ae6d49b7a090f480f2e68e9a20786d43ac141e70a4c",
+  "manifest_generation_id": "4eb0e8191cf7567feb7987a17451d8055ab0a57f7ef5916305d28c09f46f5301",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
