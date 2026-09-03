@@ -1,0 +1,69 @@
+name: Apply validated PR 44 manifest fix
+
+on:
+  push:
+    branches:
+      - chatgpt/pr44-validation-20260903
+    paths:
+      - .github/workflows/apply-pr44-manifest-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      TARGET_BRANCH: automation/server65-no-human-review
+      EXPECTED_TARGET_HEAD: 667818ea863bf664d76c22d2f400860af846d3f1
+    steps:
+      - name: Check out exact target branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 1
+      - name: Verify expected head
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_TARGET_HEAD"
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - name: Install generator dependency
+        run: python -m pip install 'PyYAML==6.0.3'
+      - name: Add policy to immutable authority inventory
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('tools/generate_migration_manifests.py')
+          value = path.read_text()
+          old = 'AUTHORITY_FILES = {".gitignore", "README.md", "SECURITY.md", "pytest.ini"}'
+          new = 'AUTHORITY_FILES = {".gitignore", "README.md", "SECURITY.md", "pytest.ini", "AUTOMATED_PRODUCTION_GATES.md"}'
+          if value.count(old) != 1:
+              raise SystemExit('authority file declaration changed unexpectedly')
+          path.write_text(value.replace(old, new))
+          PY
+          python tools/generate_migration_manifests.py
+          python tools/generate_migration_manifests.py --check
+          python tools/verify_migration_manifest.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('MIGRATION_MANIFEST.json').read_text())
+          serialized = json.dumps(data, sort_keys=True)
+          assert 'AUTOMATED_PRODUCTION_GATES.md' in serialized
+          PY
+          git diff --check
+      - name: Run focused authority tests
+        run: |
+          python -m pytest -q tests/test_migration_manifest.py tests/test_migration_manifest_transaction.py || \
+          python -m pytest -q tests -k 'migration_manifest or authority'
+      - name: Commit and push exact fix
+        run: |
+          set -Eeuo pipefail
+          git config user.name "Ralph Appolon"
+          git config user.email "appolon1908@gmail.com"
+          git add tools/generate_migration_manifests.py MIGRATION_MANIFEST.yaml MIGRATION_MANIFEST.json
+          git diff --cached --check
+          git commit -m "fix(governance): inventory automated production gate policy"
+          git push origin "HEAD:$TARGET_BRANCH"
