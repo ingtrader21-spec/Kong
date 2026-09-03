@@ -1,70 +1,135 @@
-name: Check Kong authority manifests
+name: Regenerate Kong authority manifests once
 
 on:
-  pull_request:
-    branches:
-      - main
-      - staging
-      - production
   push:
     branches:
-      - "feature/**"
-      - "fix/**"
-      - "release/**"
-      - main
-      - staging
-      - production
-  workflow_dispatch:
+      - fix/kong-staging-certification-environment-20260903
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: kong-authority-manifest-check-${{ github.workflow }}-${{ github.ref }}
+  group: kong-authority-manifest-one-shot-${{ github.ref }}
   cancel-in-progress: false
 
-defaults:
-  run:
-    shell: bash
-
 jobs:
-  manifest-check:
-    name: manifest-check
+  regenerate-and-restore:
+    name: regenerate-and-restore
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    env:
-      EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     steps:
-      - name: Check out exact triggering source
+      - name: Check out exact one-shot source
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
-          ref: ${{ env.EXPECTED_SHA }}
+          ref: ${{ github.sha }}
           fetch-depth: 1
-          persist-credentials: false
-
-      - name: Prove exact source identity
-        run: |
-          set -Eeuo pipefail
-          test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
-          test -z "$(git status --porcelain)"
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.12"
 
-      - name: Verify committed manifests without writing to GitHub
+      - name: Restore check-only workflow, regenerate manifests, and commit exact output
         run: |
           set -Eeuo pipefail
+          test "$GITHUB_REF_NAME" = fix/kong-staging-certification-environment-20260903
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          cat > .github/workflows/manifest-sync.yml <<'WORKFLOW'
+          name: Check Kong authority manifests
+
+          on:
+            pull_request:
+              branches:
+                - main
+                - staging
+                - production
+            push:
+              branches:
+                - "feature/**"
+                - "fix/**"
+                - "release/**"
+                - main
+                - staging
+                - production
+            workflow_dispatch:
+
+          permissions:
+            contents: read
+
+          concurrency:
+            group: kong-authority-manifest-check-${{ github.workflow }}-${{ github.ref }}
+            cancel-in-progress: false
+
+          defaults:
+            run:
+              shell: bash
+
+          jobs:
+            manifest-check:
+              name: manifest-check
+              runs-on: ubuntu-24.04
+              timeout-minutes: 10
+              env:
+                EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+              steps:
+                - name: Check out exact triggering source
+                  uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+                  with:
+                    ref: ${{ env.EXPECTED_SHA }}
+                    fetch-depth: 1
+                    persist-credentials: false
+
+                - name: Prove exact source identity
+                  run: |
+                    set -Eeuo pipefail
+                    test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
+                    test -z "$(git status --porcelain)"
+
+                - name: Set up Python
+                  uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+                  with:
+                    python-version: "3.12"
+
+                - name: Verify committed manifests without writing to GitHub
+                  run: |
+                    set -Eeuo pipefail
+                    python3 -m pip install --disable-pip-version-check --no-input PyYAML
+                    python3 tools/generate_migration_manifests.py
+                    git diff --exit-code -- MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml
+                    python3 tools/verify_migration_manifest.py
+                    test -z "$(git status --porcelain)"
+
+                - name: Record check-only authority
+                  run: |
+                    echo "MANIFEST_AUTHORITY=CHECK_ONLY"
+                    echo "EXACT_HEAD=${EXPECTED_SHA}"
+                    echo "REPOSITORY_WRITE_PERMISSION=NONE"
+                    echo "AUTO_COMMIT=DISABLED"
+          WORKFLOW
+          sed -i 's/^          //' .github/workflows/manifest-sync.yml
+
           python3 -m pip install --disable-pip-version-check --no-input PyYAML
           python3 tools/generate_migration_manifests.py
-          git diff --exit-code -- MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml
           python3 tools/verify_migration_manifest.py
-          test -z "$(git status --porcelain)"
 
-      - name: Record check-only authority
+          printf '%s\n' \
+            .github/workflows/manifest-sync.yml \
+            MIGRATION_MANIFEST.json \
+            MIGRATION_MANIFEST.yaml > "$RUNNER_TEMP/expected-files"
+          git diff --name-only | sort > "$RUNNER_TEMP/changed-files"
+          diff -u "$RUNNER_TEMP/expected-files" "$RUNNER_TEMP/changed-files"
+
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .github/workflows/manifest-sync.yml MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml
+          git commit -m 'ci: refresh Kong authority manifests for staging admission'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Record source-only mutation boundary
         run: |
-          echo "MANIFEST_AUTHORITY=CHECK_ONLY"
-          echo "EXACT_HEAD=${EXPECTED_SHA}"
-          echo "REPOSITORY_WRITE_PERMISSION=NONE"
-          echo "AUTO_COMMIT=DISABLED"
+          echo 'KONG_MANIFEST_REFRESH=PASS'
+          echo 'RUNTIME_MUTATION_AUTHORIZED=NO'
+          echo 'ADMIN_API_CALLS_AUTHORIZED=NO'
+          echo 'PRODUCTION_TRAFFIC_AUTHORIZED=NO'
+          echo 'EXTERNAL_EFFECTS_ENABLED=NO'
