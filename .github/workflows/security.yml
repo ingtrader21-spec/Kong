@@ -7,6 +7,7 @@ on:
     branches: [main, staging, production]
 
 permissions:
+  actions: read
   contents: read
 
 jobs:
@@ -38,7 +39,7 @@ jobs:
       - name: Analyze locally with CodeQL
         uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938
         with:
-          output: ../codeql-results
+          output: codeql-results
           upload: never
           upload-database: false
           wait-for-processing: false
@@ -48,7 +49,7 @@ jobs:
           import json
           from pathlib import Path
 
-          paths = sorted(Path("../codeql-results").glob("*.sarif"))
+          paths = sorted(Path("codeql-results").glob("*.sarif"))
           if not paths:
               raise SystemExit("CodeQL produced no SARIF evidence")
           blocking = []
@@ -90,7 +91,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: kong-codeql-sarif
-          path: ../codeql-results/*.sarif
+          path: codeql-results/*.sarif
           if-no-files-found: error
       - name: Scan filesystem and container definitions
         uses: aquasecurity/trivy-action@d2a0b60797ff03db6132bd4e2b293f9b37081297
