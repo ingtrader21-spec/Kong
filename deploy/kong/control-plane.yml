@@ -185,3 +185,13 @@ services:
                 return kong.response.exit(503,{error="gateway_identity_unavailable"})
               end
               kong.service.request.set_header("X-Codestra-Gateway-Secret",gateway_secret)
+plugins:
+  - name: prometheus
+    enabled: true
+    config:
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+      upstream_health_metrics: true
+      ai_metrics: false
+      per_consumer: false
