@@ -1,6 +1,16 @@
 {
   "files": [
     {
+      "path": ".github/workflows/kong-config.yml",
+      "sha256": "e0cde929258821281cf039f09bd0d050a42c4fbe067e3c2489e905df4f7f9a67",
+      "size": 1128
+    },
+    {
+      "path": ".github/workflows/manifest-sync.yml",
+      "sha256": "ab4b5b3d5e80be26f93a63c237031842ed8f90420dbe0a85877af60b978881b8",
+      "size": 1994
+    },
+    {
       "path": ".github/workflows/marketing-manifest-sync.yml",
       "sha256": "712cdd0aa4aca142da5859acc2ad5b28ff3063b584e1b1da32970e22885e7c2f",
       "size": 1823
@@ -11,9 +21,29 @@
       "size": 1159
     },
     {
+      "path": ".github/workflows/release.yml",
+      "sha256": "a7d47ab20fb2da8ad3263331480d8ee408ea7e7203bceb711de45d53f0d47bc6",
+      "size": 1464
+    },
+    {
+      "path": ".github/workflows/security.yml",
+      "sha256": "d02a6624049d6e4962e4330b3772c4cc6c448a4a1aeabe19ecc531c8281e1574",
+      "size": 2177
+    },
+    {
+      "path": ".github/workflows/server-drift.yml",
+      "sha256": "863fe725259224a3ebff8f53f517a68986cdde6a08052b229dfbf6072139413e",
+      "size": 629
+    },
+    {
+      "path": ".github/workflows/staging-certification.yml",
+      "sha256": "b4d22ee901e6fe8992b7d3f2b5b760d0f1017712467527f60119c9e87248f2bc",
+      "size": 1393
+    },
+    {
       "path": ".github/workflows/validate.yml",
-      "sha256": "01bec5e1b002ee8ba2194222d93c468d3b0d407c7d111c6fe3a753826d3b3e51",
-      "size": 5162
+      "sha256": "fc30f40877941df15cbf3c9eba28559a5e5a482c571371408b4713d6cdd814f0",
+      "size": 2184
     },
     {
       "path": ".gitignore",
@@ -87,8 +117,8 @@
     },
     {
       "path": "deploy/kong-production-standby/auth-middleware/Dockerfile",
-      "sha256": "56325ff0f7f4545b619471497399fddea18bb9b913bf33dab6c950acd74c7ee4",
-      "size": 589
+      "sha256": "1896751b6a7ca0e1494211ecb65d5354f9b7d02a30c0a25c0dc96bc5be4cebec",
+      "size": 563
     },
     {
       "path": "deploy/kong-production-standby/auth-middleware/app.py",
@@ -99,6 +129,11 @@
       "path": "deploy/kong-production-standby/auth-middleware/body_limit.py",
       "sha256": "d5a95c1fac2312a4ab0d76e0d54937321222bdd53aee03fdea922ac9a7e1d906",
       "size": 3917
+    },
+    {
+      "path": "deploy/kong-production-standby/auth-middleware/requirements.txt",
+      "sha256": "058a135d09c80f1152cfdbf734eb9726f27e762db1dd078db0323e2ad46bb9a6",
+      "size": 78
     },
     {
       "path": "deploy/kong-production-standby/auth-middleware/test_body_limit.py",
@@ -142,8 +177,13 @@
     },
     {
       "path": "deploy/kong/control-plane.yml",
-      "sha256": "56a9ffc4918c468953d5a2fa04d9e5d0438ca5d335cf405a0c2f76e86ee5d79b",
-      "size": 8040
+      "sha256": "726fe0bb011ad14ef561804db76d91a254da05fbca473c8c73b208d00dbc2920",
+      "size": 8276
+    },
+    {
+      "path": "deploy/kong/observability.env.example",
+      "sha256": "906d07f4a8e4a9a91d94639f7c4c69ea6d2a2dba6bb0831d222fd2075c2fbd9b",
+      "size": 329
     },
     {
       "path": "deploy/kong/scope-policy.lua",
@@ -166,9 +206,19 @@
       "size": 1188
     },
     {
+      "path": "docs/branch-governance.md",
+      "sha256": "31e29ac5b8b9583c26025f152c7846edb5183f6ac3b80aa6ed85d2312a63d42b",
+      "size": 1483
+    },
+    {
       "path": "docs/migration/from-codestra-production-platform.md",
       "sha256": "d60890efc390f77f8ec93c92df157efb50e623af5b13b451470aba50145ae577",
       "size": 589
+    },
+    {
+      "path": "docs/observability/prometheus.md",
+      "sha256": "237971310641ca06c84a3147abf558f59160a9f528e82a921ffe84dbcc7717ac",
+      "size": 2011
     },
     {
       "path": "operations/community-n8n/README.md",
@@ -317,8 +367,8 @@
     },
     {
       "path": "operations/kong-database/kong-database-restore-rehearsal.sh",
-      "sha256": "328a38afeae1dc546213db8a377e9deaa2fc4c28923254567579bfc2bbe572ea",
-      "size": 5394
+      "sha256": "37e36cc29cb69c6deb65153ccaf273448a7af9495a34e53fedd178c3bc4f852b",
+      "size": 5550
     },
     {
       "path": "operations/kong-database/kong-database.rules.yml",
@@ -452,8 +502,8 @@
     },
     {
       "path": "tests/test_kong_database_operations.py",
-      "sha256": "250603155faf3033a2171cae10eba8222fa4cb2ad4c800dcd42c14d438b924e4",
-      "size": 6697
+      "sha256": "b6f3c3cb3ee82c3965e84f3903a3c19c9eaef49aa2a272b8902cb3a77d4833d7",
+      "size": 6784
     },
     {
       "path": "tests/test_kong_n8n_control_plane.py",
@@ -464,6 +514,11 @@
       "path": "tests/test_kong_n8n_editor_route.py",
       "sha256": "46c0924866d66145dd19ed7176503a4edbaab0c2b9efc4ab0903ae4bc499ab98",
       "size": 5909
+    },
+    {
+      "path": "tests/test_kong_observability.py",
+      "sha256": "b97f461c54ae60e7258ee0aa30a17c1bb9e6d26a50851fcf81858dd8d59433ce",
+      "size": 1726
     },
     {
       "path": "tests/test_kong_route_authority_hardening.py",
@@ -481,9 +536,19 @@
       "size": 2656
     },
     {
+      "path": "tests/test_release_governance.py",
+      "sha256": "44669324390a5e9364f595aa46c9d03e149848688b75cca0197a6701394b7e5a",
+      "size": 1157
+    },
+    {
       "path": "tools/generate_migration_manifests.py",
       "sha256": "0559c486feeff5a6bdb10e304f86b19f49676e98b13f055252c4cc38c9ff5553",
       "size": 21341
+    },
+    {
+      "path": "tools/generate_release_manifest.py",
+      "sha256": "a348fe1c377d6bf9d9509c9fae13ece02b3df3101a881fe3d9905519d194cc51",
+      "size": 2559
     },
     {
       "path": "tools/verify_migration_manifest.py",
@@ -492,7 +557,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "380f4bd7635cf3e41f616f0d6b859edf64eab00713ec935d83d6697159963b58",
+  "manifest_generation_id": "38976c641e5c4644c4517af110e9428a69ccf7c7389f11144c2596262ef4892e",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
