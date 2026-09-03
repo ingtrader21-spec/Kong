@@ -2,8 +2,9 @@ name: Validate Kong source authority
 
 on:
   pull_request:
+    branches: [main, staging, production]
   push:
-    branches: [main]
+    branches: [main, staging, production]
 
 permissions:
   contents: read
@@ -12,7 +13,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
       - name: Install validation dependencies
         run: |
           sudo apt-get update
@@ -59,7 +60,9 @@ jobs:
             tests/test_kong_n8n_editor_route.py \
             tests/test_oidc_auth.py \
             tests/test_kong_database_operations.py \
-            tests/test_kong_change_authority.py
+            tests/test_kong_change_authority.py \
+            tests/test_release_governance.py \
+            tests/test_kong_observability.py
           pytest -q tests/test_community_n8n_egress.py
           python3 tools/generate_migration_manifests.py --check
           python3 tools/verify_migration_manifest.py
@@ -70,7 +73,7 @@ jobs:
     name: kong-config
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
       - name: Install config validators
         run: |
           python3 -m pip install --disable-pip-version-check PyYAML
@@ -101,7 +104,7 @@ jobs:
     name: security
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
       - name: Install security test dependencies
         run: python3 -m pip install --disable-pip-version-check pytest PyYAML
       - name: Enforce fail-closed security policy
@@ -114,5 +117,7 @@ jobs:
           pytest -q \
             tests/test_kong_route_authority_hardening.py \
             tests/test_kong_change_authority.py \
-            tests/test_kong_database_operations.py
+            tests/test_kong_database_operations.py \
+            tests/test_release_governance.py \
+            tests/test_kong_observability.py
           python3 tools/verify_migration_manifest.py
