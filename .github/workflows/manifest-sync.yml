@@ -1,4 +1,4 @@
-name: Export exact regenerated Kong authority files
+name: Regenerate Kong authority manifests once
 
 on:
   push:
@@ -6,15 +6,15 @@ on:
       - fix/kong-staging-certification-environment-20260903
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: kong-authority-manifest-export-${{ github.ref }}
+  group: kong-authority-manifest-regeneration-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  export:
-    name: export-regenerated-files
+  regenerate:
+    name: regenerate-manifests
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -23,49 +23,39 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 1
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.12"
 
-      - name: Restore final check-only workflow and regenerate exact manifests
-        env:
-          FINAL_WORKFLOW_BASE64: bmFtZTogQ2hlY2sgS29uZyBhdXRob3JpdHkgbWFuaWZlc3RzCgpvbjoKICBwdWxsX3JlcXVlc3Q6CiAgICBicmFuY2hlczoKICAgICAgLSBtYWluCiAgICAgIC0gc3RhZ2luZwogICAgICAtIHByb2R1Y3Rpb24KICBwdXNoOgogICAgYnJhbmNoZXM6CiAgICAgIC0gImZlYXR1cmUvKioiCiAgICAgIC0gImZpeC8qKiIKICAgICAgLSAicmVsZWFzZS8qKiIKICAgICAgLSBtYWluCiAgICAgIC0gc3RhZ2luZwogICAgICAtIHByb2R1Y3Rpb24KICB3b3JrZmxvd19kaXNwYXRjaDoKCnBlcm1pc3Npb25zOgogIGNvbnRlbnRzOiByZWFkCgpjb25jdXJyZW5jeToKICBncm91cDoga29uZy1hdXRob3JpdHktbWFuaWZlc3QtY2hlY2stJHt7IGdpdGh1Yi53b3JrZmxvdyB9fS0ke3sgZ2l0aHViLnJlZiB9fQogIGNhbmNlbC1pbi1wcm9ncmVzczogZmFsc2UKCmRlZmF1bHRzOgogIHJ1bjoKICAgIHNoZWxsOiBiYXNoCgpqb2JzOgogIG1hbmlmZXN0LWNoZWNrOgogICAgbmFtZTogbWFuaWZlc3QtY2hlY2sKICAgIHJ1bnMtb246IHVidW50dS0yNC4wNAogICAgdGltZW91dC1taW51dGVzOiAxMAogICAgZW52OgogICAgICBFWFBFQ1RFRF9TSEE6ICR7eyBnaXRodWIuZXZlbnRfbmFtZSA9PSAncHVsbF9yZXF1ZXN0JyAmJiBnaXRodWIuZXZlbnQucHVsbF9yZXF1ZXN0LmhlYWQuc2hhIHx8IGdpdGh1Yi5zaGEgfX0KICAgIHN0ZXBzOgogICAgICAtIG5hbWU6IENoZWNrIG91dCBleGFjdCB0cmlnZ2VyaW5nIHNvdXJjZQogICAgICAgIHVzZXM6IGFjdGlvbnMvY2hlY2tvdXRAZmJjNmYzOTkyZDI0Yjc5NmQ1YTA0OGZmMjczZjdmY2M0YTdiNmMwOQogICAgICAgIHdpdGg6CiAgICAgICAgICByZWY6ICR7eyBlbnYuRVhQRUNURURfU0hBIH19CiAgICAgICAgICBmZXRjaC1kZXB0aDogMQogICAgICAgICAgcGVyc2lzdC1jcmVkZW50aWFsczogZmFsc2UKCiAgICAgIC0gbmFtZTogUHJvdmUgZXhhY3Qgc291cmNlIGlkZW50aXR5CiAgICAgICAgcnVuOiB8CiAgICAgICAgICBzZXQgLUVldW8gcGlwZWZhaWwKICAgICAgICAgIHRlc3QgIiQoZ2l0IHJldi1wYXJzZSBIRUFEKSIgPSAiJHtFWFBFQ1RFRF9TSEF9IgogICAgICAgICAgdGVzdCAteiAiJChnaXQgc3RhdHVzIC0tcG9yY2VsYWluKSIKCiAgICAgIC0gbmFtZTogU2V0IHVwIFB5dGhvbgogICAgICAgIHVzZXM6IGFjdGlvbnMvc2V0dXAtcHl0aG9uQDVmZGEzYjk1YTRlYTkxMjk5YTM0ZTg5NDU4M2MzODYyMTUzZTRiOTcKICAgICAgICB3aXRoOgogICAgICAgICAgcHl0aG9uLXZlcnNpb246ICIzLjEyIgoKICAgICAgLSBuYW1lOiBWZXJpZnkgY29tbWl0dGVkIG1hbmlmZXN0cyB3aXRob3V0IHdyaXRpbmcgdG8gR2l0SHViCiAgICAgICAgcnVuOiB8CiAgICAgICAgICBzZXQgLUVldW8gcGlwZWZhaWwKICAgICAgICAgIHB5dGhvbjMgLW0gcGlwIGluc3RhbGwgLS1kaXNhYmxlLXBpcC12ZXJzaW9uLWNoZWNrIC0tbm8taW5wdXQgUHlZQU1MCiAgICAgICAgICBweXRob24zIHRvb2xzL2dlbmVyYXRlX21pZ3JhdGlvbl9tYW5pZmVzdHMucHkKICAgICAgICAgIGdpdCBkaWZmIC0tZXhpdC1jb2RlIC0tIE1JR1JBVElPTl9NQU5JRkVTVC5qc29uIE1JR1JBVElPTl9NQU5JRkVTVC55YW1sCiAgICAgICAgICBweXRob24zIHRvb2xzL3ZlcmlmeV9taWdyYXRpb25fbWFuaWZlc3QucHkKICAgICAgICAgIHRlc3QgLXogIiQoZ2l0IHN0YXR1cyAtLXBvcmNlbGFpbikiCgogICAgICAtIG5hbWU6IFJlY29yZCBjaGVjay1vbmx5IGF1dGhvcml0eQogICAgICAgIHJ1bjogfAogICAgICAgICAgZWNobyAiTUFOSUZFU1RfQVVUSE9SSVRZPUNIRUNLX09OTFkiCiAgICAgICAgICBlY2hvICJFWEFDVF9IRUFEPSR7RVhQRUNURURfU0hBfSIKICAgICAgICAgIGVjaG8gIlJFUE9TSVRPUllfV1JJVEVfUEVSTUlTU0lPTj1OT05FIgogICAgICAgICAgZWNobyAiQVVUT19DT01NSVQ9RElTQUJMRUQiCg==
+      - name: Regenerate and commit only authority manifests
         run: |
           set -Eeuo pipefail
           test "$GITHUB_REF_NAME" = fix/kong-staging-certification-environment-20260903
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          printf '%s' "$FINAL_WORKFLOW_BASE64" | base64 --decode > .github/workflows/manifest-sync.yml
-          test "$(wc -c < .github/workflows/manifest-sync.yml)" -eq 1936
-          test "$(sha256sum .github/workflows/manifest-sync.yml | awk '{print $1}')" = 342851089c9e14a4a48f709c1e40dffee97f003efd473ab9cbc7733c1bb62353
-
           python3 -m pip install --disable-pip-version-check --no-input PyYAML
           python3 tools/generate_migration_manifests.py
           python3 tools/verify_migration_manifest.py
 
-          printf '%s\n' \
-            .github/workflows/manifest-sync.yml \
-            MIGRATION_MANIFEST.json \
-            MIGRATION_MANIFEST.yaml > "$RUNNER_TEMP/expected-files"
+          if git diff --quiet -- MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml; then
+            echo 'KONG_MANIFEST_REFRESH=ALREADY_CURRENT'
+            exit 0
+          fi
+
           git diff --name-only | sort > "$RUNNER_TEMP/changed-files"
+          printf '%s\n' MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml > "$RUNNER_TEMP/expected-files"
           diff -u "$RUNNER_TEMP/expected-files" "$RUNNER_TEMP/changed-files"
 
-      - name: Upload exact final files
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: kong-staging-admission-final-files-${{ github.sha }}
-          path: |
-            .github/workflows/manifest-sync.yml
-            MIGRATION_MANIFEST.json
-            MIGRATION_MANIFEST.yaml
-          if-no-files-found: error
-          retention-days: 1
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml
+          git commit -m 'ci: refresh Kong authority manifests for staging admission'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
-      - name: Record source-only export boundary
+      - name: Record source-only boundary
         run: |
-          echo 'KONG_MANIFEST_EXPORT=PASS'
           echo 'RUNTIME_MUTATION_AUTHORIZED=NO'
           echo 'ADMIN_API_CALLS_AUTHORIZED=NO'
           echo 'PRODUCTION_TRAFFIC_AUTHORIZED=NO'
