@@ -35,6 +35,7 @@ jobs:
           set -Eeuo pipefail
           test "$GITHUB_REF_NAME" = fix/kong-staging-certification-environment-20260903
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 -m pip install --disable-pip-version-check --no-input PyYAML
           python3 - <<'PY'
           from pathlib import Path
           import json
