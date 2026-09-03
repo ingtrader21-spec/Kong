@@ -10,32 +10,53 @@ permissions:
 
 jobs:
   staging-certification:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    environment: staging
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           fetch-depth: 0
       - name: Require candidate ancestry from main
         env:
-          EVENT_NAME: ${{ github.event_name }}
           HEAD_REF: ${{ github.head_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          set -Eeuo pipefail
           git fetch origin main --depth=100
-          if [[ "$EVENT_NAME" == pull_request ]]; then
-            test "$HEAD_REF" = main
-            test "$HEAD_SHA" = "$(git rev-parse origin/main)"
-          else
-            test "${GITHUB_REF_NAME}" = staging
-          fi
+          test "$HEAD_REF" = main
+          test "$HEAD_SHA" = "$(git rev-parse origin/main)"
       - name: Validate source authority without live mutation
         run: |
+          set -Eeuo pipefail
           python3 -m pip install --disable-pip-version-check pytest PyYAML
           pytest -q
           python3 tools/generate_migration_manifests.py --check
           python3 tools/verify_migration_manifest.py
-      - name: Declare live certification boundary
+      - name: Declare source-only promotion boundary
         run: |
-          echo 'This gate validates promotion provenance and source authority.'
-          echo 'Live staging acceptance remains a separately reviewed, read-only/no-provider-effects certification.'
+          echo 'This required PR gate validates promotion provenance and source authority only.'
+          echo 'It does not access the protected staging environment or mutate a runtime.'
+
+  protected-staging-dispatch:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - name: Require protected staging ref
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF_NAME" = staging
+      - name: Validate protected staging source authority
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check pytest PyYAML
+          pytest -q
+          python3 tools/generate_migration_manifests.py --check
+          python3 tools/verify_migration_manifest.py
+      - name: Declare protected runtime boundary
+        run: |
+          echo 'This protected dispatch validates the exact staging branch under the staging Environment.'
+          echo 'Any live staging deployment or acceptance remains a separately reviewed, read-only/no-provider-effects operation.'
