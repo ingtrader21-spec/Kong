@@ -3,8 +3,8 @@ files:
   sha256: e0cde929258821281cf039f09bd0d050a42c4fbe067e3c2489e905df4f7f9a67
   size: 1128
 - path: .github/workflows/manifest-sync.yml
-  sha256: 342851089c9e14a4a48f709c1e40dffee97f003efd473ab9cbc7733c1bb62353
-  size: 1936
+  sha256: 288a2a21335bb2f8d9dd67617618495ea4b20785006e49c4fb72a7018e4c994c
+  size: 2208
 - path: .github/workflows/marketing-stage5-certification.yml
   sha256: e4b89f1903e190a767f95bf8a6dc0b1e0719c3aa69f382617a12b7d086565e49
   size: 1737
@@ -18,8 +18,8 @@ files:
   sha256: 863fe725259224a3ebff8f53f517a68986cdde6a08052b229dfbf6072139413e
   size: 629
 - path: .github/workflows/staging-certification.yml
-  sha256: b4d22ee901e6fe8992b7d3f2b5b760d0f1017712467527f60119c9e87248f2bc
-  size: 1393
+  sha256: ab6894c98e847258aabda18c37cbd577d9aa42b2b4ebeec7962356733646a4ed
+  size: 2229
 - path: .github/workflows/validate.yml
   sha256: fc30f40877941df15cbf3c9eba28559a5e5a482c571371408b4713d6cdd814f0
   size: 2184
@@ -330,7 +330,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 3b6b38558038998bed602154962defbd65e924da0f3eda4ac2f9ad0c080c4aa0
+manifest_generation_id: 1ad1bb8461df2357b4bd1ae6d49b7a090f480f2e68e9a20786d43ac141e70a4c
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
