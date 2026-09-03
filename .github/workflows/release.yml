@@ -1,39 +1,152 @@
-name: Generate production release evidence
+name: Generate immutable Kong release evidence
 
 on:
-  pull_request:
-    branches: [production]
   push:
-    branches: [production]
+    branches:
+      - main
+      - staging
+      - production
+  workflow_dispatch:
 
 permissions:
   contents: read
+  packages: write
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   release-evidence:
-    runs-on: ubuntu-latest
-    environment: production
+    name: release-evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EXPECTED_SHA: ${{ github.sha }}
+      KONG_IMAGE_REF: kong/kong-gateway:3.14.0.1-ubuntu
+      STANDBY_IMAGE_REPOSITORY: ghcr.io/appolon1908-hue/kong-standby-auth
+      CONFIGURED_STAGING_CERTIFICATION: ${{ vars.STAGING_CERTIFICATION }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
-      - name: Generate immutable release evidence
+      - name: Check out exact protected source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ env.EXPECTED_SHA }}
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Prove exact source and protected branch
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
+          case "${GITHUB_REF_NAME}" in
+            main|staging|production) ;;
+            *) echo "release evidence refuses non-environment branch ${GITHUB_REF_NAME}" >&2; exit 1 ;;
+          esac
+          test -z "$(git status --porcelain)"
+
+      - name: Verify protected commit identity
+        id: commit
         env:
           GH_TOKEN: ${{ github.token }}
-          KONG_IMAGE_DIGEST: ${{ vars.KONG_IMAGE_DIGEST }}
-          STAGING_CERTIFICATION: ${{ vars.STAGING_CERTIFICATION }}
-          ROLLBACK_SOURCE_SHA: ${{ vars.ROLLBACK_SOURCE_SHA }}
         run: |
-          python3 -m pip install --disable-pip-version-check PyYAML
-          verification="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}" --jq '.commit.verification.verified')"
-          test "$verification" = true
+          set -Eeuo pipefail
+          verification="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${EXPECTED_SHA}" --jq '.commit.verification.verified')"
+          test "${verification}" = true
+          echo "verification=VERIFIED" >> "${GITHUB_OUTPUT}"
+          rollback_source_sha="$(git rev-parse HEAD^1)"
+          [[ "${rollback_source_sha}" =~ ^[0-9a-f]{40}$ ]]
+          echo "rollback_source_sha=${rollback_source_sha}" >> "${GITHUB_OUTPUT}"
+
+      - name: Authenticate to GHCR for immutable candidate publication
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          printf '%s' "${GHCR_TOKEN}" | docker login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
+
+      - name: Build and publish exact standby auth image
+        id: standby
+        run: |
+          set -Eeuo pipefail
+          builder="kong-release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          docker buildx create --name "${builder}" --driver docker-container --use
+          trap 'docker buildx rm "${builder}" >/dev/null 2>&1 || true' EXIT
+          docker buildx inspect --bootstrap
+
+          tag="${STANDBY_IMAGE_REPOSITORY}:sha-${EXPECTED_SHA}"
+          docker buildx build \
+            --file deploy/kong-production-standby/auth-middleware/Dockerfile \
+            --platform linux/amd64 \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${EXPECTED_SHA}" \
+            --label "org.opencontainers.image.version=${EXPECTED_SHA}" \
+            --provenance=mode=max \
+            --sbom=true \
+            --tag "${tag}" \
+            --metadata-file "${RUNNER_TEMP}/standby-build-metadata.json" \
+            --push \
+            deploy/kong-production-standby/auth-middleware
+
+          digest="$(jq -r '."containerimage.digest"' "${RUNNER_TEMP}/standby-build-metadata.json")"
+          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+          printf '%s@%s\n' "${STANDBY_IMAGE_REPOSITORY}" "${digest}" > "${RUNNER_TEMP}/standby-image.txt"
+
+      - name: Resolve the exact upstream Kong image digest
+        id: kong
+        run: |
+          set -Eeuo pipefail
+          docker buildx imagetools inspect "${KONG_IMAGE_REF}" > "${RUNNER_TEMP}/kong-image-inspect.txt"
+          digest="$(awk '$1 == "Digest:" {print $2; exit}' "${RUNNER_TEMP}/kong-image-inspect.txt")"
+          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+          printf '%s@%s\n' "${KONG_IMAGE_REF}" "${digest}" > "${RUNNER_TEMP}/kong-image.txt"
+
+      - name: Generate stage-aware immutable release manifest
+        env:
+          COMMIT_VERIFICATION: ${{ steps.commit.outputs.verification }}
+          ROLLBACK_SOURCE_SHA: ${{ steps.commit.outputs.rollback_source_sha }}
+          KONG_IMAGE_DIGEST: ${{ steps.kong.outputs.digest }}
+          STANDBY_AUTH_IMAGE_DIGEST: ${{ steps.standby.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input PyYAML
+          case "${GITHUB_REF_NAME}" in
+            main)
+              release_stage=protected-main-source-candidate
+              staging_certification=NOT_RUN_SOURCE_CANDIDATE
+              ;;
+            staging)
+              release_stage=staging-certified
+              staging_certification="${CONFIGURED_STAGING_CERTIFICATION}"
+              ;;
+            production)
+              release_stage=production
+              staging_certification="${CONFIGURED_STAGING_CERTIFICATION}"
+              ;;
+          esac
           python3 tools/generate_release_manifest.py \
-            --output release-manifest.json \
-            --commit-verification-status VERIFIED \
-            --kong-image-digest "${KONG_IMAGE_DIGEST:-UNRESOLVED}" \
-            --staging-certification "${STAGING_CERTIFICATION:-UNRESOLVED}" \
-            --rollback-source-sha "${ROLLBACK_SOURCE_SHA:-UNRESOLVED}"
-      - name: Upload release evidence
-        if: always()
+            --output "${RUNNER_TEMP}/release-manifest.json" \
+            --release-stage "${release_stage}" \
+            --commit-verification-status "${COMMIT_VERIFICATION}" \
+            --kong-image-digest "${KONG_IMAGE_DIGEST}" \
+            --standby-auth-image-digest "${STANDBY_AUTH_IMAGE_DIGEST}" \
+            --staging-certification "${staging_certification}" \
+            --rollback-source-sha "${ROLLBACK_SOURCE_SHA}"
+
+      - name: Upload bounded immutable release evidence
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
-          name: kong-release-${{ github.sha }}
-          path: release-manifest.json
+          name: kong-release-${{ env.EXPECTED_SHA }}
+          path: |
+            ${{ runner.temp }}/release-manifest.json
+            ${{ runner.temp }}/standby-build-metadata.json
+            ${{ runner.temp }}/standby-image.txt
+            ${{ runner.temp }}/kong-image.txt
+            ${{ runner.temp }}/kong-image-inspect.txt
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Close registry session
+        if: always()
+        run: docker logout ghcr.io || true
