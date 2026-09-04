@@ -40,9 +40,9 @@ jobs:
           rm "$helper"
           python -m pip install --disable-pip-version-check --no-input PyYAML
           python tools/generate_migration_manifests.py
-          cp /tmp/temporary-refresh-calling-manifests.yml "$helper"
           python tools/verify_migration_manifest.py
           git diff --check
+          cp /tmp/temporary-refresh-calling-manifests.yml "$helper"
           git config user.name "codestra-manifest-refresh"
           git config user.email "actions@users.noreply.github.com"
           git add MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml
