@@ -32,8 +32,8 @@
     },
     {
       "path": ".github/workflows/staging-certification.yml",
-      "sha256": "b4d22ee901e6fe8992b7d3f2b5b760d0f1017712467527f60119c9e87248f2bc",
-      "size": 1393
+      "sha256": "ab6894c98e847258aabda18c37cbd577d9aa42b2b4ebeec7962356733646a4ed",
+      "size": 2229
     },
     {
       "path": ".github/workflows/validate.yml",
@@ -567,7 +567,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "bd562d830807c5192edcd8c33180b1d4319452cfeca80717b19e905a6459380b",
+  "manifest_generation_id": "d13f5577732020a780782bbc5183b3b55ccf53325088f6918b6cd4a8e7d214c6",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
