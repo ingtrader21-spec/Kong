@@ -7,8 +7,8 @@
     },
     {
       "path": ".github/workflows/manifest-sync.yml",
-      "sha256": "342851089c9e14a4a48f709c1e40dffee97f003efd473ab9cbc7733c1bb62353",
-      "size": 1936
+      "sha256": "4f0dc10e4d8674cff07ebb34c36f25076ea1ccd7881461aad84cf018fa5ae1bf",
+      "size": 2530
     },
     {
       "path": ".github/workflows/marketing-stage5-certification.yml",
@@ -99,6 +99,11 @@
       "path": "config/marketing-stage4-routes.yaml",
       "sha256": "d03766281ac015edb9d22949e8d91ea3286d4e895a8dc520dd97c354c8007d40",
       "size": 1063
+    },
+    {
+      "path": "config/staging/kong-n8n-control-plane-routes.json",
+      "sha256": "f1310b20c944b294e4a993e607a2aa395c96cd92b4376f286aa690234ecb7bf9",
+      "size": 2298
     },
     {
       "path": "config/staging/marketing-platform-edge-bindings.v1.yaml",
@@ -526,6 +531,11 @@
       "size": 5909
     },
     {
+      "path": "tests/test_kong_n8n_staging_identity.py",
+      "sha256": "af275d8ac056036855ee302d0d7f3f56dcf331c3273f18e1e07e402e3e752b7d",
+      "size": 4295
+    },
+    {
       "path": "tests/test_kong_observability.py",
       "sha256": "b97f461c54ae60e7258ee0aa30a17c1bb9e6d26a50851fcf81858dd8d59433ce",
       "size": 1726
@@ -567,7 +577,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "bd562d830807c5192edcd8c33180b1d4319452cfeca80717b19e905a6459380b",
+  "manifest_generation_id": "b98ab9f2493b78b79aeadb7146212a007570a3a3b569a018c714f64d5de7c5cc",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
