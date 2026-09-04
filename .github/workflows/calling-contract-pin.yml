@@ -1,21 +1,90 @@
 name: calling-contract-pin
+
 on:
   pull_request:
-    paths: [".codestra/calling-contract.lock.json"]
+    paths:
+      - ".codestra/calling-contract.lock.json"
+      - ".github/workflows/calling-contract-pin.yml"
+      - "config/kong-calling-routes.v1.json"
+      - "deploy/kong/calling-policy.lua"
+      - "scripts/validate_kong_calling_policy.py"
+      - "tests/test_kong_calling_policy.py"
   push:
     branches: ["main"]
-    paths: [".codestra/calling-contract.lock.json"]
+    paths:
+      - ".codestra/calling-contract.lock.json"
+      - ".github/workflows/calling-contract-pin.yml"
+      - "config/kong-calling-routes.v1.json"
+      - "deploy/kong/calling-policy.lua"
+      - "scripts/validate_kong_calling_policy.py"
+      - "tests/test_kong_calling_policy.py"
+
 permissions:
   contents: read
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  verify:
-    runs-on: ubuntu-latest
+  verify-head:
+    name: verify-head
+    runs-on: ubuntu-24.04
+    env:
+      EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Check out exact reviewed head
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
+          ref: ${{ env.EXPECTED_SHA }}
+          fetch-depth: 1
           persist-credentials: false
-      - name: Enforce issue 257 contract and fail-closed default
+      - name: Validate exact source and fail-closed policy
         run: |
-          test "$(jq -r .version .codestra/calling-contract.lock.json)" = "1.0.0"
-          test "$(jq -r .sha256 .codestra/calling-contract.lock.json)" = "b39cdffe56a8185c91174228f0423df68b1137f34875f6ee52f9914f904bf724"
-          test "$(jq -r .external_effects_enabled .codestra/calling-contract.lock.json)" = "false"
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
+          test -z "$(git status --porcelain)"
+          python3 scripts/validate_kong_calling_policy.py
+          python3 scripts/validate_kong_calling_policy.py --self-test
+          git diff --check
+
+  verify-merge-result:
+    name: verify-merge-result
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    env:
+      EXPECTED_SHA: ${{ github.sha }}
+    steps:
+      - name: Check out synthetic merge result
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ env.EXPECTED_SHA }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Validate merge-result policy
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
+          test -z "$(git status --porcelain)"
+          python3 scripts/validate_kong_calling_policy.py
+          git diff --check
+
+  verify:
+    name: verify
+    if: always()
+    needs: [verify-head, verify-merge-result]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require all applicable validations
+        env:
+          HEAD_RESULT: ${{ needs.verify-head.result }}
+          MERGE_RESULT: ${{ needs.verify-merge-result.result }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -Eeuo pipefail
+          test "${HEAD_RESULT}" = success
+          if [[ "${EVENT_NAME}" == pull_request ]]; then
+            test "${MERGE_RESULT}" = success
+          else
+            test "${MERGE_RESULT}" = skipped
+          fi
