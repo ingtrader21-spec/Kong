@@ -1,0 +1,126 @@
+{
+  "schema": "codestra.kong.calling-routes.v1",
+  "authority": "appolon1908-hue/codestra-production-platform#257",
+  "contractVersion": "1.0.0",
+  "contractDigest": "b39cdffe56a8185c91174228f0423df68b1137f34875f6ee52f9914f904bf724",
+  "status": "SOURCE_CANDIDATE_NO_RUNTIME_APPLY",
+  "runtimeApplyAuthorized": false,
+  "host": "api.codestra.co",
+  "service": {
+    "name": "codestra-calling-api",
+    "protocol": "http",
+    "host": "codestra-middleware-integration-api-1",
+    "port": 8095,
+    "connectTimeoutMs": 3000,
+    "readTimeoutMs": 30000,
+    "writeTimeoutMs": 30000
+  },
+  "identity": {
+    "issuer": "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration",
+    "audience": "middleware-api",
+    "authMethods": ["bearer"],
+    "consumerClaim": "azp",
+    "tenantClaim": "tenant_id",
+    "campaignMembershipClaim": "campaign_ids",
+    "subjectClaim": "sub",
+    "stripInboundHeaders": [
+      "X-Authenticated-Client",
+      "X-Authenticated-Subject",
+      "X-Authenticated-Tenant",
+      "X-Authenticated-Campaign",
+      "X-Authenticated-Role"
+    ],
+    "mintedHeaders": {
+      "X-Authenticated-Client": "azp",
+      "X-Authenticated-Subject": "sub",
+      "X-Authenticated-Tenant": "tenant_id",
+      "X-Authenticated-Campaign": "authorized request campaign_id"
+    }
+  },
+  "commonPolicy": {
+    "protocols": ["http"],
+    "httpsRedirectStatusCode": 426,
+    "stripPath": false,
+    "preserveHost": true,
+    "requestBuffering": true,
+    "responseBuffering": true,
+    "correlationHeader": "X-Correlation-ID",
+    "correlationRequired": true,
+    "idempotencyHeader": "Idempotency-Key",
+    "identityGuardSource": "deploy/kong/calling-policy.lua",
+    "requiredPlugins": [
+      "openid-connect",
+      "post-function",
+      "correlation-id",
+      "rate-limiting",
+      "request-size-limiting"
+    ],
+    "rateLimitPolicy": "redis",
+    "rateLimitFaultTolerant": false,
+    "requestBodyLimitMb": 1
+  },
+  "routes": [
+    {
+      "name": "codestra-calling-command-submit",
+      "path": "/v1/telephony/commands",
+      "methods": ["POST"],
+      "requiredScope": "telephony:command",
+      "idempotencyRequired": true,
+      "tenantBodyField": "tenant_id",
+      "campaignBodyField": "campaign_id",
+      "ratePerMinute": 60
+    },
+    {
+      "name": "codestra-calling-operation-read",
+      "path": "~^/v1/telephony/operations/[0-9a-fA-F-]{36}$",
+      "methods": ["GET"],
+      "requiredScope": "telephony:status",
+      "idempotencyRequired": false,
+      "ratePerMinute": 240
+    },
+    {
+      "name": "codestra-calling-operation-cancel",
+      "path": "~^/v1/telephony/operations/[0-9a-fA-F-]{36}/cancel$",
+      "methods": ["POST"],
+      "requiredScope": "telephony:command",
+      "idempotencyRequired": true,
+      "ratePerMinute": 60
+    },
+    {
+      "name": "codestra-calling-operation-reconcile",
+      "path": "~^/v1/telephony/operations/[0-9a-fA-F-]{36}/reconcile$",
+      "methods": ["POST"],
+      "requiredScope": "telephony:status",
+      "idempotencyRequired": true,
+      "ratePerMinute": 30
+    },
+    {
+      "name": "codestra-realtime-session-create",
+      "path": "/api/v1/realtime/sessions",
+      "methods": ["POST"],
+      "requiredScope": "realtime:session:create",
+      "idempotencyRequired": true,
+      "campaignBodyField": "campaign_id",
+      "ratePerMinute": 30
+    }
+  ],
+  "websocket": {
+    "path": "/ws/agent",
+    "decision": "BYPASS_KONG_DIRECT_CADDY_TO_WEBSOCKET_GATEWAY",
+    "kongRouteForbidden": true
+  },
+  "privateBoundary": {
+    "prefixes": ["/internal", "/internal/"],
+    "publicKongRouteForbidden": true
+  },
+  "failClosed": {
+    "missingOrInvalidCredentialStatus": 401,
+    "missingScopeStatus": 403,
+    "missingTenantClaimStatus": 403,
+    "crossTenantStatus": 403,
+    "unauthorizedCampaignStatus": 403,
+    "missingCorrelationStatus": 400,
+    "missingIdempotencyStatus": 400,
+    "identityGuardIndeterminateStatus": 503
+  }
+}
