@@ -8,34 +8,56 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: kong-staging-source-admission-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   staging-certification:
-    runs-on: ubuntu-latest
-    environment: staging
+    name: staging-certification
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Check out exact candidate source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-      - name: Require candidate ancestry from main
+          persist-credentials: false
+
+      - name: Require exact main to staging promotion
         env:
           EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          git fetch origin main --depth=100
+          set -Eeuo pipefail
+          git fetch origin main staging --depth=100
           if [[ "$EVENT_NAME" == pull_request ]]; then
+            test "$BASE_REF" = staging
             test "$HEAD_REF" = main
+            test "$HEAD_SHA" = "$(git rev-parse HEAD)"
             test "$HEAD_SHA" = "$(git rev-parse origin/main)"
+            git merge-base --is-ancestor origin/staging "$HEAD_SHA"
           else
             test "${GITHUB_REF_NAME}" = staging
+            test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           fi
+
       - name: Validate source authority without live mutation
         run: |
-          python3 -m pip install --disable-pip-version-check pytest PyYAML
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input pytest PyYAML
           pytest -q
           python3 tools/generate_migration_manifests.py --check
           python3 tools/verify_migration_manifest.py
-      - name: Declare live certification boundary
+
+      - name: Declare source-only certification boundary
         run: |
-          echo 'This gate validates promotion provenance and source authority.'
-          echo 'Live staging acceptance remains a separately reviewed, read-only/no-provider-effects certification.'
+          set -Eeuo pipefail
+          echo 'KONG_STAGING_SOURCE_ADMISSION=PASS'
+          echo 'RUNTIME_MUTATION_AUTHORIZED=NO'
+          echo 'ADMIN_API_CALLS_AUTHORIZED=NO'
+          echo 'PRODUCTION_TRAFFIC_AUTHORIZED=NO'
+          echo 'EXTERNAL_EFFECTS_ENABLED=NO'
+          echo 'Live staging acceptance remains a separate immutable read-only/no-provider-effects certification.'
