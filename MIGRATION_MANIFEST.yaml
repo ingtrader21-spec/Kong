@@ -1,7 +1,7 @@
 files:
 - path: .github/workflows/calling-contract-pin.yml
-  sha256: af5a1104778445d4c1466a04c5ac7c09cd0999847eb03cb72b174e3d2822d8d8
-  size: 790
+  sha256: da966e52a23577cc45d823f6dc29bf95555531c7656643b3b8c76ab5a4f49141
+  size: 2835
 - path: .github/workflows/kong-config.yml
   sha256: e0cde929258821281cf039f09bd0d050a42c4fbe067e3c2489e905df4f7f9a67
   size: 1128
@@ -24,8 +24,8 @@ files:
   sha256: ab6894c98e847258aabda18c37cbd577d9aa42b2b4ebeec7962356733646a4ed
   size: 2229
 - path: .github/workflows/validate.yml
-  sha256: fc30f40877941df15cbf3c9eba28559a5e5a482c571371408b4713d6cdd814f0
-  size: 2184
+  sha256: 00fce284a9d3092d3fe9b23064ebb914aa722818fa546207b2c3da23b0277c75
+  size: 4805
 - path: .gitignore
   sha256: 8c06027889bb245680b8a248468504a51ff8654fc6c800ea9ebd9f54213ddf9d
   size: 214
@@ -38,6 +38,9 @@ files:
 - path: config/kong-callback-routes.json
   sha256: a5df270de68fa7cb99d494bf80311e6f82c65c977fc0a0cc3068b1d64f141970
   size: 1073
+- path: config/kong-calling-routes.v1.json
+  sha256: e8c08fffcb4d96320e7422b654aa3aa0f87a9d1552c9f361b274378958e902f6
+  size: 3932
 - path: config/kong-campaign-automation-routes.json
   sha256: d01b006ad8de7b3e93561eb976ef21789f3e3db8fbf70069225b728c3e81d22a
   size: 869
@@ -104,6 +107,9 @@ files:
 - path: deploy/kong-production-standby/kong/standby.json
   sha256: 0977fd510b2c8aaab8672df8be3f141462a3f5359708fa94ebba614f74d3bb59
   size: 2609
+- path: deploy/kong/calling-policy.lua
+  sha256: 90665911471901f8a2a41cb020cb0b742818c92b26904fe2164f3c9e487572d7
+  size: 5994
 - path: deploy/kong/compose.kong.yaml
   sha256: 30bab49b1837caf7bf65969ee516d7b43fa25e0f13c26e5456ac3d8217317e0a
   size: 4917
@@ -290,6 +296,9 @@ files:
 - path: scripts/validate_community_n8n_egress.py
   sha256: 6d8203f876a054b40c689e773f0638a2aba8fc09b3328cde20b944e95a094b0d
   size: 5201
+- path: scripts/validate_kong_calling_policy.py
+  sha256: 49a1b46272898744431d5941c84521aa6b89937fad28cf8296f464034b28aa27
+  size: 13329
 - path: scripts/validate_kong_production_standby.py
   sha256: a33d3937b02067660c72fe7cc55e7d78a649c66c643d62f62bb82f10d860cc28
   size: 2952
@@ -302,6 +311,9 @@ files:
 - path: tests/test_community_n8n_egress.py
   sha256: a189aa86cab419b91e420472d72624aab6bf540a9ab653a4a8c9a4cf1b9069ad
   size: 10355
+- path: tests/test_kong_calling_policy.py
+  sha256: 9a74bacd74e4964ba67bb37bfb0a04246cdd429b198b69c6ad072dad22585e1d
+  size: 3691
 - path: tests/test_kong_canonical_route_contract.py
   sha256: 403a72c9d84e36be504d79f08160fe77d2a4ce6ea7ff18010ceb2062c509d805
   size: 5979
@@ -342,7 +354,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: e1e62332921c043e159f66199d37d10de690016297b51d49aceab6b0d5f7c45d
+manifest_generation_id: 7bbd6cf64939c205396f03ed526959dbf879fa2a4a7f6341d946eadcb6b988f5
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
