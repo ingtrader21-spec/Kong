@@ -2,7 +2,7 @@
   "files": [
     {
       "path": ".github/workflows/calling-contract-pin.yml",
-      "sha256": "13420b6f5788c4a20d7d6a023cef0b4107ec6766747900c0dddc548f1fc43bb5",
+      "sha256": "38bb6750af6cd01773b2a1dfe43fc40fce51dc44b4512b67991603576b10d6fa",
       "size": 790
     },
     {
@@ -572,7 +572,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "0229d7ab11edd9d385ff873775224d092a5adb74907ca4f07f1a298458c203c0",
+  "manifest_generation_id": "2460eca0960e608579202465be1f4bbd0e836aeb5b94bafc27990f14ed0bd60f",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
