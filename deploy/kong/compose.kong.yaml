@@ -8,7 +8,7 @@
 # This file stands a node up. It does not authorize one: activation still
 # requires operations/runbooks/kong-production-activation.md.
 services:
-  kong:
+  kong-gateway:
     image: kong/kong-gateway@${KONG_IMAGE_DIGEST:?KONG_IMAGE_DIGEST must be an immutable sha256 digest}
     restart: unless-stopped
 
@@ -57,7 +57,10 @@ services:
       KONG_VAULTS: env
 
       KONG_PROXY_LISTEN: 0.0.0.0:8000
-      KONG_ADMIN_LISTEN: 127.0.0.1:8001
+      # Docker publishes this listener only to host loopback below. Binding the
+      # container interface makes that loopback-only NAT path reachable by the
+      # read-only drift runner without exposing Admin publicly.
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
       KONG_STATUS_LISTEN: 0.0.0.0:8100
       KONG_HEADERS: "off"
       KONG_LOG_LEVEL: notice
@@ -86,6 +89,7 @@ services:
       # API stays on container loopback, and the status listener is reachable
       # only over the private observability network.
       - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8001:8001"
 
     networks:
       kong_frontend:

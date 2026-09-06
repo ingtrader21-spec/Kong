@@ -15,7 +15,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE_DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
 SOURCE_SHA = re.compile(r"^[0-9a-f]{40}$")
-CERTIFICATION_ID = re.compile(r"^PASS:[A-Za-z0-9._:/-]+$")
+CERTIFICATION_ID = re.compile(r"^PASS:([0-9a-f]{40}):[A-Za-z0-9._:/-]+$")
 VERIFIED_SIGNATURES = {"G", "U", "VERIFIED"}
 SOURCE_RELEASE_STAGE = "protected-main-source-candidate"
 STAGING_RELEASE_STAGE = "staging-certified"
@@ -48,9 +48,10 @@ def main() -> int:
 
     authority = yaml.safe_load((ROOT / "MIGRATION_MANIFEST.yaml").read_text())
     verification = args.commit_verification_status or git("log", "-1", "--format=%G?")
+    source_sha = git("rev-parse", "HEAD")
     document = {
         "release_stage": args.release_stage,
-        "source_sha": git("rev-parse", "HEAD"),
+        "source_sha": source_sha,
         "source_tree": git("rev-parse", "HEAD^{tree}"),
         "commit_verification_status": verification,
         "kong_version": "3.14.0.1",
@@ -79,8 +80,10 @@ def main() -> int:
     if args.release_stage == SOURCE_RELEASE_STAGE:
         if args.staging_certification != "NOT_RUN_SOURCE_CANDIDATE":
             unresolved.add("staging_certification")
-    elif not CERTIFICATION_ID.fullmatch(args.staging_certification):
-        unresolved.add("staging_certification")
+    else:
+        certification = CERTIFICATION_ID.fullmatch(args.staging_certification)
+        if not certification or certification.group(1) != source_sha:
+            unresolved.add("staging_certification")
 
     print("RELEASE_MANIFEST=PASS" if not unresolved else "RELEASE_MANIFEST=INCOMPLETE")
     print("UNRESOLVED=" + ",".join(sorted(unresolved)))

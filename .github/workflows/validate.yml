@@ -54,6 +54,7 @@ jobs:
           python3 scripts/validate_kong_production_inventory.py
           luac -p deploy/kong/scope-policy.lua
           luac -p deploy/kong/calling-policy.lua
+          luac -p deploy/kong/correlation-required.lua
           luac -p deploy/kong/moneybee-identity-policy.lua
       - name: Validate shell policies
         run: |

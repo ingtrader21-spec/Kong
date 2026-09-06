@@ -148,6 +148,9 @@ jobs:
               staging_certification="${CONFIGURED_STAGING_CERTIFICATION}"
               ;;
           esac
+          if [[ "${release_stage}" != protected-main-source-candidate ]]; then
+            [[ "${staging_certification}" == "PASS:${EXPECTED_SHA}:"* ]]
+          fi
           python3 tools/generate_release_manifest.py \
             --output "${RUNNER_TEMP}/release-manifest.json" \
             --release-stage "${release_stage}" \

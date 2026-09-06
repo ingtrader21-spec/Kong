@@ -133,6 +133,7 @@ def test_calling_policy_renders_as_executable_kong_configuration() -> None:
     plugins = {plugin["name"]: plugin for plugin in service["plugins"]}
     assert set(plugins) == {
         "openid-connect",
+        "pre-function",
         "post-function",
         "correlation-id",
         "request-size-limiting",
@@ -142,6 +143,10 @@ def test_calling_policy_renders_as_executable_kong_configuration() -> None:
     assert plugins["post-function"]["config"]["access"] == [
         (ROOT / "deploy/kong/calling-policy.lua").read_text(encoding="utf-8")
     ]
+    assert plugins["pre-function"]["config"]["access"] == [
+        (ROOT / "deploy/kong/correlation-required.lua").read_text(encoding="utf-8")
+    ]
+    assert "authenticated" not in plugins["pre-function"]["config"]["access"][0]
     assert all(route["hosts"] == ["telephony.internal.invalid"] for route in service["routes"])
 
 

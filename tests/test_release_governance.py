@@ -36,7 +36,9 @@ def test_release_stage_is_explicit_and_fail_closed():
         "staging-certified",
         "production",
     }
-    assert release.CERTIFICATION_ID.fullmatch("PASS:staging-run-123")
+    sha = "a" * 40
+    assert release.CERTIFICATION_ID.fullmatch(f"PASS:{sha}:staging-run-123")
+    assert not release.CERTIFICATION_ID.fullmatch("PASS:staging-run-123")
     assert not release.CERTIFICATION_ID.fullmatch("PENDING")
 
 
@@ -64,6 +66,7 @@ def test_staging_and_production_release_require_live_topology_gate():
     assert "python3 scripts/verify_runtime_integration.py" in workflow
     assert "needs: [runtime-topology]" in workflow
     assert "needs.runtime-topology.result == 'success'" in workflow
+    assert 'PASS:${EXPECTED_SHA}:' in workflow
 
 
 def test_standby_compose_forbids_deploy_time_build_and_floating_tag():

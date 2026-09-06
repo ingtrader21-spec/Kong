@@ -182,8 +182,11 @@ def validate_policy(document: object, lua_source: str) -> None:
         raise ValueError("idempotency header mismatch")
     if common["identityGuardSource"] != "deploy/kong/calling-policy.lua":
         raise ValueError("identity guard source mismatch")
+    if common["correlationGuardSource"] != "deploy/kong/correlation-required.lua":
+        raise ValueError("correlation guard source mismatch")
     if set(common["requiredPlugins"]) != {
         "openid-connect",
+        "pre-function",
         "post-function",
         "correlation-id",
         "rate-limiting",
