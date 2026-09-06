@@ -43,7 +43,9 @@ def test_release_stage_is_explicit_and_fail_closed():
 def test_staging_promotion_requires_exact_main_head():
     workflow = (ROOT / ".github/workflows/staging-certification.yml").read_text()
     assert 'test "$HEAD_REF" = main' in workflow
-    assert 'test "$HEAD_SHA" = "$(git rev-parse origin/main)"' in workflow
+    assert 'git/ref/heads/main' in workflow
+    assert 'test "$HEAD_SHA" = "$main_sha"' in workflow
+    assert 'compare/${staging_sha}...${HEAD_SHA}' in workflow
 
 
 def test_release_evidence_builds_exact_immutable_standby_image():
