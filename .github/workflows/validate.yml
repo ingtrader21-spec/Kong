@@ -74,6 +74,7 @@ jobs:
             tests/test_release_governance.py \
             tests/test_kong_observability.py \
             tests/test_kong_calling_policy.py
+          pytest -q tests/test_runtime_integration_preflight.py
           pytest -q tests/test_community_n8n_egress.py
           python3 tools/generate_migration_manifests.py --check
           python3 tools/verify_migration_manifest.py
