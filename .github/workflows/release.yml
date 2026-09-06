@@ -17,8 +17,31 @@ defaults:
     shell: bash
 
 jobs:
+  runtime-topology:
+    name: runtime-topology
+    if: github.ref_name == 'staging' || github.ref_name == 'production'
+    runs-on: [self-hosted, linux, kong-runtime]
+    environment: ${{ github.ref_name }}
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact protected source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Require healthy designated runtime networks
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          python3 scripts/verify_runtime_integration.py
+
   release-evidence:
     name: release-evidence
+    needs: [runtime-topology]
+    if: >-
+      always() &&
+      (github.ref_name == 'main' || needs.runtime-topology.result == 'success')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:

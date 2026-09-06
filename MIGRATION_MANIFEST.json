@@ -27,8 +27,8 @@
     },
     {
       "path": ".github/workflows/release.yml",
-      "sha256": "fc3f7960aae49a24e487ef33e2cff992e9267dc97576321bff69756d0896cd44",
-      "size": 6180
+      "sha256": "23bba5fbe3ef5305b2e88b4726764fd48a98c40461529aed8a7087c7e8087de2",
+      "size": 7004
     },
     {
       "path": ".github/workflows/security.yml",
@@ -622,8 +622,8 @@
     },
     {
       "path": "scripts/verify_runtime_integration.py",
-      "sha256": "27d01f1f853ab79d58ccad02ae16ab908c1b1c78a478c6b97dd5d9e7c783731f",
-      "size": 2180
+      "sha256": "aff5c4bb3aaff82bdbfddbcbfbeecd879ca569e657b87ad4df7668a676786e57",
+      "size": 2302
     },
     {
       "path": "tests/conftest.py",
@@ -712,13 +712,13 @@
     },
     {
       "path": "tests/test_release_governance.py",
-      "sha256": "626d36bec0ba9831b6520ceb4e52e4a0db1c5b06beea1884bcaac6aa320754b9",
-      "size": 2403
+      "sha256": "008b4f977b092245ce9449e6549ba06a6ae7afd876fb86001dbf0f611bfb75a1",
+      "size": 2802
     },
     {
       "path": "tests/test_runtime_integration_preflight.py",
-      "sha256": "fdd113d9e697b4161a3142ee1c97b153b2e608eeb083f2a9b7e080ae4d59417d",
-      "size": 1410
+      "sha256": "1f218f1bdc281f3880c5f5b923d0333cde17dc585d5be6eccd30f881090622f7",
+      "size": 1668
     },
     {
       "path": "tools/capture_kong_server_baseline.sh",
@@ -742,7 +742,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "29d4da4c8c5948007d3c7c09412b888584f2df63da7feb6ef54c83236e984e69",
+  "manifest_generation_id": "d8ffa45de656979541e92531efae182f4984fa9f0266cfbed994a5426ccba01b",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

@@ -52,14 +52,14 @@ def main() -> int:
             failures.append(f"{role}_not_healthy")
 
     required = {
-        "caddy_kong": ("caddy", "kong"),
-        "kong_middleware": ("kong", "middleware"),
-        "kong_redis": ("kong", "redis"),
-        "middleware_redis": ("middleware", "redis"),
+        "caddy_kong": ("caddy", "kong", "codestra_edge"),
+        "kong_middleware": ("kong", "middleware", "codestra_edge"),
+        "kong_redis": ("kong", "redis", "codestra_backend"),
+        "middleware_redis": ("middleware", "redis", "codestra_backend"),
     }
-    for label, (left, right) in required.items():
-        if not networks(containers[left]) & networks(containers[right]):
-            failures.append(f"{label}_no_shared_network")
+    for label, (left, right, required_network) in required.items():
+        if not all(required_network in networks(containers[role]) for role in (left, right)):
+            failures.append(f"{label}_missing_{required_network}")
 
     if failures:
         print("RUNTIME_INTEGRATION=FAIL reasons=" + ",".join(sorted(failures)))

@@ -41,3 +41,10 @@ def test_script_never_reads_or_prints_container_environment():
     assert 'Config"]["Env' not in source
     assert "docker exec" not in source
     assert "password" not in source.lower()
+
+
+def test_each_hop_requires_its_designated_network():
+    source = SCRIPT.read_text()
+    assert '("caddy", "kong", "codestra_edge")' in source
+    assert '("kong", "redis", "codestra_backend")' in source
+    assert "required_network in networks" in source
