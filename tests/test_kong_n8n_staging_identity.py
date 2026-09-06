@@ -32,10 +32,11 @@ def load(path: Path) -> dict:
     return value
 
 
-def test_staging_manifest_is_approved_but_not_production_identity():
+def test_staging_manifest_is_prepared_but_not_apply_authorized():
     staging = load(STAGING_PATH)
     assert staging["environment"] == "staging"
-    assert staging["status"] == "APPROVED_STAGING"
+    assert staging["status"] == "PREPARED_STAGING_NO_RUNTIME_APPLY"
+    assert staging["safety"]["reconciliation_apply"] is False
     assert staging["production_authority"] == "config/kong-n8n-control-plane-routes.json"
     assert staging["issuer"] == "https://auth-staging.codestra.co/realms/codestra"
     assert staging["oidc_discovery"] == staging["issuer"] + "/.well-known/openid-configuration"
@@ -65,7 +66,6 @@ def test_staging_keeps_exact_production_route_and_service_contract():
     ):
         assert staging[key] == production[key]
     for key in (
-        "reconciliation_apply",
         "credentials_in_repository",
         "direct_provider_routes",
         "middleware_revalidates_identity",
@@ -94,11 +94,12 @@ def test_staging_claim_guards_embed_only_the_staging_issuer():
         assert "openid-connect" not in expected
 
 
-def test_existing_reconciler_accepts_staging_authority_for_apply():
+def test_existing_reconciler_refuses_unbound_staging_authority_for_apply():
     source = RECONCILER_PATH.read_text(encoding="utf-8")
     assert 'spec.get("status") not in {"APPROVED_STAGING", "APPROVED_PRODUCTION"}' in source
     staging = load(STAGING_PATH)
-    assert staging["safety"]["reconciliation_apply"] is True
+    assert staging["status"] not in {"APPROVED_STAGING", "APPROVED_PRODUCTION"}
+    assert staging["safety"]["reconciliation_apply"] is False
     assert staging["preserve_authorization_header"] is True
     assert staging["token_exchange"] is False
     assert staging["safety"]["middleware_revalidates_identity"] is True

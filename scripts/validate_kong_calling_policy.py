@@ -131,8 +131,8 @@ def validate_policy(document: object, lua_source: str) -> None:
         raise ValueError("calling policy status mismatch")
     if type(policy["runtimeApplyAuthorized"]) is not bool or policy["runtimeApplyAuthorized"] is not False:
         raise ValueError("runtime application must remain explicitly unauthorized")
-    if policy["host"] != "api.codestra.co":
-        raise ValueError("canonical API host mismatch")
+    if policy["host"] != "telephony.internal.invalid":
+        raise ValueError("private telephony host mismatch")
 
     service = policy["service"]
     expected_service = {
@@ -279,7 +279,17 @@ def validate_policy(document: object, lua_source: str) -> None:
 
 def validate_files() -> None:
     validate_lock(parse_json(LOCK_PATH))
-    validate_policy(parse_json(POLICY_PATH), LUA_PATH.read_text(encoding="utf-8"))
+    policy = parse_json(POLICY_PATH)
+    validate_policy(policy, LUA_PATH.read_text(encoding="utf-8"))
+    cells = parse_json(ROOT / "config/codestra-kong-cells.v1.json")
+    registry = parse_json(ROOT / "config/codestra-kong-route-registry.v1.json")
+    assert isinstance(policy, dict) and isinstance(cells, dict) and isinstance(registry, dict)
+    telephony = next(item for item in cells["cells"] if item["id"] == "telephony-private")
+    telephony_route = next(item for item in registry["routes"] if item["id"] == "telephony-private")
+    if telephony["public_routes"] is not False or telephony["proxy_visibility"] != "PRIVATE_VLAN_ONLY":
+        raise ValueError("telephony cell exposure boundary mismatch")
+    if policy["host"] != telephony_route["host"]:
+        raise ValueError("calling policy conflicts with telephony cell host")
     if not RENDERER_PATH.is_file():
         raise ValueError("executable calling configuration renderer is missing")
     renderer = RENDERER_PATH.read_text(encoding="utf-8")

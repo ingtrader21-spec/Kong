@@ -67,6 +67,7 @@ def test_identity_tenant_campaign_and_header_policy_is_fail_closed() -> None:
 
 def test_websocket_and_private_boundaries_are_explicit() -> None:
     policy = load_policy()
+    assert policy["host"] == "telephony.internal.invalid"
     assert policy["websocket"] == {
         "path": "/ws/agent",
         "decision": "BYPASS_KONG_DIRECT_CADDY_TO_WEBSOCKET_GATEWAY",
@@ -141,6 +142,7 @@ def test_calling_policy_renders_as_executable_kong_configuration() -> None:
     assert plugins["post-function"]["config"]["access"] == [
         (ROOT / "deploy/kong/calling-policy.lua").read_text(encoding="utf-8")
     ]
+    assert all(route["hosts"] == ["telephony.internal.invalid"] for route in service["routes"])
 
 
 def test_renderer_refuses_runtime_apply() -> None:

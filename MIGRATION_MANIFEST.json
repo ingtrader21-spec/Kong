@@ -1,6 +1,11 @@
 {
   "files": [
     {
+      "path": ".codestra/calling-contract.lock.json",
+      "sha256": "430371c7f1c504a4d585e5710f9772938786d654c4f35fd716cbbfaf48185b9a",
+      "size": 233
+    },
+    {
       "path": ".github/workflows/calling-contract-pin.yml",
       "sha256": "eb004bbc12919944c1a8312275a99475dfa4d2abefab2f309181173d16492ff0",
       "size": 3263
@@ -87,8 +92,8 @@
     },
     {
       "path": "config/kong-calling-routes.v1.json",
-      "sha256": "e8c08fffcb4d96320e7422b654aa3aa0f87a9d1552c9f361b274378958e902f6",
-      "size": 3932
+      "sha256": "5a36ea8e69a887ef41955a160f9ea3832e09c55083b9b07cb90c72597ff255bf",
+      "size": 3943
     },
     {
       "path": "config/kong-campaign-automation-routes.json",
@@ -142,8 +147,8 @@
     },
     {
       "path": "config/staging/kong-n8n-control-plane-routes.json",
-      "sha256": "f1310b20c944b294e4a993e607a2aa395c96cd92b4376f286aa690234ecb7bf9",
-      "size": 2298
+      "sha256": "2adb73a39a7c25a04788a40a0e174462a1602a29fae2a28d727552bbff0080ca",
+      "size": 2316
     },
     {
       "path": "config/staging/marketing-platform-edge-bindings.v1.yaml",
@@ -592,8 +597,8 @@
     },
     {
       "path": "scripts/validate_kong_calling_policy.py",
-      "sha256": "4cfeac83301d3b5a2ee1bbccf711c0624485dc9338e0fbb1c24ded715e8c541f",
-      "size": 13783
+      "sha256": "f37c262833c9dc3e71cfa42b2c6f85dea852d671ce9be4566ce6e8a0dfe7d743",
+      "size": 14555
     },
     {
       "path": "scripts/validate_kong_production_inventory.py",
@@ -632,8 +637,8 @@
     },
     {
       "path": "tests/test_kong_calling_policy.py",
-      "sha256": "f5e9eb0de5ac904b511faf0720af0429e412e9014bbd97578fa398d2d8d72e66",
-      "size": 5956
+      "sha256": "3e0cd4e69689efe4f6843f44a79a2e765f1ad7e01016abf0bd2b3db3ea194c99",
+      "size": 6110
     },
     {
       "path": "tests/test_kong_canonical_route_contract.py",
@@ -662,8 +667,8 @@
     },
     {
       "path": "tests/test_kong_n8n_staging_identity.py",
-      "sha256": "af275d8ac056036855ee302d0d7f3f56dcf331c3273f18e1e07e402e3e752b7d",
-      "size": 4295
+      "sha256": "4513a5568d2d918650d169069071847e8f532a07a5a8fcba84ce606d678e55f9",
+      "size": 4428
     },
     {
       "path": "tests/test_kong_observability.py",
@@ -712,8 +717,8 @@
     },
     {
       "path": "tools/generate_migration_manifests.py",
-      "sha256": "963f287ab0500430736dcb82cff52c0474378180b097d33afc8fa276cc640775",
-      "size": 21375
+      "sha256": "29288af99ef409b536033dae85a01e274b4116ba4e46f83107438769381c9e9b",
+      "size": 21388
     },
     {
       "path": "tools/generate_release_manifest.py",
@@ -727,7 +732,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "249b0440a546dbe5bb2c1e6150dac5ff09ae5636351ad7fa7d66f17da2a60870",
+  "manifest_generation_id": "7a874a243369a03778d0c4570d9365572e106f3df3d96255d4252243d48fa845",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
