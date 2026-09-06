@@ -51,10 +51,10 @@ The scope policy is attached as `post-function`, never `pre-function`.
 `pre-function` has plugin priority 1000000 and runs before every authentication
 plugin, so a policy placed there observes no verified credential and no claims.
 
-Service-level rate limiting uses the `redis` policy so one counter is shared by
-every data-plane node, with `fault_tolerant` false so an unreachable Redis fails
-closed. The per-route rate limits in `config/` still specify `local` and are
-changed under their own route-security authority.
+All canonical service and route renderers use the `redis` policy so one counter
+is shared by every data-plane node, with `fault_tolerant` false so an unreachable
+Redis fails closed. Kong and `codestra-redis` must share the external
+`codestra_backend` network before a candidate can pass runtime preflight.
 
 ## Activation boundary
 

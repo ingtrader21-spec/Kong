@@ -58,6 +58,14 @@ def test_release_evidence_builds_exact_immutable_standby_image():
     assert "latest" not in workflow
 
 
+def test_staging_and_production_release_require_live_topology_gate():
+    workflow = (ROOT / ".github/workflows/release.yml").read_text()
+    assert "runs-on: [self-hosted, linux, kong-runtime]" in workflow
+    assert "python3 scripts/verify_runtime_integration.py" in workflow
+    assert "needs: [runtime-topology]" in workflow
+    assert "needs.runtime-topology.result == 'success'" in workflow
+
+
 def test_standby_compose_forbids_deploy_time_build_and_floating_tag():
     compose = (ROOT / "deploy/kong-production-standby/compose.standby.yaml").read_text()
     assert "build:" not in compose
