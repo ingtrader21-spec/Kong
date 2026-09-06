@@ -7,6 +7,7 @@ on:
       - ".github/workflows/calling-contract-pin.yml"
       - "config/kong-calling-routes.v1.json"
       - "deploy/kong/calling-policy.lua"
+      - "scripts/render_kong_calling_routes.py"
       - "scripts/validate_kong_calling_policy.py"
       - "tests/test_kong_calling_policy.py"
   push:
@@ -16,6 +17,7 @@ on:
       - ".github/workflows/calling-contract-pin.yml"
       - "config/kong-calling-routes.v1.json"
       - "deploy/kong/calling-policy.lua"
+      - "scripts/render_kong_calling_routes.py"
       - "scripts/validate_kong_calling_policy.py"
       - "tests/test_kong_calling_policy.py"
 
@@ -44,8 +46,10 @@ jobs:
           set -Eeuo pipefail
           test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
           test -z "$(git status --porcelain)"
+          python3 -m pip install --disable-pip-version-check --no-input PyYAML
           python3 scripts/validate_kong_calling_policy.py
           python3 scripts/validate_kong_calling_policy.py --self-test
+          python3 scripts/render_kong_calling_routes.py > /tmp/kong-calling-routes.yml
           git diff --check
 
   verify-merge-result:
@@ -66,7 +70,9 @@ jobs:
           set -Eeuo pipefail
           test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
           test -z "$(git status --porcelain)"
+          python3 -m pip install --disable-pip-version-check --no-input PyYAML
           python3 scripts/validate_kong_calling_policy.py
+          python3 scripts/render_kong_calling_routes.py > /tmp/kong-calling-routes.yml
           git diff --check
 
   verify:

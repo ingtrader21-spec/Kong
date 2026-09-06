@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -12,6 +14,12 @@ SPEC = importlib.util.spec_from_file_location("calling_policy_validator", MODULE
 assert SPEC and SPEC.loader
 validator = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(validator)
+
+RENDERER_PATH = ROOT / "scripts/render_kong_calling_routes.py"
+RENDERER_SPEC = importlib.util.spec_from_file_location("calling_policy_renderer", RENDERER_PATH)
+assert RENDERER_SPEC and RENDERER_SPEC.loader
+renderer = importlib.util.module_from_spec(RENDERER_SPEC)
+RENDERER_SPEC.loader.exec_module(renderer)
 
 
 def load_policy() -> dict:
@@ -96,3 +104,51 @@ def test_duplicate_json_keys_are_rejected() -> None:
 
 def test_negative_policy_self_test() -> None:
     validator.self_test()
+
+
+def test_calling_policy_renders_as_executable_kong_configuration() -> None:
+    policy = load_policy()
+    document = renderer.render()
+    assert document["_format_version"] == "3.0"
+    assert len(document["services"]) == 1
+    service = document["services"][0]
+    assert service["name"] == policy["service"]["name"]
+    assert service["host"] == policy["service"]["host"]
+    assert service["enabled"] is True
+
+    routes = {route["name"]: route for route in service["routes"]}
+    assert set(routes) == set(validator.EXPECTED_ROUTES)
+    for source in policy["routes"]:
+        rendered = routes[source["name"]]
+        assert rendered["hosts"] == [policy["host"]]
+        assert rendered["paths"] == [source["path"]]
+        assert rendered["methods"] == source["methods"]
+        rate = rendered["plugins"][0]
+        assert rate["name"] == "rate-limiting"
+        assert rate["config"]["minute"] == source["ratePerMinute"]
+        assert rate["config"]["policy"] == "redis"
+        assert rate["config"]["fault_tolerant"] is False
+
+    plugins = {plugin["name"]: plugin for plugin in service["plugins"]}
+    assert set(plugins) == {
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "request-size-limiting",
+    }
+    assert plugins["openid-connect"]["config"]["audience"] == ["middleware-api"]
+    assert plugins["post-function"]["config"]["access"] == [
+        (ROOT / "deploy/kong/calling-policy.lua").read_text(encoding="utf-8")
+    ]
+
+
+def test_renderer_refuses_runtime_apply() -> None:
+    result = subprocess.run(
+        [sys.executable, str(RENDERER_PATH), "--apply"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "runtime apply is not authorized" in result.stderr

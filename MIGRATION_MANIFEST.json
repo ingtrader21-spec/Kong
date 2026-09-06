@@ -2,13 +2,13 @@
   "files": [
     {
       "path": ".github/workflows/calling-contract-pin.yml",
-      "sha256": "da966e52a23577cc45d823f6dc29bf95555531c7656643b3b8c76ab5a4f49141",
-      "size": 2835
+      "sha256": "eb004bbc12919944c1a8312275a99475dfa4d2abefab2f309181173d16492ff0",
+      "size": 3263
     },
     {
       "path": ".github/workflows/kong-config.yml",
-      "sha256": "e0cde929258821281cf039f09bd0d050a42c4fbe067e3c2489e905df4f7f9a67",
-      "size": 1128
+      "sha256": "85b808d576b0a1c2f1a89260a4a21208ee97ddbb56d16798a387ca2319d993ea",
+      "size": 1278
     },
     {
       "path": ".github/workflows/manifest-sync.yml",
@@ -481,6 +481,11 @@
       "size": 15924
     },
     {
+      "path": "scripts/render_kong_calling_routes.py",
+      "sha256": "57864f3c6fbd626b93b113746ceff8adc9f11365e8298f0634d80c1d017c6720",
+      "size": 5027
+    },
+    {
       "path": "scripts/rollback_kong_standby.py",
       "sha256": "47878ef1417bc8c4efb241853bdefd3b1f60e811887f8e817ffc60537d7908d3",
       "size": 824
@@ -497,8 +502,8 @@
     },
     {
       "path": "scripts/validate_kong_calling_policy.py",
-      "sha256": "49a1b46272898744431d5941c84521aa6b89937fad28cf8296f464034b28aa27",
-      "size": 13329
+      "sha256": "4cfeac83301d3b5a2ee1bbccf711c0624485dc9338e0fbb1c24ded715e8c541f",
+      "size": 13783
     },
     {
       "path": "scripts/validate_kong_production_standby.py",
@@ -522,8 +527,8 @@
     },
     {
       "path": "tests/test_kong_calling_policy.py",
-      "sha256": "9a74bacd74e4964ba67bb37bfb0a04246cdd429b198b69c6ad072dad22585e1d",
-      "size": 3691
+      "sha256": "ebd4e054dde777f0550509ff254c7d365d087882adad945b718d850027530527",
+      "size": 5841
     },
     {
       "path": "tests/test_kong_canonical_route_contract.py",
@@ -592,7 +597,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "7bbd6cf64939c205396f03ed526959dbf879fa2a4a7f6341d946eadcb6b988f5",
+  "manifest_generation_id": "5b333d2a6276ac00cecb1490553101816e42773ab1fa2fdc59ed95cad7f66dc2",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

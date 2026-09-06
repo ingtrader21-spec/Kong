@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LOCK_PATH = ROOT / ".codestra/calling-contract.lock.json"
 POLICY_PATH = ROOT / "config/kong-calling-routes.v1.json"
 LUA_PATH = ROOT / "deploy/kong/calling-policy.lua"
+RENDERER_PATH = ROOT / "scripts/render_kong_calling_routes.py"
 
 DIGEST = "b39cdffe56a8185c91174228f0423df68b1137f34875f6ee52f9914f904bf724"
 AUTHORITY = "appolon1908-hue/codestra-production-platform#257"
@@ -279,6 +280,12 @@ def validate_policy(document: object, lua_source: str) -> None:
 def validate_files() -> None:
     validate_lock(parse_json(LOCK_PATH))
     validate_policy(parse_json(POLICY_PATH), LUA_PATH.read_text(encoding="utf-8"))
+    if not RENDERER_PATH.is_file():
+        raise ValueError("executable calling configuration renderer is missing")
+    renderer = RENDERER_PATH.read_text(encoding="utf-8")
+    for marker in ("def render()", '"openid-connect"', '"post-function"', '"rate-limiting"'):
+        if marker not in renderer:
+            raise ValueError(f"calling configuration renderer is incomplete: {marker}")
 
 
 def self_test() -> None:
