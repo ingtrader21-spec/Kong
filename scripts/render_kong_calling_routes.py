@@ -91,6 +91,7 @@ def render() -> dict[str, Any]:
                             "auth_methods": identity["authMethods"],
                             "audience": [identity["audience"]],
                             "consumer_claim": [identity["consumerClaim"]],
+                            "cache_tokens_salt": "{vault://env/kong-oidc-cache-tokens-salt}",
                         },
                     },
                     {

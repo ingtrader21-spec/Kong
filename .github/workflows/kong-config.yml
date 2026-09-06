@@ -16,8 +16,8 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
       - name: Install pinned decK
         run: |
-          DECK_VERSION=1.55.0
-          DECK_SHA256=22958ee3a34fc91a41fb215c0f8f81c08e29d363bd5c41dc8287ce9bcd89bc11
+          DECK_VERSION=1.66.0
+          DECK_SHA256=33004b03edf84dbd0869acd17f42ad729be44976f33a5477715df5cb11ac9adf
           curl --fail --location --silent --show-error \
             --output /tmp/deck.tar.gz \
             "https://github.com/Kong/deck/releases/download/v${DECK_VERSION}/deck_${DECK_VERSION}_linux_amd64.tar.gz"
@@ -29,4 +29,6 @@ jobs:
           python3 -m pip install --disable-pip-version-check pytest PyYAML
           python3 scripts/render_kong_calling_routes.py > /tmp/kong-calling-routes.yml
           /tmp/deck file validate /tmp/kong-calling-routes.yml
+          python3 scripts/render_kong_moneybee_identity.py > /tmp/kong-moneybee-identity.yml
+          /tmp/deck file validate /tmp/kong-moneybee-identity.yml
           pytest -q tests/test_kong_canonical_route_contract.py tests/test_kong_route_authority_hardening.py

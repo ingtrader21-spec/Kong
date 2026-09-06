@@ -22,6 +22,7 @@ def test_canonical_keycloak_oidc_contract_exists_and_is_secret_free():
     assert plugin["config"]["auth_methods"] == ["bearer"]
     assert plugin["config"]["audience"] == ["middleware-api"]
     assert plugin["config"]["consumer_claim"] == ["azp"]
+    assert plugin["config"]["cache_tokens_salt"] == "{vault://env/kong-oidc-cache-tokens-salt}"
     serialized = PLUGIN.read_text().lower()
     assert "client_secret" not in serialized
     assert "access_token" not in serialized
@@ -36,6 +37,7 @@ def test_existing_control_plane_already_uses_keycloak_oidc():
         "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration"
     )
     assert oidc["auth_methods"] == ["bearer"]
+    assert oidc["cache_tokens_salt"] == "{vault://env/kong-oidc-cache-tokens-salt}"
 
 
 def test_n8n_authority_is_bound_to_same_keycloak_realm():

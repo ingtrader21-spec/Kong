@@ -26,7 +26,7 @@
       "maxBodyBytes": 65536,
       "requiredPlugins": [
         "openid-connect",
-        "pre-function",
+        "post-function",
         "correlation-id",
         "rate-limiting",
         "request-size-limiting",
@@ -39,7 +39,8 @@
         "consumerClaim": ["azp"]
       },
       "claimEnforcement": {
-        "hook": "pre-function",
+        "hook": "post-function",
+        "source": "deploy/kong/moneybee-identity-policy.lua",
         "failClosed": true,
         "requireExactIssuer": true,
         "requireAudience": "moneybee-api",

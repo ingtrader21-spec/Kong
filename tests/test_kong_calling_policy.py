@@ -137,6 +137,7 @@ def test_calling_policy_renders_as_executable_kong_configuration() -> None:
         "request-size-limiting",
     }
     assert plugins["openid-connect"]["config"]["audience"] == ["middleware-api"]
+    assert plugins["openid-connect"]["config"]["cache_tokens_salt"] == "{vault://env/kong-oidc-cache-tokens-salt}"
     assert plugins["post-function"]["config"]["access"] == [
         (ROOT / "deploy/kong/calling-policy.lua").read_text(encoding="utf-8")
     ]
