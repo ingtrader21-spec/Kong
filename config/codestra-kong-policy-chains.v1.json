@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "chains": {
+    "global": {
+      "required": ["correlation-id", "opentelemetry", "request-size-limiting", "prometheus", "identity-header-scrub", "redacted-access-log", "standard-error-envelope"],
+      "cors": false
+    },
+    "browser": {
+      "extends": "global",
+      "required": ["exact-origin-cors", "oidc-or-bff-auth", "audience-check", "scope-check", "tenant-aware-rate-limit", "upstream-tls"],
+      "authoritative_tenant_header": false
+    },
+    "service": {
+      "extends": "global",
+      "required": ["private-source-policy", "client-credentials", "audience-check", "granular-scope-check", "workflow-family-check", "command-prefix-check", "upstream-mtls"],
+      "cors": false
+    },
+    "webhook": {
+      "extends": "global",
+      "required": ["post-only", "strict-body-limit", "provider-rate-limit", "middleware-inbox-target"],
+      "cors": false,
+      "direct_n8n_target": false,
+      "provider_signature_authority": "MIDDLEWARE"
+    }
+  },
+  "spoofed_headers_removed": ["X-Tenant-ID", "X-User-ID", "X-User-Roles", "X-Authenticated-User", "X-Consumer-ID", "X-Internal-Service", "X-Admin"],
+  "mutation_retry_authority": "MIDDLEWARE",
+  "shared_rate_limit_backend": "DEDICATED_REDIS_PER_CELL"
+}

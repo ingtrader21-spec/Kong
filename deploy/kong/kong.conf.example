@@ -1,0 +1,88 @@
+# Codestra Kong data-plane node configuration.
+#
+# This file is the source authority for how a Kong node must be configured to
+# run deploy/kong/control-plane.yml correctly. It is an example: the deployment
+# renders it with real values and supplies secrets out of band. Nothing here
+# authorizes a reload, a migration, or a traffic change.
+#
+# Every setting in the "REQUIRED FOR CORRECTNESS" block below is load-bearing.
+# The control-plane policy silently misbehaves or fails closed without them.
+
+# ---------------------------------------------------------------------------
+# REQUIRED FOR CORRECTNESS
+# ---------------------------------------------------------------------------
+
+# deploy/kong/scope-policy.lua calls kong.request.get_forwarded_scheme() and
+# rejects anything that is not https with 426. Kong only honours
+# X-Forwarded-Proto from a trusted peer; with trusted_ips unset it reports the
+# real connection scheme, which is plain http on the Caddy -> Kong loopback hop,
+# so EVERY request would be rejected. Set this to the exact source address Caddy
+# connects from - the Docker bridge gateway for the proxy network, or 127.0.0.1
+# when Kong listens on the host loopback. Never use 0.0.0.0/0.
+trusted_ips = REQUIRED_EXACT_CADDY_SOURCE_CIDR
+real_ip_header = X-Forwarded-For
+real_ip_recursive = on
+
+# The scope policy runs as a sandboxed serverless function. It needs cjson.safe
+# to decode the verified token payload, which the sandbox does not expose by
+# default. Keep untrusted_lua on `sandbox` and widen the require allowlist by
+# exactly one module; `untrusted_lua = on` would disable sandboxing for every
+# serverless function on the node and is not an acceptable substitute.
+untrusted_lua = sandbox
+untrusted_lua_sandbox_requires = cjson.safe
+
+# The gateway secret and the rate-limit Redis password are read as
+# {vault://env/...} references. Without the env vault enabled those references
+# are never resolved and the policy exits 503 gateway_identity_unavailable.
+# The env vault uppercases the resource name and maps '-' to '_', so
+# {vault://env/kong-control-plane-gateway-secret} reads
+# KONG_CONTROL_PLANE_GATEWAY_SECRET from the Kong process environment.
+vaults = env
+
+# openid-connect is a licensed Kong plugin. It is not present in Kong OSS and
+# it does not load on kong/kong-gateway in free mode. Without a valid license
+# the declarative config in deploy/kong/control-plane.yml is rejected at load.
+plugins = bundled
+license_path = /run/secrets/kong_license
+
+# ---------------------------------------------------------------------------
+# LISTENERS
+# ---------------------------------------------------------------------------
+# Container-internal addresses. Publishing is owned by compose.kong.yaml, which
+# binds the proxy to host loopback only. The Admin API is never published.
+proxy_listen = 0.0.0.0:8000
+admin_listen = 127.0.0.1:8001
+status_listen = 0.0.0.0:8100
+
+# Do not advertise the gateway or its version to public clients.
+headers = off
+
+# ---------------------------------------------------------------------------
+# DATASTORE
+# ---------------------------------------------------------------------------
+# Operations, roles, HBA, backup, PITR and HA for this database are owned by
+# operations/kong-database/. kong_runtime is the least-privilege runtime role
+# from operations/kong-database/roles.sql; migrations use kong_migration_admin
+# under a separate approved change.
+database = postgres
+pg_host = REQUIRED_KONG_DB_STABLE_ENDPOINT
+pg_port = 5432
+pg_database = kong
+pg_user = kong_runtime
+# Vault reference form, for a node configured from this file. The compose
+# deployment instead uses KONG_PG_PASSWORD_FILE, which the official entrypoint
+# reads from a mounted Docker secret; that mechanism only works for real Kong
+# options, which is why the gateway secret and the Redis password cannot use it.
+pg_password = {vault://env/kong-database-runtime-password}
+pg_ssl = on
+pg_ssl_verify = on
+lua_ssl_trusted_certificate = system
+
+# ---------------------------------------------------------------------------
+# LOGGING
+# ---------------------------------------------------------------------------
+log_level = notice
+proxy_access_log = /dev/stdout
+proxy_error_log = /dev/stderr
+admin_access_log = off
+status_access_log = off

@@ -1,0 +1,115 @@
+name: Security and supply-chain validation
+
+on:
+  pull_request:
+    branches: [main, staging, production]
+  push:
+    branches: [main, staging, production]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Scan Git history for secrets
+        run: |
+          GITLEAKS_VERSION=8.30.1
+          GITLEAKS_SHA256=551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+          curl --fail --location --silent --show-error \
+            --output /tmp/gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tar.gz" | sha256sum --check
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks git --redact --no-banner .
+      - name: Audit Python dependencies
+        run: |
+          python3 -m pip install --disable-pip-version-check pip-audit==2.10.1
+          python3 -m pip_audit -r deploy/kong-production-standby/auth-middleware/requirements.txt
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938
+        with:
+          languages: python
+      - name: Analyze locally with CodeQL
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938
+        with:
+          output: codeql-results
+          upload: never
+          upload-database: false
+          wait-for-processing: false
+      - name: Enforce local CodeQL security findings
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          paths = sorted(Path("codeql-results").glob("*.sarif"))
+          if not paths:
+              raise SystemExit("CodeQL produced no SARIF evidence")
+          blocking = []
+          result_count = 0
+          for path in paths:
+              document = json.loads(path.read_text())
+              for run in document.get("runs", []):
+                  rules = {
+                      rule.get("id"): rule
+                      for rule in run.get("tool", {}).get("driver", {}).get("rules", [])
+                  }
+                  for result in run.get("results", []):
+                      result_count += 1
+                      rule_id = result.get("ruleId", "unknown")
+                      rule = rules.get(rule_id, {})
+                      properties = rule.get("properties", {})
+                      raw_severity = properties.get("security-severity", "0")
+                      try:
+                          security_severity = float(raw_severity)
+                      except (TypeError, ValueError):
+                          security_severity = 0.0
+                      level = result.get("level", "warning")
+                      if security_severity >= 7.0 or level == "error":
+                          blocking.append(
+                              {
+                                  "rule": rule_id,
+                                  "level": level,
+                                  "security_severity": security_severity,
+                              }
+                          )
+          print(f"CODEQL_RESULTS={result_count}")
+          print(f"CODEQL_BLOCKING_FINDINGS={len(blocking)}")
+          if blocking:
+              print(json.dumps(blocking, sort_keys=True, indent=2))
+              raise SystemExit(1)
+          PY
+      - name: Upload local CodeQL evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: kong-codeql-sarif
+          path: codeql-results/*.sarif
+          if-no-files-found: error
+      - name: Scan filesystem and container definitions
+        uses: aquasecurity/trivy-action@d2a0b60797ff03db6132bd4e2b293f9b37081297
+        with:
+          scan-type: fs
+          scan-ref: .
+          version: v0.74.0
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+        with:
+          path: .
+          format: spdx-json
+          output-file: kong-source.spdx.json
+      - name: Upload SBOM
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: kong-source-sbom
+          path: kong-source.spdx.json
+          if-no-files-found: error

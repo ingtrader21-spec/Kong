@@ -109,20 +109,96 @@ services:
           audience: [codestra-control-plane]
           scopes_required: [openid]
           consumer_claim: [azp]
+          cache_tokens_salt: "{vault://env/kong-oidc-cache-tokens-salt}"
       - name: rate-limiting
-        config: {minute: 120, policy: local, fault_tolerant: false, hide_client_headers: false}
+        config:
+          minute: 120
+          # `local` counts per node, so N nodes allow N x the limit. `redis`
+          # keeps one shared counter. fault_tolerant stays false: if Redis is
+          # unreachable the gateway fails closed rather than stops limiting.
+          policy: redis
+          fault_tolerant: false
+          hide_client_headers: false
+          # Private backend alias only. Redis is never published to the host or
+          # to Caddy; confirm this alias against the deployment's compose
+          # network before the first reload.
+          redis:
+            host: codestra-redis
+            port: 6379
+            database: 0
+            timeout: 2000
+            password: "{vault://env/kong-rate-limit-redis-password}"
       - name: correlation-id
         config: {header_name: X-Correlation-ID, generator: uuid, echo_downstream: true}
-      - name: pre-function
+      - name: post-function
+        # post-function (priority -1000) runs AFTER openid-connect. The same
+        # policy under pre-function (priority 1000000) would run before any
+        # authentication plugin and see no claims at all.
         config:
           access:
             - |
+              -- Codestra control-plane scope, tenant and gateway-identity policy.
+              --
+              -- This MUST be attached as `post-function`, never `pre-function`.
+              -- pre-function has plugin priority 1000000 and therefore executes before every
+              -- authentication plugin (openid-connect is 1000, jwt is 1005). A policy placed
+              -- there observes no verified credential and no claims, so every request would
+              -- be rejected at the tenant check. post-function has priority -1000 and is the
+              -- only serverless phase that observes the result of authentication.
+              --
+              -- Required kong.conf settings (see kong.conf.example):
+              --   untrusted_lua                  = sandbox
+              --   untrusted_lua_sandbox_requires = cjson.safe
+              --   trusted_ips                    = <the Caddy edge>  -- get_forwarded_scheme
+              --   vaults                         = env               -- gateway secret
+              local cjson = require("cjson.safe")
+
+              -- Identity headers are minted here and nowhere else. Clearing them first means
+              -- a client-supplied value can never survive into the upstream request, even on
+              -- a path that exits early below.
+              local minted = {
+                "X-Authenticated-Client",
+                "X-Authenticated-Tenant",
+                "X-Authenticated-Role",
+                "X-Codestra-Gateway-Secret",
+              }
+              for _, name in ipairs(minted) do
+                kong.service.request.clear_header(name)
+              end
+
               local scheme = kong.request.get_forwarded_scheme()
               if scheme ~= "https" then return kong.response.exit(426,{error="https_required"}) end
+
+              -- Proof that an authentication plugin actually ran and accepted this request.
+              -- The claims below are read from the token body; without this gate a caller
+              -- could present an unsigned token and choose their own scopes.
+              if not kong.client.get_credential() and not kong.client.get_consumer() then
+                return kong.response.exit(401,{error="unauthenticated"})
+              end
+
+              -- Claims from the already-verified token. The jwt plugin publishes them on
+              -- kong.ctx.shared; openid-connect does not, and its internals are not a stable
+              -- contract, so fall back to decoding the token Kong has already validated.
+              local function verified_claims()
+                local shared = kong.ctx.shared.authenticated_jwt_token
+                if type(shared) == "table" and type(shared.claims) == "table" then
+                  return shared.claims
+                end
+                local header = kong.request.get_header("authorization") or ""
+                local token = header:match("[Bb]earer%s+(.+)") or ""
+                local segment = token:match("^[^.]+%.([^.]+)%.") or ""
+                if segment == "" then return {} end
+                segment = segment:gsub("-", "+"):gsub("_", "/")
+                segment = segment .. string.rep("=", (4 - #segment % 4) % 4)
+                local raw = ngx.decode_base64(segment)
+                local decoded = raw and cjson.decode(raw) or nil
+                if type(decoded) ~= "table" then return {} end
+                return decoded
+              end
+
               local path = kong.request.get_path()
               local method = kong.request.get_method()
-              local token = kong.ctx.shared.authenticated_jwt_token
-              local claims = token and token.claims or {}
+              local claims = verified_claims()
               local scopes = {}
               for value in string.gmatch(claims.scope or "", "%S+") do scopes[value] = true end
               local required
@@ -180,8 +256,22 @@ services:
               else
                 kong.service.request.set_header("X-Authenticated-Role", "tenant_admin")
               end
-              local gateway_secret = os.getenv("KONG_CONTROL_PLANE_GATEWAY_SECRET")
+              -- Resolved through the env vault rather than os.getenv: the Kong Lua sandbox
+              -- exposes only os.clock, os.date, os.difftime and os.time, so os.getenv raises
+              -- at request time. {vault://env/kong-control-plane-gateway-secret} reads the
+              -- KONG_CONTROL_PLANE_GATEWAY_SECRET environment variable.
+              local gateway_secret = kong.vault.get("{vault://env/kong-control-plane-gateway-secret}")
               if not gateway_secret or gateway_secret == "" then
                 return kong.response.exit(503,{error="gateway_identity_unavailable"})
               end
               kong.service.request.set_header("X-Codestra-Gateway-Secret",gateway_secret)
+plugins:
+  - name: prometheus
+    enabled: true
+    config:
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+      upstream_health_metrics: true
+      ai_metrics: false
+      per_consumer: false

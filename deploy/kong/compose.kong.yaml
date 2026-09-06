@@ -1,0 +1,131 @@
+# Codestra Kong data-plane node.
+#
+# Consumes only the immutable upstream image digest recorded by the protected
+# release-evidence workflow (.github/workflows/release.yml resolves
+# kong/kong-gateway:3.14.0.1-ubuntu and writes kong-image.txt). Retagging or
+# floating tags at deploy time is intentionally unsupported.
+#
+# This file stands a node up. It does not authorize one: activation still
+# requires operations/runbooks/kong-production-activation.md.
+services:
+  kong-gateway:
+    image: kong/kong-gateway@${KONG_IMAGE_DIGEST:?KONG_IMAGE_DIGEST must be an immutable sha256 digest}
+    restart: unless-stopped
+
+    # Secrets that Kong itself understands are injected as KONG_<OPTION>_FILE;
+    # the official entrypoint reads the file and exports the value. That
+    # mechanism only covers real Kong options, so the two values consumed by the
+    # declarative config through {vault://env/...} references must be true
+    # environment variables. They come from a root-owned host file that is never
+    # committed:
+    #
+    #   CODESTRA_RUNTIME_ENV=/etc/codestra/secrets/kong/runtime.env
+    #     KONG_CONTROL_PLANE_GATEWAY_SECRET=...
+    #     KONG_RATE_LIMIT_REDIS_PASSWORD=...
+    #
+    # The env vault uppercases the reference resource and maps '-' to '_', so
+    # {vault://env/kong-control-plane-gateway-secret} resolves to the first.
+    env_file:
+      - ${CODESTRA_RUNTIME_ENV:?CODESTRA_RUNTIME_ENV must point at the root-owned runtime env file}
+
+    environment:
+      # Rationale for each setting is in kong.conf.example. Kept as KONG_* env
+      # rather than a mounted kong.conf so the running node's configuration is
+      # visible in the compose source under review.
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: ${KONG_DB_STABLE_ENDPOINT:?KONG_DB_STABLE_ENDPOINT must be the approved private endpoint}
+      KONG_PG_PORT: "5432"
+      KONG_PG_DATABASE: kong
+      KONG_PG_USER: kong_runtime
+      KONG_PG_PASSWORD_FILE: /run/secrets/kong_database_runtime_password
+      KONG_PG_SSL: "on"
+      KONG_PG_SSL_VERIFY: "on"
+      KONG_LUA_SSL_TRUSTED_CERTIFICATE: system
+
+      # Without trusted_ips, get_forwarded_scheme() reports the real loopback
+      # scheme and the control-plane policy rejects every request with 426.
+      KONG_TRUSTED_IPS: ${KONG_TRUSTED_IPS:?KONG_TRUSTED_IPS must be the exact Caddy source CIDR}
+      KONG_REAL_IP_HEADER: X-Forwarded-For
+      KONG_REAL_IP_RECURSIVE: "on"
+
+      # The scope policy is a sandboxed serverless function that needs exactly
+      # one extra module. `on` would disable the sandbox entirely.
+      KONG_UNTRUSTED_LUA: sandbox
+      KONG_UNTRUSTED_LUA_SANDBOX_REQUIRES: cjson.safe
+
+      # Resolves the {vault://env/...} references in control-plane.yml.
+      KONG_VAULTS: env
+
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+      # Docker publishes this listener only to host loopback below. Binding the
+      # container interface makes that loopback-only NAT path reachable by the
+      # read-only drift runner without exposing Admin publicly.
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_STATUS_LISTEN: 0.0.0.0:8100
+      KONG_HEADERS: "off"
+      KONG_LOG_LEVEL: notice
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ACCESS_LOG: "off"
+      KONG_STATUS_ACCESS_LOG: "off"
+
+      # openid-connect is a licensed plugin. It is absent from Kong OSS and does
+      # not load on kong/kong-gateway in free mode, so the declarative config is
+      # rejected at load without a valid license.
+      KONG_LICENSE_PATH: /run/secrets/kong_license
+
+      # Kong writes its generated nginx configuration and pid files into the
+      # prefix. The container root stays read-only, so the prefix is a tmpfs.
+      KONG_PREFIX: /var/run/kong
+
+    secrets:
+      - kong_license
+      - kong_database_runtime_password
+
+    ports:
+      # Host loopback only. Caddy runs on the host and reaches the data plane at
+      # 127.0.0.1:8000 (CADDY_KONG_UPSTREAM in appolon1908-hue/Caddy). The Admin
+      # API and the status listener are deliberately not published: the Admin
+      # API stays on container loopback, and the status listener is reachable
+      # only over the private observability network.
+      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8001:8001"
+
+    networks:
+      kong_frontend:
+        aliases: [codestra-kong]
+      codestra_backend: {}
+      codestra_observability:
+        aliases: [kong]
+
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/kong
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, kong, health]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+networks:
+  kong_frontend:
+    external: true
+    name: codestra_edge
+  codestra_backend:
+    external: true
+    name: codestra_backend
+  codestra_observability:
+    external: true
+    name: codestra-observability
+
+secrets:
+  # Root-owned files supplied by the deployment authority. Only paths belong in
+  # Git; see SECURITY.md.
+  kong_license:
+    file: /etc/codestra/secrets/kong/license.json
+  kong_database_runtime_password:
+    file: /etc/codestra/secrets/kong/database-runtime-password

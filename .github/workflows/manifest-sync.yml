@@ -1,0 +1,85 @@
+name: Check Kong authority manifests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - staging
+      - production
+  push:
+    branches:
+      - "feature/**"
+      - "fix/**"
+      - "release/**"
+      - main
+      - staging
+      - production
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kong-authority-manifest-check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  manifest-check:
+    name: manifest-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Check out exact triggering source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ env.EXPECTED_SHA }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prove exact source identity
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
+          test -z "$(git status --porcelain)"
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Generate deterministic manifest candidate without publishing to Git
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input PyYAML
+          python3 tools/generate_migration_manifests.py
+          python3 tools/verify_migration_manifest.py
+
+      - name: Upload deterministic non-secret candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: kong-authority-manifests-${{ env.EXPECTED_SHA }}
+          path: |
+            MIGRATION_MANIFEST.json
+            MIGRATION_MANIFEST.yaml
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Verify committed manifests match the deterministic candidate
+        run: |
+          set -Eeuo pipefail
+          git diff --exit-code -- MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml
+          test -z "$(git status --porcelain)"
+
+      - name: Record check-only authority
+        run: |
+          echo "MANIFEST_AUTHORITY=CHECK_ONLY"
+          echo "EXACT_HEAD=${EXPECTED_SHA}"
+          echo "REPOSITORY_WRITE_PERMISSION=NONE"
+          echo "AUTO_COMMIT=DISABLED"
+          echo "DETERMINISTIC_CANDIDATE_ARTIFACT=kong-authority-manifests-${EXPECTED_SHA}"

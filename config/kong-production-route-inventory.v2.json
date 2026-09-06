@@ -1,0 +1,934 @@
+{
+  "schema": "codestra.kong.production-route-inventory.v2",
+  "status": "SOURCE_CANDIDATE_NO_RUNTIME_APPLY",
+  "runtimeApplyAuthorized": false,
+  "expectedRouteCount": 27,
+  "sourceEvidence": "docs/evidence/PRODUCTION_ROUTE_READBACK_20260906.json",
+  "intentionalFailClosedMigrations": [
+    {
+      "route": "breero-production-api-route",
+      "reason": "public clients must not route directly to a provider runtime",
+      "requiredUpstream": "codestra-middleware-integration-api-1:8095"
+    },
+    {
+      "route": "codestra-website-api-route",
+      "reason": "public clients must not route directly to a private provider address",
+      "requiredUpstream": "codestra-middleware-integration-api-1:8095"
+    }
+  ],
+  "routes": [
+    {
+      "name": "breero-production-api-route",
+      "hosts": [
+        "api.breero.com"
+      ],
+      "paths": [
+        "/health",
+        "/api/v1"
+      ],
+      "methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "breero-production-api",
+        "protocol": "http",
+        "host": "codestra-middleware-integration-api-1",
+        "port": 8095,
+        "connect_timeout": 5000,
+        "read_timeout": 30000,
+        "write_timeout": 30000
+      },
+      "plugins": [
+        "rate-limiting",
+        "request-size-limiting",
+        "request-transformer"
+      ]
+    },
+    {
+      "name": "codestra-callback-control",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/api/v1/control/callbacks"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": true,
+      "service": {
+        "name": "codestra-callback-api",
+        "protocol": "http",
+        "host": "codestra-middleware-integration-api-1",
+        "port": 8095,
+        "connect_timeout": 3000,
+        "read_timeout": 10000,
+        "write_timeout": 10000
+      },
+      "plugins": [
+        "correlation-id",
+        "jwt",
+        "pre-function",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "codestra-callback-read",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/api/v1/callbacks"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": true,
+      "service": {
+        "name": "codestra-callback-api",
+        "protocol": "http",
+        "host": "codestra-middleware-integration-api-1",
+        "port": 8095,
+        "connect_timeout": 3000,
+        "read_timeout": 10000,
+        "write_timeout": 10000
+      },
+      "plugins": [
+        "correlation-id",
+        "jwt",
+        "pre-function",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "codestra-campaign-policy-check",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/api/v1/automation/policy-check"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-campaign-automation-api",
+        "protocol": "http",
+        "host": "codestra-middleware-integration-api-1",
+        "port": 8095,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "correlation-id",
+        "jwt",
+        "post-function",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "codestra-campaign-result-submit",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/api/v1/integrations/n8n/results"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-campaign-automation-api",
+        "protocol": "http",
+        "host": "codestra-middleware-integration-api-1",
+        "port": 8095,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "correlation-id",
+        "jwt",
+        "post-function",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "codestra-communication-canonical-read",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/api/v1/messages"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": true,
+      "service": {
+        "name": "codestra-communication-control-plane",
+        "protocol": "http",
+        "host": "codestra-integration-control-plane-api-1",
+        "port": 8096,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "correlation-id",
+        "key-auth",
+        "rate-limiting",
+        "request-transformer"
+      ]
+    },
+    {
+      "name": "codestra-communication-canonical-write",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/api/v1/control/messages",
+        "/api/v1/results/messages"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": true,
+      "service": {
+        "name": "codestra-communication-control-plane",
+        "protocol": "http",
+        "host": "codestra-integration-control-plane-api-1",
+        "port": 8096,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "correlation-id",
+        "key-auth",
+        "rate-limiting",
+        "request-size-limiting",
+        "request-transformer"
+      ]
+    },
+    {
+      "name": "codestra-email-standby-route",
+      "hosts": [
+        "kong-standby.internal.codestra.agency"
+      ],
+      "paths": [
+        "/v1/email"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-email-standby",
+        "protocol": "http",
+        "host": "codestra-kong-standby-auth",
+        "port": 8080,
+        "connect_timeout": 3000,
+        "read_timeout": 5000,
+        "write_timeout": 5000
+      },
+      "plugins": [
+        "ip-restriction",
+        "rate-limiting",
+        "request-size-limiting",
+        "request-transformer"
+      ]
+    },
+    {
+      "name": "codestra-email-webhook-standby-route",
+      "hosts": [
+        "kong-standby.internal.codestra.agency"
+      ],
+      "paths": [
+        "/v1/webhooks/email"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-email-webhook-standby",
+        "protocol": "http",
+        "host": "codestra-kong-standby-auth",
+        "port": 8080,
+        "connect_timeout": 3000,
+        "read_timeout": 5000,
+        "write_timeout": 5000
+      },
+      "plugins": [
+        "ip-restriction",
+        "rate-limiting",
+        "request-size-limiting",
+        "request-transformer"
+      ]
+    },
+    {
+      "name": "codestra-mail-api",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/api/v1/mail",
+        "/api/v1/admin/mail"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": true,
+      "service": {
+        "name": "codestra-mail-control-plane",
+        "protocol": "http",
+        "host": "codestra-mail-api",
+        "port": 8098,
+        "connect_timeout": 5000,
+        "read_timeout": 30000,
+        "write_timeout": 30000
+      },
+      "plugins": []
+    },
+    {
+      "name": "codestra-n8n-command-read",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/v1/integrations/n8n/operations"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-middleware-n8n-control-plane",
+        "protocol": "http",
+        "host": "appolon-middleware-integration-api",
+        "port": 8080,
+        "connect_timeout": 3000,
+        "read_timeout": 10000,
+        "write_timeout": 10000
+      },
+      "plugins": [
+        "correlation-id",
+        "jwt",
+        "post-function",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "codestra-n8n-command-submit",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/v1/integrations/n8n/commands"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-middleware-n8n-control-plane",
+        "protocol": "http",
+        "host": "appolon-middleware-integration-api",
+        "port": 8080,
+        "connect_timeout": 3000,
+        "read_timeout": 10000,
+        "write_timeout": 10000
+      },
+      "plugins": [
+        "correlation-id",
+        "jwt",
+        "post-function",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "codestra-sms-standby-route",
+      "hosts": [
+        "kong-standby.internal.codestra.agency"
+      ],
+      "paths": [
+        "/v1/sms"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-sms-standby",
+        "protocol": "http",
+        "host": "codestra-kong-standby-auth",
+        "port": 8080,
+        "connect_timeout": 3000,
+        "read_timeout": 5000,
+        "write_timeout": 5000
+      },
+      "plugins": [
+        "ip-restriction",
+        "rate-limiting",
+        "request-size-limiting",
+        "request-transformer"
+      ]
+    },
+    {
+      "name": "codestra-sms-webhook-standby-route",
+      "hosts": [
+        "kong-standby.internal.codestra.agency"
+      ],
+      "paths": [
+        "/v1/webhooks/sms"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-sms-webhook-standby",
+        "protocol": "http",
+        "host": "codestra-kong-standby-auth",
+        "port": 8080,
+        "connect_timeout": 3000,
+        "read_timeout": 5000,
+        "write_timeout": 5000
+      },
+      "plugins": [
+        "ip-restriction",
+        "rate-limiting",
+        "request-size-limiting",
+        "request-transformer"
+      ]
+    },
+    {
+      "name": "codestra-token-validation-certification",
+      "hosts": [
+        "api.codestra.co",
+        "api.codestra.agency"
+      ],
+      "paths": [
+        "/v1/identity-token-certification"
+      ],
+      "methods": [
+        "GET",
+        "OPTIONS"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-token-validator",
+        "protocol": "http",
+        "host": "identity-certification",
+        "port": 8080,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "cors",
+        "rate-limiting",
+        "request-transformer"
+      ]
+    },
+    {
+      "name": "codestra-website-api-route",
+      "hosts": [
+        "api.codestra.agency"
+      ],
+      "paths": [
+        "/api/v1/demo-requests",
+        "/api/v1/contact-requests",
+        "/api/v1/pricing-requests",
+        "/api/v1/analytics/events",
+        "/api/v1/localization/country",
+        "/api/v1/localization/preference"
+      ],
+      "methods": [
+        "GET",
+        "POST",
+        "OPTIONS"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-website-api",
+        "protocol": "http",
+        "host": "codestra-middleware-integration-api-1",
+        "port": 8095,
+        "connect_timeout": 3000,
+        "read_timeout": 10000,
+        "write_timeout": 10000
+      },
+      "plugins": [
+        "cors",
+        "key-auth"
+      ]
+    },
+    {
+      "name": "crm-route",
+      "hosts": [
+        "api.codestra.agency",
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/v1/crm"
+      ],
+      "methods": [
+        "GET",
+        "POST",
+        "PATCH",
+        "OPTIONS"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": true,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-crm-api",
+        "protocol": "http",
+        "host": "codestra-kong-service-auth-adapter-1",
+        "port": 8080,
+        "connect_timeout": 5000,
+        "read_timeout": 5000,
+        "write_timeout": 5000
+      },
+      "plugins": [
+        "cors",
+        "key-auth",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "email-route",
+      "hosts": [
+        "api.codestra.agency",
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/v1/email"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": true,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-email-api",
+        "protocol": "http",
+        "host": "codestra-email-reseller-api-1",
+        "port": 8080,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "key-auth",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "gateway-test-route",
+      "hosts": [
+        "api.codestra.agency"
+      ],
+      "paths": [
+        "/v1/test"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": true,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-gateway-test",
+        "protocol": "http",
+        "host": "kong-test-upstream",
+        "port": 8080,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "key-auth"
+      ]
+    },
+    {
+      "name": "sms-dlr-telnexa-route",
+      "hosts": [
+        "api.codestra.agency",
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/v1/sms/dlr/telnexa"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": true,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-sms-dlr",
+        "protocol": "http",
+        "host": "codestra-sms-api-api-1",
+        "port": 8080,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "key-auth",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "sms-route",
+      "hosts": [
+        "api.codestra.agency",
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/v1/sms"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": true,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-sms-api",
+        "protocol": "http",
+        "host": "codestra-kong-service-auth-adapter-1",
+        "port": 8080,
+        "connect_timeout": 3000,
+        "read_timeout": 10000,
+        "write_timeout": 10000
+      },
+      "plugins": [
+        "key-auth",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "webhooks-route",
+      "hosts": [
+        "api.codestra.agency",
+        "api.codestra.co"
+      ],
+      "paths": [
+        "/v1/webhooks"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-webhooks",
+        "protocol": "http",
+        "host": "codestra-middleware-event-gateway-1",
+        "port": 8095,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "key-auth",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "website-form-demo-request",
+      "hosts": [
+        "api.codestra.agency"
+      ],
+      "paths": [
+        "/v1/forms/demo-request"
+      ],
+      "methods": [
+        "POST",
+        "OPTIONS"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-website-forms",
+        "protocol": "http",
+        "host": "codestra-integration-control-plane-api-1",
+        "port": 8096,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "bot-detection",
+        "cors",
+        "key-auth",
+        "rate-limiting"
+      ]
+    },
+    {
+      "name": "website-form-electronic-billing",
+      "hosts": [
+        "api.codestra.agency"
+      ],
+      "paths": [
+        "/v1/forms/electronic-billing-application"
+      ],
+      "methods": [
+        "POST",
+        "OPTIONS"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-website-forms",
+        "protocol": "http",
+        "host": "codestra-integration-control-plane-api-1",
+        "port": 8096,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "bot-detection",
+        "cors",
+        "key-auth",
+        "rate-limiting"
+      ]
+    },
+    {
+      "name": "website-form-electronic-billing-registration",
+      "hosts": [
+        "api.codestra.agency"
+      ],
+      "paths": [
+        "/v1/forms/electronic-billing-registration"
+      ],
+      "methods": [
+        "POST",
+        "OPTIONS"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-website-forms",
+        "protocol": "http",
+        "host": "codestra-integration-control-plane-api-1",
+        "port": 8096,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "bot-detection",
+        "cors",
+        "key-auth",
+        "rate-limiting"
+      ]
+    },
+    {
+      "name": "website-form-pricing-request",
+      "hosts": [
+        "api.codestra.agency"
+      ],
+      "paths": [
+        "/v1/forms/pricing-request"
+      ],
+      "methods": [
+        "POST",
+        "OPTIONS"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-website-forms",
+        "protocol": "http",
+        "host": "codestra-integration-control-plane-api-1",
+        "port": 8096,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "bot-detection",
+        "cors",
+        "key-auth",
+        "rate-limiting"
+      ]
+    },
+    {
+      "name": "website-form-sales-contact",
+      "hosts": [
+        "api.codestra.agency"
+      ],
+      "paths": [
+        "/v1/forms/sales-contact"
+      ],
+      "methods": [
+        "POST",
+        "OPTIONS"
+      ],
+      "protocols": [
+        "http",
+        "https"
+      ],
+      "strip_path": false,
+      "preserve_host": false,
+      "service": {
+        "name": "codestra-website-forms",
+        "protocol": "http",
+        "host": "codestra-integration-control-plane-api-1",
+        "port": 8096,
+        "connect_timeout": 60000,
+        "read_timeout": 60000,
+        "write_timeout": 60000
+      },
+      "plugins": [
+        "bot-detection",
+        "cors",
+        "key-auth",
+        "rate-limiting"
+      ]
+    }
+  ],
+  "retiredDuplicateRoutes": [
+    {
+      "route": "cod-web-out-email-production",
+      "reason": "match is fully owned by codestra-communication-canonical-write"
+    },
+    {
+      "route": "codestra-communication-oauth-shadow-create",
+      "reason": "match is fully owned by codestra-communication-canonical-write"
+    }
+  ]
+}

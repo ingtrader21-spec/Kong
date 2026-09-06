@@ -65,6 +65,21 @@ def form_value(value):
     return value
 
 
+def plugin_form(config: dict) -> dict:
+    result = {}
+    def add(prefix, value):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                add(f"{prefix}.{key}", item)
+        elif isinstance(value, list):
+            result[f"{prefix}[]"] = [form_value(item) for item in value]
+        else:
+            result[prefix] = form_value(value)
+    for key, value in config.items():
+        add(f"config.{key}", value)
+    return result
+
+
 def enabled_plugins(base: str, route_id: str) -> dict[str, dict]:
     plugins = all_rows(base, f"/routes/{route_id}/plugins?size=1000")
     grouped: dict[str, list[dict]] = {}
@@ -151,20 +166,35 @@ def security_authority(root: Path, expected: dict) -> tuple[Path, dict, dict]:
     path = root / expected["securityAuthority"]
     manifest = json.loads(path.read_text())
     route_name = expected["name"]
-    if path.name == "kong-callback-routes.json":
-        route = one(
-            [item for item in manifest["routes"] if item["name"] == route_name],
-            f"security authority route {route_name}",
-        )
+    route = one(
+        [item for item in manifest["routes"] if item["name"] == route_name],
+        f"security authority route {route_name}",
+    )
+    if path.name in {"kong-callback-routes.json", "kong-intake-routes.json"}:
         require_equal(route["paths"], expected["paths"], f"{route_name}.authority.paths")
         require_equal(sorted(route["methods"]), sorted(expected["methods"]), f"{route_name}.authority.methods")
+        if path.name == "kong-intake-routes.json":
+            require_equal(
+                route["stripPath"],
+                expected["stripPath"],
+                f"{route_name}.authority.stripPath",
+            )
+            require_equal(
+                route["preserveHost"],
+                expected["preserveHost"],
+                f"{route_name}.authority.preserveHost",
+            )
+            require_equal(
+                set(route["requiredPlugins"]),
+                set(expected["requiredPlugins"]),
+                f"{route_name}.authority.requiredPlugins",
+            )
     elif path.name == "kong-campaign-automation-routes.json":
-        route = one(
-            [item for item in manifest["routes"] if item["name"] == route_name],
-            f"security authority route {route_name}",
-        )
         require_equal([route["path"]], expected["paths"], f"{route_name}.authority.paths")
         require_equal(expected["methods"], ["POST"], f"{route_name}.authority.methods")
+    elif path.name == "kong-n8n-control-plane-routes.json":
+        require_equal([route["path"]], expected["paths"], f"{route_name}.authority.paths")
+        require_equal([route["method"]], expected["methods"], f"{route_name}.authority.methods")
     else:
         raise RuntimeError(f"unsupported route security authority: {path}")
     require_equal(manifest["host"], expected["hosts"][0], f"{route_name}.authority.host")
@@ -180,6 +210,70 @@ def security_module(root: Path, module_name: str):
     return importlib.import_module(module_name)
 
 
+def _verify_intake_plugins(
+    manifest: dict,
+    route: dict,
+    plugins: dict[str, dict],
+    expected: dict,
+) -> None:
+    require_config_subset(
+        plugins["jwt"].get("config", {}),
+        {
+            "key_claim_name": "azp",
+            "claims_to_verify": ["exp"],
+            "header_names": ["authorization"],
+        },
+        f"{expected['name']}.jwt",
+    )
+    oidc = plugins["openid-connect"].get("config", {})
+    require_config_subset(
+        oidc,
+        {"auth_methods": ["bearer"], "consumer_claim": ["azp"]},
+        f"{expected['name']}.openid_connect",
+    )
+    issuer = str(oidc.get("issuer", ""))
+    if not issuer.startswith("https://auth.codestra.co/realms/codestra"):
+        raise RuntimeError(f"{expected['name']}.openid_connect.issuer drift")
+    if route["requiredClientId"] not in set(oidc.get("audience") or []):
+        raise RuntimeError(f"{expected['name']}.openid_connect.audience drift")
+    if route["requiredScope"] not in set(oidc.get("scopes_required") or []):
+        raise RuntimeError(f"{expected['name']}.openid_connect.scope drift")
+
+    access = "\n".join(plugins["post-function"].get("config", {}).get("access") or [])
+    for required_text in (
+        route["requiredClientId"],
+        route["requiredScope"],
+        "X-Tenant-ID",
+        "Idempotency-Key",
+    ):
+        if required_text not in access:
+            raise RuntimeError(f"{expected['name']}.post_function missing {required_text}")
+    require_config_subset(
+        plugins["request-size-limiting"].get("config", {}),
+        {"allowed_payload_size": route["maxBodyMb"]},
+        f"{expected['name']}.body_limit",
+    )
+    require_config_subset(
+        plugins["rate-limiting"].get("config", {}),
+        {"minute": route["ratePerMinute"], "policy": "redis", "fault_tolerant": False,
+         "redis": {"host": "codestra-redis", "port": 6379}},
+        f"{expected['name']}.rate_limit",
+    )
+    require_config_subset(
+        plugins["correlation-id"].get("config", {}),
+        {
+            "header_name": "X-Correlation-ID",
+            "generator": "uuid",
+            "echo_downstream": True,
+        },
+        f"{expected['name']}.correlation_id",
+    )
+    if not isinstance(plugins["request-termination"].get("config", {}), dict):
+        raise RuntimeError(f"{expected['name']}.request_termination invalid")
+    if manifest.get("activation", {}).get("runtimeApplyAuthorized") is not False:
+        raise RuntimeError(f"{expected['name']}.runtime_apply_authority must remain false")
+
+
 def verify_security_plugins(
     root: Path,
     authority_path: Path,
@@ -190,9 +284,16 @@ def verify_security_plugins(
 ) -> None:
     required = set(expected["requiredPlugins"])
     require_equal(set(plugins), required, f"{expected['name']}.route_plugins")
+    if authority_path.name == "kong-intake-routes.json":
+        _verify_intake_plugins(manifest, authority_route, plugins, expected)
+        return
     if authority_path.name == "kong-callback-routes.json":
         callback = security_module(root, "reconcile_kong_callback_routes")
         callback.verify_plugins(plugins, authority_route, manifest)
+        return
+    if authority_path.name == "kong-n8n-control-plane-routes.json":
+        n8n = security_module(root, "reconcile_kong_n8n_control_plane")
+        n8n.verify_plugins(plugins, authority_route, manifest)
         return
     if authority_path.name != "kong-campaign-automation-routes.json":
         raise RuntimeError(f"unsupported route security authority: {authority_path}")
@@ -222,7 +323,9 @@ def verify_security_plugins(
         plugins["rate-limiting"],
         {
             "minute": authority_route["rate_per_minute"],
-            "policy": "local",
+            "policy": "redis",
+            "fault_tolerant": False,
+            "redis": {"host": "codestra-redis", "port": 6379},
             "limit_by": "consumer",
         },
         f"{expected['name']}.rate_limit",
@@ -295,7 +398,7 @@ def ensure_plugin(
 ) -> dict:
     plugins = enabled_plugins(admin, route_id)
     plugin = plugins.get(name)
-    form = {f"config.{key}": form_value(value) for key, value in expected_config.items()}
+    form = plugin_form(expected_config)
     if plugin is None:
         if not apply:
             raise RuntimeError(f"required route plugin absent: {name}")
@@ -355,7 +458,8 @@ def verify_managed_route(
         admin,
         route["id"],
         "rate-limiting",
-        {"minute": expected["ratePerMinute"], "policy": "local", "limit_by": "consumer"},
+        {"minute": expected["ratePerMinute"], "policy": "redis", "limit_by": "consumer", "fault_tolerant": False,
+         "redis": {"host": "codestra-redis", "port": 6379}},
         apply,
     )
     ensure_plugin(
@@ -392,6 +496,10 @@ def main() -> int:
     root = Path(__file__).resolve().parents[1]
     manifest = json.loads(args.manifest.read_text())
     require_equal(manifest.get("schema"), "codestra.kong.canonical-routes.v2", "manifest.schema")
+    if not isinstance(manifest.get("runtimeApplyAuthorized"), bool):
+        raise RuntimeError("runtimeApplyAuthorized must be an explicit boolean")
+    if args.apply and manifest["runtimeApplyAuthorized"] is not True:
+        raise RuntimeError("runtime apply is not authorized by the reviewed manifest")
     if "allowedExistingRouteNames" in manifest:
         raise RuntimeError("name-only public route allowlists are forbidden")
     if not isinstance(manifest.get("legacyHostEnabled"), bool):

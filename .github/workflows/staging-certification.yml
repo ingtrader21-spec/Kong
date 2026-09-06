@@ -1,0 +1,66 @@
+name: Staging certification policy
+
+on:
+  pull_request:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kong-staging-source-admission-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  staging-certification:
+    name: staging-certification
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out exact candidate source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require exact main to staging promotion
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$EVENT_NAME" == pull_request ]]; then
+            test "$BASE_REF" = staging
+            test "$HEAD_REF" = main
+            test "$HEAD_SHA" = "$(git rev-parse HEAD)"
+            main_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)"
+            staging_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/staging" --jq .object.sha)"
+            test "$HEAD_SHA" = "$main_sha"
+            comparison="$(gh api "repos/${GITHUB_REPOSITORY}/compare/${staging_sha}...${HEAD_SHA}" --jq .status)"
+            [[ "$comparison" == ahead || "$comparison" == identical ]]
+          else
+            test "${GITHUB_REF_NAME}" = staging
+            test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          fi
+
+      - name: Validate source authority without live mutation
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input pytest PyYAML
+          pytest -q
+          python3 tools/generate_migration_manifests.py --check
+          python3 tools/verify_migration_manifest.py
+
+      - name: Declare source-only certification boundary
+        run: |
+          set -Eeuo pipefail
+          echo 'KONG_STAGING_SOURCE_ADMISSION=PASS'
+          echo 'RUNTIME_MUTATION_AUTHORIZED=NO'
+          echo 'ADMIN_API_CALLS_AUTHORIZED=NO'
+          echo 'PRODUCTION_TRAFFIC_AUTHORIZED=NO'
+          echo 'EXTERNAL_EFFECTS_ENABLED=NO'
+          echo 'Live staging acceptance remains a separate immutable read-only/no-provider-effects certification.'

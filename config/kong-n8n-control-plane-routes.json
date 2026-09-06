@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.1",
+  "status": "APPROVED_PRODUCTION",
+  "service": {
+    "name": "codestra-middleware-n8n-control-plane",
+    "host": "appolon-middleware-integration-api",
+    "port": 8080,
+    "protocol": "http",
+    "enabled": true,
+    "retries": 1,
+    "connect_timeout": 3000,
+    "read_timeout": 10000,
+    "write_timeout": 10000
+  },
+  "consumer": {
+    "username": "codestra-n8n-automation",
+    "custom_id": "n8n-automation"
+  },
+  "issuer": "https://auth.codestra.co/realms/codestra",
+  "oidc_discovery": "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration",
+  "jwks_uri": "https://auth.codestra.co/realms/codestra/protocol/openid-connect/certs",
+  "audience": "middleware-api",
+  "client_id": "n8n-automation",
+  "host": "api.codestra.co",
+  "preserve_authorization_header": true,
+  "token_exchange": false,
+  "routes": [
+    {
+      "name": "codestra-n8n-command-submit",
+      "path": "/v1/integrations/n8n/commands",
+      "method": "POST",
+      "scope": "middleware.request.forward",
+      "required_headers": ["Authorization", "X-Tenant-ID", "X-Correlation-ID", "Idempotency-Key"],
+      "rate_per_minute": 120,
+      "max_body_mb": 1
+    },
+    {
+      "name": "codestra-n8n-command-read",
+      "path": "/v1/integrations/n8n/operations",
+      "method": "GET",
+      "scope": "middleware.status.read",
+      "required_headers": ["Authorization", "X-Tenant-ID"],
+      "rate_per_minute": 240,
+      "max_body_mb": 1
+    }
+  ],
+  "safety": {
+    "reconciliation_apply": true,
+    "credentials_in_repository": false,
+    "direct_provider_routes": false,
+    "middleware_revalidates_identity": true,
+    "oidc_required": true,
+    "oidc_enforcement": "jwt-rs256-plus-claim-guard",
+    "legacy_jwt_validation_retained": true
+  },
+  "legacy_contract_items": [
+    {
+      "path": "/webhooks/vicidial/call-result/",
+      "owner": "legacy-vicidial-ingress",
+      "included_in_n8n_control_plane_gate": false
+    }
+  ]
+}

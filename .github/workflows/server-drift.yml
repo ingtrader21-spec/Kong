@@ -1,0 +1,29 @@
+name: Read-only server drift capture
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  server-drift:
+    runs-on: self-hosted
+    environment: production-read-only
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Enforce capture-only boundary
+        run: |
+          echo 'Server capture is intentionally manual and read-only.'
+          echo 'No POST, PUT, PATCH, DELETE, restart, reload, DNS, firewall, or traffic action is authorized.'
+      - name: Require reviewed capture implementation
+        run: |
+          test -x tools/capture_kong_server_baseline.sh
+          tools/capture_kong_server_baseline.sh "${RUNNER_TEMP}/kong-production-readback.json"
+      - name: Upload sanitized read-only evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: kong-production-readback-${{ github.sha }}
+          path: ${{ runner.temp }}/kong-production-readback.json
+          if-no-files-found: error
+          retention-days: 30

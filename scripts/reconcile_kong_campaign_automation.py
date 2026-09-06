@@ -89,13 +89,18 @@ def plugin_form(config: dict) -> dict:
             return "true" if value else "false"
         return value
 
-    return {
-        f"config.{key}{'[]' if isinstance(value, list) else ''}": (
-            [form_value(item) for item in value] if isinstance(value, list)
-            else form_value(value)
-        )
-        for key, value in config.items()
-    }
+    result = {}
+    def add(prefix, value):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                add(f"{prefix}.{key}", item)
+        elif isinstance(value, list):
+            result[f"{prefix}[]"] = [form_value(item) for item in value]
+        else:
+            result[prefix] = form_value(value)
+    for key, value in config.items():
+        add(f"config.{key}", value)
+    return result
 
 
 def claim_guard(manifest: dict, required_scope: str) -> str:
@@ -272,7 +277,10 @@ def main() -> int:
             "allowed_payload_size": expected["max_body_mb"],
         }, args.apply)
         ensure_plugin(args.admin_url, route["id"], "rate-limiting", {
-            "minute": expected["rate_per_minute"], "policy": "local", "limit_by": "consumer",
+            "minute": expected["rate_per_minute"], "policy": "redis", "limit_by": "consumer",
+            "fault_tolerant": False,
+            "redis": {"host": "codestra-redis", "port": 6379, "database": 0,
+                      "timeout": 2000, "password": "{vault://env/kong-rate-limit-redis-password}"},
         }, args.apply)
         ensure_plugin(args.admin_url, route["id"], "correlation-id", {
             "header_name": "X-Correlation-ID", "generator": "uuid", "echo_downstream": True,

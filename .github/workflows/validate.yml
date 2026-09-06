@@ -2,30 +2,41 @@ name: Validate Kong source authority
 
 on:
   pull_request:
+    branches: [main, staging, production]
   push:
-    branches: [main]
+    branches: [main, staging, production]
 
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  validate:
-    runs-on: ubuntu-latest
+  source-head:
+    name: source-head
+    runs-on: ubuntu-24.04
+    env:
+      EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Check out exact reviewed head
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ env.EXPECTED_SHA }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Prove exact source identity
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
+          test -z "$(git status --porcelain)"
       - name: Install validation dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends shellcheck lua5.4
           python3 -m pip install --disable-pip-version-check pytest PyYAML
-          DECK_VERSION=1.55.0
-          DECK_SHA256=22958ee3a34fc91a41fb215c0f8f81c08e29d363bd5c41dc8287ce9bcd89bc11
-          curl --fail --location --silent --show-error \
-            --output /tmp/deck.tar.gz \
-            "https://github.com/Kong/deck/releases/download/v${DECK_VERSION}/deck_${DECK_VERSION}_linux_amd64.tar.gz"
-          echo "${DECK_SHA256}  /tmp/deck.tar.gz" | sha256sum --check
-          tar -xzf /tmp/deck.tar.gz -C /tmp deck
-      - name: Validate structured source
+      - name: Validate structured source and calling policy
         run: |
           python3 - <<'PY'
           import json
@@ -37,26 +48,87 @@ jobs:
               yaml.safe_load(path.read_text())
           PY
           python3 -m compileall -q deploy operations scripts tests tools
+          python3 scripts/validate_community_n8n_egress.py
+          python3 scripts/validate_kong_calling_policy.py
+          python3 scripts/validate_kong_calling_policy.py --self-test
+          python3 scripts/validate_kong_production_inventory.py
           luac -p deploy/kong/scope-policy.lua
-          /tmp/deck file validate deploy/kong/control-plane.yml
-      - name: Validate shell and source policies
+          luac -p deploy/kong/calling-policy.lua
+          luac -p deploy/kong/correlation-required.lua
+          luac -p deploy/kong/moneybee-identity-policy.lua
+      - name: Validate shell policies
         run: |
           find operations deploy scripts -type f -name '*.sh' -print0 \
             | xargs -0 -r -n1 bash -n
           find operations deploy scripts -type f -name '*.sh' -print0 \
             | xargs -0 -r shellcheck -x
-          ! grep -RIlE --exclude-dir=tests --exclude-dir=reports --exclude-dir=docs \
-            --exclude='MIGRATION_MANIFEST.json' \
-            '(BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|Authorization:[[:space:]]*Bearer[[:space:]]+[^[:space:]]+|client_secret[[:space:]]*=[[:space:]]*[^[:space:]]+)' \
-            .
       - name: Run Kong authority tests
         run: |
           pytest -q \
             tests/test_kong_canonical_route_contract.py \
             tests/test_kong_route_authority_hardening.py \
+            tests/test_kong_n8n_control_plane.py \
+            tests/test_kong_n8n_editor_route.py \
+            tests/test_oidc_auth.py \
             tests/test_kong_database_operations.py \
-            tests/test_kong_change_authority.py
+            tests/test_kong_change_authority.py \
+            tests/test_release_governance.py \
+            tests/test_kong_observability.py \
+            tests/test_kong_calling_policy.py
+          pytest -q tests/test_runtime_integration_preflight.py
+          pytest -q tests/test_community_n8n_egress.py
           python3 tools/generate_migration_manifests.py --check
           python3 tools/verify_migration_manifest.py
           git diff --exit-code
           test -z "$(git status --porcelain)"
+
+  merge-result:
+    name: merge-result
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    env:
+      EXPECTED_SHA: ${{ github.sha }}
+    steps:
+      - name: Check out synthetic merge result
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ env.EXPECTED_SHA }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Install merge-result validation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends lua5.4
+          python3 -m pip install --disable-pip-version-check pytest PyYAML
+      - name: Validate merge-result calling policy and manifests
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
+          test -z "$(git status --porcelain)"
+          python3 scripts/validate_kong_calling_policy.py
+          luac -p deploy/kong/calling-policy.lua
+          pytest -q tests/test_kong_calling_policy.py
+          python3 tools/generate_migration_manifests.py --check
+          python3 tools/verify_migration_manifest.py
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+
+  validate:
+    name: validate
+    if: always()
+    needs: [source-head, merge-result]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require exact head and applicable merge-result validation
+        env:
+          HEAD_RESULT: ${{ needs.source-head.result }}
+          MERGE_RESULT: ${{ needs.merge-result.result }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -Eeuo pipefail
+          test "${HEAD_RESULT}" = success
+          if [[ "${EVENT_NAME}" == pull_request ]]; then
+            test "${MERGE_RESULT}" = success
+          else
+            test "${MERGE_RESULT}" = skipped
+          fi

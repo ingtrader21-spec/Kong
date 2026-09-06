@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "2.0.0",
+  "repository": "appolon1908-hue/Kong",
+  "classification": "runtime-infrastructure",
+  "targetBranch": "codex/codestra-orbit-v2-kong",
+  "adoptionMode": "n/a-no-rendered-interface",
+  "domain": null,
+  "domainStatus": "not-applicable",
+  "requirements": {
+    "noFabricatedBrowserUi": true,
+    "domainRegistry": true,
+    "routingContract": true,
+    "identityBoundary": true,
+    "securityPolicy": true,
+    "immutableArtifacts": true,
+    "monitoring": true,
+    "rollback": true
+  },
+  "status": "branch-created",
+  "blockers": [
+    "SDK-repository pull request 75 must complete protected review before shared Orbit contracts are promoted.",
+    "Reconcile Caddy, Kong, Keycloak, Middleware, browser-session, Brand/Content/Asset/Footer, CORS, security-header, and observability boundaries.",
+    "Validate declarative configuration, immutable release identity, staging readback, and rollback without adding a browser UI or changing live routes."
+  ]
+}

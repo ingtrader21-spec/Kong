@@ -1,0 +1,63 @@
+name: Kong candidate certification
+
+on:
+  pull_request:
+    branches:
+      - main
+      - staging
+      - production
+  push:
+    branches:
+      - main
+      - staging
+      - production
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  certify:
+    name: certify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Check out exact candidate source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.EXPECTED_SHA }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prove exact checkout
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
+          test -z "$(git status --porcelain)"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Validate governed route and manifest authority
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input PyYAML
+          python3 scripts/validate_marketing_routes.py
+          python3 tools/generate_migration_manifests.py
+          git diff --exit-code -- MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml
+          python3 tools/verify_migration_manifest.py
+          test -z "$(git status --porcelain)"
+
+      - name: Record exact candidate certification
+        run: |
+          echo "CANDIDATE_CERTIFICATION=PASS"
+          echo "EXACT_HEAD=${EXPECTED_SHA}"
+          echo "RUNTIME_MUTATION=NO"

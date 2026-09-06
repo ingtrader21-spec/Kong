@@ -1,3 +1,4 @@
+import copy
 import importlib.util
 import json
 from pathlib import Path
@@ -14,6 +15,7 @@ CONTROL_PLANE_PATH = ROOT / "deploy/kong/control-plane.yml"
 SCOPE_POLICY_PATH = ROOT / "deploy/kong/scope-policy.lua"
 STANDBY_APPLIER_PATH = ROOT / "scripts/apply_kong_standby.py"
 CAMPAIGN_RECONCILER_PATH = ROOT / "scripts/reconcile_kong_campaign_automation.py"
+PROVIDER_CONTROL_VALIDATOR_PATH = ROOT / "scripts/validate_provider_control_routes.py"
 
 
 def _load(path: Path, name: str):
@@ -30,6 +32,54 @@ def _module():
 
 def _exporter():
     return _load(EXPORTER_PATH, "export_kong_public_route_contracts")
+
+
+def test_provider_control_authority_is_fail_closed_and_mutation_covered():
+    module = _load(PROVIDER_CONTROL_VALIDATOR_PATH, "validate_provider_control_routes")
+    contract = json.loads(module.CONTRACT.read_text())
+    module.validate(copy.deepcopy(contract))
+
+    mutations = []
+    enabled = copy.deepcopy(contract)
+    enabled["runtimeApplyAuthorized"] = True
+    mutations.append(enabled)
+    shared_key = copy.deepcopy(contract)
+    shared_key["security"]["sharedKeysAllowed"] = True
+    mutations.append(shared_key)
+    direct_provider = copy.deepcopy(contract)
+    direct_provider["security"]["directProviderRoutesAllowed"] = True
+    mutations.append(direct_provider)
+    wrong_client = copy.deepcopy(contract)
+    wrong_client["routes"][0]["clientId"] = "codestra-marketing"
+    mutations.append(wrong_client)
+    wrong_scope = copy.deepcopy(contract)
+    wrong_scope["routes"][0]["scope"] = "marketing.campaign.request"
+    mutations.append(wrong_scope)
+    wrong_name = copy.deepcopy(contract)
+    wrong_name["routes"][0]["name"] = "unreviewed-route-name"
+    mutations.append(wrong_name)
+    duplicate_name = copy.deepcopy(contract)
+    duplicate_name["routes"][1]["name"] = duplicate_name["routes"][0]["name"]
+    mutations.append(duplicate_name)
+    wrong_audience = copy.deepcopy(contract)
+    wrong_audience["audience"] = "ai-provider-adapter"
+    mutations.append(wrong_audience)
+    wrong_dependency = copy.deepcopy(contract)
+    wrong_dependency["dependencies"]["middlewarePullRequest"] = 999
+    mutations.append(wrong_dependency)
+    wrong_upstream = copy.deepcopy(contract)
+    wrong_upstream["service"]["host"] = "unreviewed-middleware"
+    mutations.append(wrong_upstream)
+    delete_legacy = copy.deepcopy(contract)
+    delete_legacy["legacyRetirement"]["runtimeDeletionAuthorized"] = True
+    mutations.append(delete_legacy)
+    weaken_retirement = copy.deepcopy(contract)
+    weaken_retirement["legacyRetirement"]["acceptance"] = "review later"
+    mutations.append(weaken_retirement)
+
+    for mutation in mutations:
+        with pytest.raises(ValueError):
+            module.validate(mutation)
 
 
 def test_standby_apply_refuses_unowned_name_collisions(monkeypatch):
@@ -68,8 +118,71 @@ def test_campaign_reconciler_validates_manifest_consumer_identity():
 def _inline_scope_policy() -> str:
     document = yaml.safe_load(CONTROL_PLANE_PATH.read_text())
     plugins = document["services"][0]["plugins"]
-    pre_function = next(plugin for plugin in plugins if plugin["name"] == "pre-function")
-    return pre_function["config"]["access"][0].strip()
+    post_function = next(plugin for plugin in plugins if plugin["name"] == "post-function")
+    return post_function["config"]["access"][0].strip()
+
+
+def test_control_plane_scope_policy_runs_after_authentication():
+    """pre-function has priority 1000000 and executes before every auth plugin.
+
+    The policy reads verified claims, so attaching it there would leave it with
+    no credential and no claims on every request. post-function (priority -1000)
+    is the only serverless phase that observes the result of openid-connect.
+    """
+    document = yaml.safe_load(CONTROL_PLANE_PATH.read_text())
+    names = {plugin["name"] for plugin in document["services"][0]["plugins"]}
+    assert "post-function" in names
+    assert "pre-function" not in names
+
+
+def test_control_plane_scope_policy_uses_sandbox_safe_primitives():
+    """os.getenv is absent from Kong's Lua sandbox (only clock/date/difftime/time).
+
+    Reading the gateway secret through the env vault keeps untrusted_lua on
+    `sandbox`; os.getenv would force `untrusted_lua = on`, disabling the sandbox
+    for every serverless function on the node.
+    """
+    policy = SCOPE_POLICY_PATH.read_text()
+    code = "\n".join(
+        line for line in policy.splitlines() if not line.lstrip().startswith("--")
+    )
+    assert "os.getenv" not in code
+    assert 'kong.vault.get("{vault://env/kong-control-plane-gateway-secret}")' in code
+
+
+def test_control_plane_scope_policy_requires_a_verified_credential():
+    """The policy decodes the bearer token itself, so it must first prove that an
+    authentication plugin accepted the request."""
+    policy = SCOPE_POLICY_PATH.read_text()
+    guard = policy.index("kong.client.get_credential()")
+    claims = policy.index("local function verified_claims()")
+    assert guard < claims
+    assert 'error="unauthenticated"' in policy
+
+
+def test_control_plane_never_inherits_client_supplied_identity_headers():
+    policy = SCOPE_POLICY_PATH.read_text()
+    for header in (
+        "X-Authenticated-Client",
+        "X-Authenticated-Tenant",
+        "X-Authenticated-Role",
+        "X-Codestra-Gateway-Secret",
+    ):
+        assert header in policy
+    assert "kong.service.request.clear_header(name)" in policy
+    assert policy.index("clear_header(name)") < policy.index(
+        'kong.service.request.set_header("X-Authenticated-Client"'
+    )
+
+
+def test_control_plane_rate_limit_counts_across_every_node():
+    document = yaml.safe_load(CONTROL_PLANE_PATH.read_text())
+    plugins = {p["name"]: p for p in document["services"][0]["plugins"]}
+    config = plugins["rate-limiting"]["config"]
+    assert config["policy"] == "redis"
+    assert config["fault_tolerant"] is False
+    assert config["redis"]["port"] == 6379
+    assert config["redis"]["password"].startswith("{vault://env/")
 
 
 def test_public_route_manifest_disables_legacy_and_name_only_trust():
@@ -91,12 +204,17 @@ def test_contract_routes_bind_exact_dedicated_security_authority():
         authority = ROOT / route["securityAuthority"]
         assert authority.is_file()
         assert route["hosts"] == ["api.codestra.co"]
-        assert route["serviceHost"] == "codestra-middleware-integration-api-1"
-        assert route["servicePort"] == 8095
+        if route["securityAuthority"] == "config/kong-n8n-control-plane-routes.json":
+            assert route["serviceHost"] == "appolon-middleware-integration-api"
+            assert route["servicePort"] == 8080
+        else:
+            assert route["serviceHost"] == "codestra-middleware-integration-api-1"
+            assert route["servicePort"] == 8095
         assert {"jwt", "correlation-id", "rate-limiting", "request-size-limiting"} <= set(
             route["requiredPlugins"]
         )
-        assert {"pre-function", "post-function"} & set(route["requiredPlugins"])
+        assert "post-function" in route["requiredPlugins"]
+        assert "pre-function" not in route["requiredPlugins"]
 
 
 def test_callback_contract_rejects_security_plugin_config_drift():
@@ -121,7 +239,7 @@ def test_callback_contract_rejects_security_plugin_config_drift():
                 "anonymous": None,
             },
         },
-        "pre-function": {
+        "post-function": {
             "enabled": True,
             "config": {"access": [callback.claim_guard(spec, route["requiredScope"])]},
         },
@@ -133,8 +251,10 @@ def test_callback_contract_rejects_security_plugin_config_drift():
             "enabled": True,
             "config": {
                 "minute": route["ratePerMinute"],
-                "policy": "local",
+                "policy": "redis",
+                "fault_tolerant": False,
                 "limit_by": "ip",
+                "redis": {"host": "codestra-redis", "port": 6379},
             },
         },
         "correlation-id": {
@@ -150,6 +270,103 @@ def test_callback_contract_rejects_security_plugin_config_drift():
     plugins["jwt"]["config"]["key_claim_name"] = "sub"
     with pytest.raises(RuntimeError, match="jwt_key_claim"):
         module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
+
+
+def _intake_plugins(route: dict) -> dict[str, dict]:
+    access = (
+        f"require {route['requiredClientId']} {route['requiredScope']} "
+        "X-Tenant-ID Idempotency-Key"
+    )
+    return {
+        "jwt": {
+            "config": {
+                "header_names": ["authorization"],
+                "claims_to_verify": ["exp"],
+                "key_claim_name": "azp",
+            }
+        },
+        "openid-connect": {
+            "config": {
+                "auth_methods": ["bearer"],
+                "consumer_claim": ["azp"],
+                "issuer": "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration",
+                "audience": [route["requiredClientId"]],
+                "scopes_required": [route["requiredScope"]],
+            }
+        },
+        "post-function": {"config": {"access": [access]}},
+        "request-size-limiting": {
+            "config": {"allowed_payload_size": route["maxBodyMb"]}
+        },
+        "rate-limiting": {
+            "config": {"minute": route["ratePerMinute"], "policy": "redis", "fault_tolerant": False,
+                       "redis": {"host": "codestra-redis", "port": 6379}}
+        },
+        "correlation-id": {
+            "config": {
+                "header_name": "X-Correlation-ID",
+                "generator": "uuid",
+                "echo_downstream": True,
+            }
+        },
+        "request-termination": {"config": {"status_code": 403}},
+    }
+
+
+def test_intake_contract_parser_and_plugins_are_verified_exactly():
+    module = _module()
+    canonical = json.loads(MANIFEST_PATH.read_text())
+    expected = next(
+        row for row in canonical["contractRoutes"] if row["name"] == "codestra-intake-leads"
+    )
+    authority_path, spec, route = module.security_authority(ROOT, expected)
+    plugins = _intake_plugins(route)
+
+    assert authority_path.name == "kong-intake-routes.json"
+    module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
+
+
+def test_intake_contract_rejects_identity_scope_and_header_drift():
+    module = _module()
+    canonical = json.loads(MANIFEST_PATH.read_text())
+    expected = next(
+        row for row in canonical["contractRoutes"] if row["name"] == "codestra-intake-leads"
+    )
+    authority_path, spec, route = module.security_authority(ROOT, expected)
+
+    plugins = _intake_plugins(route)
+    plugins["openid-connect"]["config"]["audience"] = ["wrong-client"]
+    with pytest.raises(RuntimeError, match="openid_connect.audience drift"):
+        module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
+
+    plugins = _intake_plugins(route)
+    plugins["openid-connect"]["config"]["scopes_required"] = ["wrong.scope"]
+    with pytest.raises(RuntimeError, match="openid_connect.scope drift"):
+        module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
+
+    plugins = _intake_plugins(route)
+    plugins["post-function"]["config"]["access"] = ["return true"]
+    with pytest.raises(RuntimeError, match="post_function missing"):
+        module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
+
+
+def test_intake_contract_cannot_authorize_runtime_apply():
+    module = _module()
+    canonical = json.loads(MANIFEST_PATH.read_text())
+    expected = next(
+        row for row in canonical["contractRoutes"] if row["name"] == "codestra-intake-leads"
+    )
+    authority_path, spec, route = module.security_authority(ROOT, expected)
+    spec["activation"]["runtimeApplyAuthorized"] = True
+    with pytest.raises(RuntimeError, match="runtime_apply_authority"):
+        module.verify_security_plugins(
+            ROOT,
+            authority_path,
+            spec,
+            route,
+            _intake_plugins(route),
+            expected,
+        )
 
 
 def test_campaign_contract_rejects_scope_guard_drift():
@@ -182,8 +399,10 @@ def test_campaign_contract_rejects_scope_guard_drift():
             "enabled": True,
             "config": {
                 "minute": route["rate_per_minute"],
-                "policy": "local",
+                "policy": "redis",
+                "fault_tolerant": False,
                 "limit_by": "consumer",
+                "redis": {"host": "codestra-redis", "port": 6379},
             },
         },
         "correlation-id": {
