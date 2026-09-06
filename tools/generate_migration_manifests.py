@@ -21,9 +21,9 @@ YAML_MANIFEST = "MIGRATION_MANIFEST.yaml"
 JSON_MANIFEST = "MIGRATION_MANIFEST.json"
 MANIFEST_ARTIFACTS = {YAML_MANIFEST, JSON_MANIFEST}
 AUTHORITY_ROOTS = (
-    ".github/workflows", "config", "deploy", "docs", "operations", "scripts", "tests", "tools"
+    ".codestra", ".github/workflows", "config", "deploy", "docs", "operations", "orbit", "scripts", "tests", "tools"
 )
-AUTHORITY_FILES = {".gitignore", "README.md", "SECURITY.md", "pytest.ini"}
+AUTHORITY_FILES = {".gitignore", "README.md", "REPOSITORY_PROFILE.md", "SECURITY.md", "pytest.ini"}
 EXCLUDED_PARTS = {".git", "__pycache__", ".pytest_cache"}
 EXCLUDED_SUFFIXES = {".pyc", ".pyo", ".swp", ".tmp", "~"}
 LOCK_NAME = ".migration-manifests.lock"

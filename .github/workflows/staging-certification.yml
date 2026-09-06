@@ -26,19 +26,22 @@ jobs:
 
       - name: Require exact main to staging promotion
         env:
+          GH_TOKEN: ${{ github.token }}
           EVENT_NAME: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -Eeuo pipefail
-          git fetch origin main staging --depth=100
           if [[ "$EVENT_NAME" == pull_request ]]; then
             test "$BASE_REF" = staging
             test "$HEAD_REF" = main
             test "$HEAD_SHA" = "$(git rev-parse HEAD)"
-            test "$HEAD_SHA" = "$(git rev-parse origin/main)"
-            git merge-base --is-ancestor origin/staging "$HEAD_SHA"
+            main_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)"
+            staging_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/staging" --jq .object.sha)"
+            test "$HEAD_SHA" = "$main_sha"
+            comparison="$(gh api "repos/${GITHUB_REPOSITORY}/compare/${staging_sha}...${HEAD_SHA}" --jq .status)"
+            [[ "$comparison" == ahead || "$comparison" == identical ]]
           else
             test "${GITHUB_REF_NAME}" = staging
             test "$(git rev-parse HEAD)" = "$GITHUB_SHA"

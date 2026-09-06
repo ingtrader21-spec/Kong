@@ -53,13 +53,27 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Verify committed manifests without writing to GitHub
+      - name: Generate deterministic manifest candidate without publishing to Git
         run: |
           set -Eeuo pipefail
           python3 -m pip install --disable-pip-version-check --no-input PyYAML
           python3 tools/generate_migration_manifests.py
-          git diff --exit-code -- MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml
           python3 tools/verify_migration_manifest.py
+
+      - name: Upload deterministic non-secret candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: kong-authority-manifests-${{ env.EXPECTED_SHA }}
+          path: |
+            MIGRATION_MANIFEST.json
+            MIGRATION_MANIFEST.yaml
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Verify committed manifests match the deterministic candidate
+        run: |
+          set -Eeuo pipefail
+          git diff --exit-code -- MIGRATION_MANIFEST.json MIGRATION_MANIFEST.yaml
           test -z "$(git status --porcelain)"
 
       - name: Record check-only authority
@@ -68,3 +82,4 @@ jobs:
           echo "EXACT_HEAD=${EXPECTED_SHA}"
           echo "REPOSITORY_WRITE_PERMISSION=NONE"
           echo "AUTO_COMMIT=DISABLED"
+          echo "DETERMINISTIC_CANDIDATE_ARTIFACT=kong-authority-manifests-${EXPECTED_SHA}"

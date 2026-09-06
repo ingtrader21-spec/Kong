@@ -16,6 +16,8 @@ INTAKE_AUTHORITY = json.loads(Path("config/kong-intake-routes.json").read_text()
 
 
 def test_only_proven_middleware_routes_are_managed_public_routes():
+    assert MANIFEST["runtimeApplyAuthorized"] is False
+    assert "runtime apply is not authorized by the reviewed manifest" in SOURCE
     assert {route["path"] for route in MANIFEST["routes"]} == {
         "/v1/crm",
         "/v1/email",
@@ -53,7 +55,8 @@ def test_authenticated_middleware_contract_routes_are_canonical():
             "rate-limiting",
             "request-size-limiting",
         } <= set(route["requiredPlugins"])
-        assert {"pre-function", "post-function"} & set(route["requiredPlugins"])
+        assert "post-function" in route["requiredPlugins"]
+        assert "pre-function" not in route["requiredPlugins"]
 
     for name in ("codestra-intake-leads", "codestra-intake-survey-responses"):
         route = routes[name]

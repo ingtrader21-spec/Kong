@@ -213,7 +213,8 @@ def test_contract_routes_bind_exact_dedicated_security_authority():
         assert {"jwt", "correlation-id", "rate-limiting", "request-size-limiting"} <= set(
             route["requiredPlugins"]
         )
-        assert {"pre-function", "post-function"} & set(route["requiredPlugins"])
+        assert "post-function" in route["requiredPlugins"]
+        assert "pre-function" not in route["requiredPlugins"]
 
 
 def test_callback_contract_rejects_security_plugin_config_drift():
@@ -238,7 +239,7 @@ def test_callback_contract_rejects_security_plugin_config_drift():
                 "anonymous": None,
             },
         },
-        "pre-function": {
+        "post-function": {
             "enabled": True,
             "config": {"access": [callback.claim_guard(spec, route["requiredScope"])]},
         },
@@ -250,8 +251,10 @@ def test_callback_contract_rejects_security_plugin_config_drift():
             "enabled": True,
             "config": {
                 "minute": route["ratePerMinute"],
-                "policy": "local",
+                "policy": "redis",
+                "fault_tolerant": False,
                 "limit_by": "ip",
+                "redis": {"host": "codestra-redis", "port": 6379},
             },
         },
         "correlation-id": {
@@ -291,12 +294,13 @@ def _intake_plugins(route: dict) -> dict[str, dict]:
                 "scopes_required": [route["requiredScope"]],
             }
         },
-        "pre-function": {"config": {"access": [access]}},
+        "post-function": {"config": {"access": [access]}},
         "request-size-limiting": {
             "config": {"allowed_payload_size": route["maxBodyMb"]}
         },
         "rate-limiting": {
-            "config": {"minute": route["ratePerMinute"], "policy": "local"}
+            "config": {"minute": route["ratePerMinute"], "policy": "redis", "fault_tolerant": False,
+                       "redis": {"host": "codestra-redis", "port": 6379}}
         },
         "correlation-id": {
             "config": {
@@ -341,8 +345,8 @@ def test_intake_contract_rejects_identity_scope_and_header_drift():
         module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
 
     plugins = _intake_plugins(route)
-    plugins["pre-function"]["config"]["access"] = ["return true"]
-    with pytest.raises(RuntimeError, match="pre_function missing"):
+    plugins["post-function"]["config"]["access"] = ["return true"]
+    with pytest.raises(RuntimeError, match="post_function missing"):
         module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
 
 
@@ -395,8 +399,10 @@ def test_campaign_contract_rejects_scope_guard_drift():
             "enabled": True,
             "config": {
                 "minute": route["rate_per_minute"],
-                "policy": "local",
+                "policy": "redis",
+                "fault_tolerant": False,
                 "limit_by": "consumer",
+                "redis": {"host": "codestra-redis", "port": 6379},
             },
         },
         "correlation-id": {

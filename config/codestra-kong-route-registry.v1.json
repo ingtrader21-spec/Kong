@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "state": "DESIGN_ONLY",
+  "routes": [
+    {"id":"platform-api","cell":"core-communications","host":"api.codestra.co","path_prefix":"/v1/platform","methods":["GET","POST","PATCH"],"policy_chain":"browser","upstream":"middleware-platform","risk":"HIGH"},
+    {"id":"forms-api","cell":"core-communications","host":"api.codestra.co","path_prefix":"/v1/forms","methods":["GET","POST"],"policy_chain":"browser","upstream":"middleware-forms","risk":"MEDIUM"},
+    {"id":"crm-api","cell":"core-communications","host":"api.codestra.co","path_prefix":"/v1/crm","methods":["GET","POST","PATCH"],"policy_chain":"browser","upstream":"middleware-crm","risk":"HIGH"},
+    {"id":"email-api","cell":"core-communications","host":"api.codestra.co","path_prefix":"/v1/email","methods":["GET","POST","PATCH","DELETE"],"policy_chain":"browser","upstream":"middleware-email","risk":"HIGH"},
+    {"id":"sms-api","cell":"core-communications","host":"api.codestra.co","path_prefix":"/v1/sms","methods":["GET","POST","PATCH","DELETE"],"policy_chain":"browser","upstream":"middleware-sms","risk":"HIGH"},
+    {"id":"social-api","cell":"core-communications","host":"api.codestra.co","path_prefix":"/v1/social","methods":["GET","POST","PATCH","DELETE"],"policy_chain":"browser","upstream":"middleware-social","risk":"HIGH"},
+    {"id":"crawler-api","cell":"core-communications","host":"api.codestra.co","path_prefix":"/v1/crawler","methods":["GET","POST","PATCH"],"policy_chain":"browser","upstream":"middleware-crawler","risk":"HIGH"},
+    {"id":"automation-private","cell":"core-communications","host":"middleware.internal.invalid","path_prefix":"/internal/v1/automation","methods":["GET","POST"],"policy_chain":"service","upstream":"middleware-automation","risk":"CRITICAL"},
+    {"id":"email-webhook","cell":"core-communications","host":"api.codestra.co","path_prefix":"/v1/webhooks/email","methods":["POST"],"policy_chain":"webhook","upstream":"middleware-email-inbox","risk":"CRITICAL"},
+    {"id":"sms-webhook","cell":"core-communications","host":"api.codestra.co","path_prefix":"/v1/webhooks/sms","methods":["POST"],"policy_chain":"webhook","upstream":"middleware-sms-inbox","risk":"CRITICAL"},
+    {"id":"social-webhook","cell":"core-communications","host":"api.codestra.co","path_prefix":"/v1/webhooks/social","methods":["POST"],"policy_chain":"webhook","upstream":"middleware-social-inbox","risk":"CRITICAL"},
+    {"id":"beyvra-public","cell":"beyvra-financial","host":"api.beyvra.com","path_prefix":"/v1","methods":["GET","POST","PATCH","DELETE"],"policy_chain":"browser","upstream":"middleware-beyvra","risk":"CRITICAL"},
+    {"id":"beyvra-automation-private","cell":"beyvra-financial","host":"middleware-beyvra.internal.invalid","path_prefix":"/v1/beyvra/automation","methods":["GET","POST"],"policy_chain":"service","upstream":"middleware-beyvra-automation","risk":"CRITICAL"},
+    {"id":"telephony-private","cell":"telephony-private","host":"telephony.internal.invalid","path_prefix":"/v1/telephony","methods":["GET","POST"],"policy_chain":"service","upstream":"middleware-telephony","risk":"CRITICAL"},
+    {"id":"telephony-webhook-private","cell":"telephony-private","host":"telephony.internal.invalid","path_prefix":"/v1/webhooks/telephony","methods":["POST"],"policy_chain":"webhook","upstream":"middleware-telephony-inbox","risk":"CRITICAL"}
+  ],
+  "invariants": {
+    "all_upstreams_are_middleware": true,
+    "direct_n8n_routes": false,
+    "direct_provider_routes": false,
+    "explicit_methods_required": true,
+    "authoritative_tenant_from_header": false,
+    "live_sync_authorized": false
+  }
+}

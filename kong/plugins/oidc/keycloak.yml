@@ -14,3 +14,4 @@ plugins:
         - middleware-api
       consumer_claim:
         - azp
+      cache_tokens_salt: "{vault://env/kong-oidc-cache-tokens-salt}"

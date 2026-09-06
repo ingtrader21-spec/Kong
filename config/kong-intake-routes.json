@@ -19,7 +19,7 @@
       "requiredHeaders": ["Authorization", "X-Tenant-ID", "X-Correlation-ID", "Idempotency-Key"],
       "maxBodyMb": 1,
       "ratePerMinute": 120,
-      "requiredPlugins": ["jwt", "openid-connect", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting", "request-termination"]
+      "requiredPlugins": ["jwt", "openid-connect", "post-function", "correlation-id", "rate-limiting", "request-size-limiting", "request-termination"]
     },
     {
       "name": "codestra-intake-survey-responses",
@@ -32,7 +32,7 @@
       "requiredHeaders": ["Authorization", "X-Tenant-ID", "X-Correlation-ID", "Idempotency-Key"],
       "maxBodyMb": 1,
       "ratePerMinute": 120,
-      "requiredPlugins": ["jwt", "openid-connect", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting", "request-termination"]
+      "requiredPlugins": ["jwt", "openid-connect", "post-function", "correlation-id", "rate-limiting", "request-size-limiting", "request-termination"]
     }
   ],
   "security": {

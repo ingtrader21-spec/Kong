@@ -100,7 +100,10 @@ def expected_plugin_configs(spec: dict, route: dict) -> dict[str, dict]:
         "request-size-limiting": {"allowed_payload_size": route["max_body_mb"]},
         "rate-limiting": {
             "minute": route["rate_per_minute"],
-            "policy": "local",
+            "policy": "redis",
+            "fault_tolerant": False,
+            "redis": {"host": "codestra-redis", "port": 6379, "database": 0,
+                      "timeout": 2000, "password": "{vault://env/kong-rate-limit-redis-password}"},
             "limit_by": "consumer",
         },
         "correlation-id": {

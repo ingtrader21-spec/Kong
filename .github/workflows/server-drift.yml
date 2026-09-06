@@ -19,3 +19,11 @@ jobs:
       - name: Require reviewed capture implementation
         run: |
           test -x tools/capture_kong_server_baseline.sh
+          tools/capture_kong_server_baseline.sh "${RUNNER_TEMP}/kong-production-readback.json"
+      - name: Upload sanitized read-only evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: kong-production-readback-${{ github.sha }}
+          path: ${{ runner.temp }}/kong-production-readback.json
+          if-no-files-found: error
+          retention-days: 30
