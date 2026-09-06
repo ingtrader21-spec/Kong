@@ -527,8 +527,13 @@
     },
     {
       "path": "pytest.ini",
-      "sha256": "6a96ba0e2d5a8296fb90f474da9d2f0173d3e41eba18965513f711104155f913",
-      "size": 41
+      "sha256": "d5018ccfd259bcc065451357984d9404e0eaea62dd20fef7e513823483e2e3d1",
+      "size": 56
+    },
+    {
+      "path": "scripts/__init__.py",
+      "sha256": "f579db3ee8eec874f67f19df372e37d217d0e77dd5307343c9e08b43f89c34de",
+      "size": 67
     },
     {
       "path": "scripts/apply_kong_standby.py",
@@ -742,7 +747,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "d8ffa45de656979541e92531efae182f4984fa9f0266cfbed994a5426ccba01b",
+  "manifest_generation_id": "a2ca3a657935b45c9c87d3340036b83f2604f2c6ad489021ac18cdf3df24ec9b",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
