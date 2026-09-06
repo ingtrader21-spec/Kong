@@ -65,6 +65,21 @@ def form_value(value):
     return value
 
 
+def plugin_form(config: dict) -> dict:
+    result = {}
+    def add(prefix, value):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                add(f"{prefix}.{key}", item)
+        elif isinstance(value, list):
+            result[f"{prefix}[]"] = [form_value(item) for item in value]
+        else:
+            result[prefix] = form_value(value)
+    for key, value in config.items():
+        add(f"config.{key}", value)
+    return result
+
+
 def enabled_plugins(base: str, route_id: str) -> dict[str, dict]:
     plugins = all_rows(base, f"/routes/{route_id}/plugins?size=1000")
     grouped: dict[str, list[dict]] = {}
@@ -224,7 +239,7 @@ def _verify_intake_plugins(
     if route["requiredScope"] not in set(oidc.get("scopes_required") or []):
         raise RuntimeError(f"{expected['name']}.openid_connect.scope drift")
 
-    access = "\n".join(plugins["pre-function"].get("config", {}).get("access") or [])
+    access = "\n".join(plugins["post-function"].get("config", {}).get("access") or [])
     for required_text in (
         route["requiredClientId"],
         route["requiredScope"],
@@ -232,7 +247,7 @@ def _verify_intake_plugins(
         "Idempotency-Key",
     ):
         if required_text not in access:
-            raise RuntimeError(f"{expected['name']}.pre_function missing {required_text}")
+            raise RuntimeError(f"{expected['name']}.post_function missing {required_text}")
     require_config_subset(
         plugins["request-size-limiting"].get("config", {}),
         {"allowed_payload_size": route["maxBodyMb"]},
@@ -240,7 +255,8 @@ def _verify_intake_plugins(
     )
     require_config_subset(
         plugins["rate-limiting"].get("config", {}),
-        {"minute": route["ratePerMinute"], "policy": "local"},
+        {"minute": route["ratePerMinute"], "policy": "redis", "fault_tolerant": False,
+         "redis": {"host": "codestra-redis", "port": 6379}},
         f"{expected['name']}.rate_limit",
     )
     require_config_subset(
@@ -307,7 +323,9 @@ def verify_security_plugins(
         plugins["rate-limiting"],
         {
             "minute": authority_route["rate_per_minute"],
-            "policy": "local",
+            "policy": "redis",
+            "fault_tolerant": False,
+            "redis": {"host": "codestra-redis", "port": 6379},
             "limit_by": "consumer",
         },
         f"{expected['name']}.rate_limit",
@@ -380,7 +398,7 @@ def ensure_plugin(
 ) -> dict:
     plugins = enabled_plugins(admin, route_id)
     plugin = plugins.get(name)
-    form = {f"config.{key}": form_value(value) for key, value in expected_config.items()}
+    form = plugin_form(expected_config)
     if plugin is None:
         if not apply:
             raise RuntimeError(f"required route plugin absent: {name}")
@@ -440,7 +458,8 @@ def verify_managed_route(
         admin,
         route["id"],
         "rate-limiting",
-        {"minute": expected["ratePerMinute"], "policy": "local", "limit_by": "consumer"},
+        {"minute": expected["ratePerMinute"], "policy": "redis", "limit_by": "consumer", "fault_tolerant": False,
+         "redis": {"host": "codestra-redis", "port": 6379}},
         apply,
     )
     ensure_plugin(
@@ -477,6 +496,10 @@ def main() -> int:
     root = Path(__file__).resolve().parents[1]
     manifest = json.loads(args.manifest.read_text())
     require_equal(manifest.get("schema"), "codestra.kong.canonical-routes.v2", "manifest.schema")
+    if not isinstance(manifest.get("runtimeApplyAuthorized"), bool):
+        raise RuntimeError("runtimeApplyAuthorized must be an explicit boolean")
+    if args.apply and manifest["runtimeApplyAuthorized"] is not True:
+        raise RuntimeError("runtime apply is not authorized by the reviewed manifest")
     if "allowedExistingRouteNames" in manifest:
         raise RuntimeError("name-only public route allowlists are forbidden")
     if not isinstance(manifest.get("legacyHostEnabled"), bool):

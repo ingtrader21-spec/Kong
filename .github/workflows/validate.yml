@@ -51,6 +51,7 @@ jobs:
           python3 scripts/validate_community_n8n_egress.py
           python3 scripts/validate_kong_calling_policy.py
           python3 scripts/validate_kong_calling_policy.py --self-test
+          python3 scripts/validate_kong_production_inventory.py
           luac -p deploy/kong/scope-policy.lua
           luac -p deploy/kong/calling-policy.lua
           luac -p deploy/kong/moneybee-identity-policy.lua

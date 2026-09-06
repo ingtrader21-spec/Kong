@@ -18,14 +18,14 @@ files:
   sha256: 6f5b172ee32bf6f358bd6ea876eae2c2f1c71b771dc0b5192fd8c6fa9505f6cf
   size: 4569
 - path: .github/workflows/server-drift.yml
-  sha256: 863fe725259224a3ebff8f53f517a68986cdde6a08052b229dfbf6072139413e
-  size: 629
+  sha256: 054e9cc6c2f6a1ffbf78730ef971ccc01ed9349e650574bd15fb49d3706234d5
+  size: 1055
 - path: .github/workflows/staging-certification.yml
   sha256: ac856b1c507fa1d61645ef050e117c349e4569cb42729a0b998f9da4b56ef6f7
   size: 2517
 - path: .github/workflows/validate.yml
-  sha256: 6f509a5a3fd6cd6f805d900050c958aad8e5f5936770ebdbbbb2b54fc6273cd3
-  size: 4864
+  sha256: 246a7f18a033ccf4874b56642d67209588aa993a88b101592d893b90f758b50d
+  size: 4928
 - path: .gitignore
   sha256: 8c06027889bb245680b8a248468504a51ff8654fc6c800ea9ebd9f54213ddf9d
   size: 214
@@ -57,14 +57,14 @@ files:
   sha256: d01b006ad8de7b3e93561eb976ef21789f3e3db8fbf70069225b728c3e81d22a
   size: 869
 - path: config/kong-canonical-middleware-routes.json
-  sha256: 737ce62a1841a8ec11414943162a80abd5dcf353eb374f2178cdbc5816e5bc19
-  size: 5407
+  sha256: 06b8e6ed8352922cf72f2448f1987cae33b61164964e7e94ac6a8c9bebcacdfb
+  size: 5446
 - path: config/kong-community-n8n-egress.v1.json
   sha256: 54429854adae343d7242fd323ddcabd9993793909d99e282310f185920e28614
   size: 2310
 - path: config/kong-intake-routes.json
-  sha256: 0638aaf3de901e835a37dfe081e097035f3360c67ac487ab6fffa15db63b0c77
-  size: 1717
+  sha256: fac04e32cf124bd40cb1e8e00076b4ff4c7b116dbe112dadf38ffbe300dce9b7
+  size: 1719
 - path: config/kong-moneybee-identity-routes.json
   sha256: 769b44d5a9c4683dc62b57ae4166e4f8b1b99140fad9f3ee0d31690472e85e1d
   size: 2194
@@ -74,6 +74,9 @@ files:
 - path: config/kong-n8n-editor-routes.json
   sha256: 650d9f88aa88fe1e27f6fb116ea6a8155efd4f36be8c5ea23d408703d0e1ae8c
   size: 3727
+- path: config/kong-production-route-inventory.v2.json
+  sha256: 7296a8ffde779dd7ba9f7b1d0e358798b80478896e5cf56fbd14f1b31de26d4d
+  size: 21113
 - path: config/kong-provider-control-routes.v1.json
   sha256: a85b01190d4ed98f395b37ca6c125fc6ceb5eb4f1ea2a27105f971e45c650d7e
   size: 2823
@@ -176,6 +179,12 @@ files:
 - path: docs/branches/KONG_CELL_BRANCH_MAP.md
   sha256: 928eace591d85d8ff38520432c898d20cdd69f7a14ba505da0a153629e016c4a
   size: 1032
+- path: docs/evidence/PRODUCTION_HEAD_CANARY_20260906.json
+  sha256: 37d038f5e4ea308b4939f699e88f8bd642b0c87adcc9b45eb8f71c8d4d4498ed
+  size: 8930
+- path: docs/evidence/PRODUCTION_ROUTE_READBACK_20260906.json
+  sha256: 9d6f536bcf7eb0bef90594656b569f004380ce1bb047d363757e687bdf284232
+  size: 21882
 - path: docs/migration/from-codestra-production-platform.md
   sha256: d60890efc390f77f8ec93c92df157efb50e623af5b13b451470aba50145ae577
   size: 589
@@ -315,17 +324,17 @@ files:
   sha256: 10aa8dc945108439d5ec45fc0b1834ab0d01c7455cd974cc63d947f452e606a0
   size: 1991
 - path: scripts/reconcile_kong_callback_routes.py
-  sha256: b2e8ae3080c6a59d772768b481b1dab32c4fdb95b548a93719ec4b4d6b654d1a
-  size: 20182
+  sha256: 1c96bd766f83a1c6930a208d427bc810ba67c5f8ea7df46749b3a2e293a831cd
+  size: 20715
 - path: scripts/reconcile_kong_campaign_automation.py
-  sha256: a62514a4ff3288acf6bc6472a87477d661853710e566c3df21b0ef2c6af96227
-  size: 13031
+  sha256: 15031a4df971a83dc3106d9d6b169de2ab848c5e80f652ad69ce7023b3b99157
+  size: 13429
 - path: scripts/reconcile_kong_canonical_routes.py
-  sha256: 1945455f057d6dfb5b51492b945498315f3b6cc764bc9785f699843bbabbf81e
-  size: 23060
+  sha256: 486261ecf6d1aee0e1abb65d275e06b0927364f183d77a7af50756f58ad253f1
+  size: 24063
 - path: scripts/reconcile_kong_n8n_control_plane.py
-  sha256: a3650ee47b001132ede68185f1b00fd6ab5e1ff8f59853b8f4e6cb8c6e510c79
-  size: 15924
+  sha256: 3f914cfd3ee09171e8531e4cf31c9b4b8e6ef7ba7ea6b1e830705d5770982f9b
+  size: 16138
 - path: scripts/render_kong_calling_routes.py
   sha256: 4b43e785394a3d06bb2c1c7a5b1155b2a7a37cfb24f62bfa4ab2e105f0aad4f1
   size: 5121
@@ -347,6 +356,9 @@ files:
 - path: scripts/validate_kong_calling_policy.py
   sha256: 4cfeac83301d3b5a2ee1bbccf711c0624485dc9338e0fbb1c24ded715e8c541f
   size: 13783
+- path: scripts/validate_kong_production_inventory.py
+  sha256: cb37376f4594ee20745b2ddffc3d28bd7870d7a317f4523a1465e58e1cff746d
+  size: 2337
 - path: scripts/validate_kong_production_standby.py
   sha256: a33d3937b02067660c72fe7cc55e7d78a649c66c643d62f62bb82f10d860cc28
   size: 2952
@@ -369,8 +381,8 @@ files:
   sha256: f5e9eb0de5ac904b511faf0720af0429e412e9014bbd97578fa398d2d8d72e66
   size: 5956
 - path: tests/test_kong_canonical_route_contract.py
-  sha256: 403a72c9d84e36be504d79f08160fe77d2a4ce6ea7ff18010ceb2062c509d805
-  size: 5979
+  sha256: ca0d59a4f1a48b806afa7ee2d1d52a1db24de878f2d92aa2f1516bdb52c8baf1
+  size: 6154
 - path: tests/test_kong_change_authority.py
   sha256: f33f5cde8fea444db729bad54a0412973a4cbd068ba95f32b265574ae1c08948
   size: 30646
@@ -389,9 +401,15 @@ files:
 - path: tests/test_kong_observability.py
   sha256: b97f461c54ae60e7258ee0aa30a17c1bb9e6d26a50851fcf81858dd8d59433ce
   size: 1726
+- path: tests/test_kong_production_inventory.py
+  sha256: 06cb5d31352a2783c2664d63accbf57b5d38b8c31839d331dc768f468df53098
+  size: 1900
+- path: tests/test_kong_read_only_capture.py
+  sha256: b3efb856d043f444399717cecfbe002b7ce68c98e9a466615303bf4cc3fb7250
+  size: 571
 - path: tests/test_kong_route_authority_hardening.py
-  sha256: 06db521bb05a2411939669c187343b62776dc7f9a1f39ea06687aad5d06f0e20
-  size: 26505
+  sha256: cacf799c397fbd0c7634e59d1831b856eb50d84725fd9de89fc338ed45a61c7e
+  size: 26864
 - path: tests/test_moneybee_identity_edge.py
   sha256: 9dde2d49604618281379c44f0e0f7f66b73ea0f42c4b72b466ad85c563717fa5
   size: 3581
@@ -404,6 +422,9 @@ files:
 - path: tests/test_release_governance.py
   sha256: 626d36bec0ba9831b6520ceb4e52e4a0db1c5b06beea1884bcaac6aa320754b9
   size: 2403
+- path: tools/capture_kong_server_baseline.sh
+  sha256: a3b5314174edf63a850384b19fcea921ab4c33cac39a6edd7cdab601f4345404
+  size: 2541
 - path: tools/generate_migration_manifests.py
   sha256: 963f287ab0500430736dcb82cff52c0474378180b097d33afc8fa276cc640775
   size: 21375
@@ -414,7 +435,7 @@ files:
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 2510c4417ef9bb14918ca024b0c9ebbb8edc5da12ca0a3d883b11e5d5e83d076
+manifest_generation_id: 249b0440a546dbe5bb2c1e6150dac5ff09ae5636351ad7fa7d66f17da2a60870
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:

@@ -172,7 +172,7 @@ def claim_guard(spec, required_scope):
 
 def verify_auth_plugins(by_name, expected, spec):
     jwt = by_name.get("jwt")
-    guard = by_name.get("pre-function")
+    guard = by_name.get("post-function")
     if not jwt or not jwt.get("enabled") or not guard or not guard.get("enabled"):
         raise RuntimeError("callback route lacks enabled JWT claim enforcement: %s" % expected["name"])
     config = jwt["config"]
@@ -196,13 +196,15 @@ def auth_matches(by_name, expected, spec):
 
 
 def verify_plugins(by_name, expected, spec):
-    required = {"request-size-limiting", "rate-limiting", "correlation-id", "jwt", "pre-function"}
+    required = {"request-size-limiting", "rate-limiting", "correlation-id", "jwt", "post-function"}
     if not required <= set(by_name):
         raise RuntimeError("callback route lacks security plugins: %s" % expected["name"])
     require_equal(by_name["request-size-limiting"]["config"].get("allowed_payload_size"), expected["maxBodyMb"], expected["name"] + ".body_limit")
     rate = by_name["rate-limiting"]["config"]
     require_equal(rate.get("minute"), expected["ratePerMinute"], expected["name"] + ".rate")
-    require_equal(rate.get("policy"), "local", expected["name"] + ".rate_policy")
+    require_equal(rate.get("policy"), "redis", expected["name"] + ".rate_policy")
+    require_equal(rate.get("fault_tolerant"), False, expected["name"] + ".rate_fault_tolerant")
+    require_equal((rate.get("redis") or {}).get("host"), "codestra-redis", expected["name"] + ".rate_redis_host")
     require_equal(rate.get("limit_by"), "ip", expected["name"] + ".rate_identity")
     correlation = by_name["correlation-id"]["config"]
     require_equal(correlation.get("header_name"), "X-Correlation-ID", expected["name"] + ".correlation_header")
@@ -325,18 +327,21 @@ def main():
             require_equal(deny.get("config", {}).get("message"), "callback route maintenance", expected["name"] + ".deny_message")
         controls = {
             "request-size-limiting": {"config.allowed_payload_size": expected["maxBodyMb"]},
-            "rate-limiting": {"config.minute": expected["ratePerMinute"], "config.policy": "local", "config.limit_by": "ip"},
+            "rate-limiting": {"config.minute": expected["ratePerMinute"], "config.policy": "redis", "config.limit_by": "ip", "config.fault_tolerant": False,
+                              "config.redis.host": "codestra-redis", "config.redis.port": 6379,
+                              "config.redis.database": 0, "config.redis.timeout": 2000,
+                              "config.redis.password": "{vault://env/kong-rate-limit-redis-password}"},
             "correlation-id": {"config.header_name": "X-Correlation-ID", "config.generator": "uuid", "config.echo_downstream": "true"},
             "jwt": {"header_names": ["authorization"], "uri_param_names": [], "cookie_names": [],
                     "claims_to_verify": ["exp"], "key_claim_name": "azp", "run_on_preflight": False,
                     "secret_is_base64": False, "anonymous": None},
-            "pre-function": {"access": [claim_guard(spec, expected["requiredScope"])]},
+            "post-function": {"access": [claim_guard(spec, expected["requiredScope"])]},
         }
         for name, config in controls.items():
             current = by_name.get(name)
             if args.apply:
                 endpoint = "/plugins/%s" % current["id"] if current else "/routes/%s/plugins" % route["id"]
-                if name in {"jwt", "pre-function"}:
+                if name in {"jwt", "post-function"}:
                     request_json(args.admin_url, "PATCH" if current else "POST", endpoint,
                                  {"name": name, "enabled": True, "config": config})
                 else:

@@ -1,5 +1,6 @@
 {
   "schema": "codestra.kong.canonical-routes.v2",
+  "runtimeApplyAuthorized": false,
   "canonicalHost": "api.codestra.co",
   "legacyHost": "api.codestra.agency",
   "legacyHostEnabled": false,
@@ -23,7 +24,7 @@
       "serviceHost": "codestra-middleware-integration-api-1",
       "servicePort": 8095,
       "securityAuthority": "config/kong-intake-routes.json",
-      "requiredPlugins": ["jwt", "openid-connect", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting", "request-termination"]
+      "requiredPlugins": ["jwt", "openid-connect", "post-function", "correlation-id", "rate-limiting", "request-size-limiting", "request-termination"]
     },
     {
       "name": "codestra-intake-survey-responses",
@@ -36,7 +37,7 @@
       "serviceHost": "codestra-middleware-integration-api-1",
       "servicePort": 8095,
       "securityAuthority": "config/kong-intake-routes.json",
-      "requiredPlugins": ["jwt", "openid-connect", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting", "request-termination"]
+      "requiredPlugins": ["jwt", "openid-connect", "post-function", "correlation-id", "rate-limiting", "request-size-limiting", "request-termination"]
     },
     {
       "name": "codestra-callback-read",
@@ -49,7 +50,7 @@
       "serviceHost": "codestra-middleware-integration-api-1",
       "servicePort": 8095,
       "securityAuthority": "config/kong-callback-routes.json",
-      "requiredPlugins": ["jwt", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
     },
     {
       "name": "codestra-callback-control",
@@ -62,7 +63,7 @@
       "serviceHost": "codestra-middleware-integration-api-1",
       "servicePort": 8095,
       "securityAuthority": "config/kong-callback-routes.json",
-      "requiredPlugins": ["jwt", "pre-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
     },
     {
       "name": "codestra-campaign-policy-check",

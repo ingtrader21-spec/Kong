@@ -1,0 +1,307 @@
+{
+  "schema": "codestra.kong.production-read-only-head-canary.v1",
+  "capturedAt": "2026-09-06T10:53:51-04:00",
+  "method": "HEAD",
+  "credentialsSent": false,
+  "requestBodiesSent": false,
+  "writeEffectsAuthorized": false,
+  "requests": 37,
+  "results": [
+    {
+      "route": "breero-production-api-route",
+      "url": "https://api.breero.com/health",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "breero-production-api-route",
+      "url": "https://api.breero.com/api/v1",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "cod-web-out-email-production",
+      "url": "https://api.codestra.co/api/v1/control/messages",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-callback-control",
+      "url": "https://api.codestra.co/api/v1/control/callbacks",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-callback-read",
+      "url": "https://api.codestra.co/api/v1/callbacks",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-campaign-policy-check",
+      "url": "https://api.codestra.co/api/v1/automation/policy-check",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-campaign-result-submit",
+      "url": "https://api.codestra.co/api/v1/integrations/n8n/results",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-communication-canonical-read",
+      "url": "https://api.codestra.co/api/v1/messages",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-communication-canonical-write",
+      "url": "https://api.codestra.co/api/v1/results/messages",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-mail-api",
+      "url": "https://api.codestra.co/api/v1/mail",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-mail-api",
+      "url": "https://api.codestra.co/api/v1/admin/mail",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-n8n-command-read",
+      "url": "https://api.codestra.co/v1/integrations/n8n/operations",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-n8n-command-submit",
+      "url": "https://api.codestra.co/v1/integrations/n8n/commands",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-token-validation-certification",
+      "url": "https://api.codestra.co/v1/identity-token-certification",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-token-validation-certification",
+      "url": "https://api.codestra.agency/v1/identity-token-certification",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-website-api-route",
+      "url": "https://api.codestra.agency/api/v1/demo-requests",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-website-api-route",
+      "url": "https://api.codestra.agency/api/v1/contact-requests",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-website-api-route",
+      "url": "https://api.codestra.agency/api/v1/pricing-requests",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-website-api-route",
+      "url": "https://api.codestra.agency/api/v1/analytics/events",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-website-api-route",
+      "url": "https://api.codestra.agency/api/v1/localization/country",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "codestra-website-api-route",
+      "url": "https://api.codestra.agency/api/v1/localization/preference",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "crm-route",
+      "url": "https://api.codestra.agency/v1/crm",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "crm-route",
+      "url": "https://api.codestra.co/v1/crm",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "email-route",
+      "url": "https://api.codestra.agency/v1/email",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "email-route",
+      "url": "https://api.codestra.co/v1/email",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "gateway-test-route",
+      "url": "https://api.codestra.agency/v1/test",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "sms-dlr-telnexa-route",
+      "url": "https://api.codestra.agency/v1/sms/dlr/telnexa",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "sms-dlr-telnexa-route",
+      "url": "https://api.codestra.co/v1/sms/dlr/telnexa",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "sms-route",
+      "url": "https://api.codestra.agency/v1/sms",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "sms-route",
+      "url": "https://api.codestra.co/v1/sms",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "webhooks-route",
+      "url": "https://api.codestra.agency/v1/webhooks",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "webhooks-route",
+      "url": "https://api.codestra.co/v1/webhooks",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "website-form-demo-request",
+      "url": "https://api.codestra.agency/v1/forms/demo-request",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "website-form-electronic-billing",
+      "url": "https://api.codestra.agency/v1/forms/electronic-billing-application",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "website-form-electronic-billing-registration",
+      "url": "https://api.codestra.agency/v1/forms/electronic-billing-registration",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "website-form-pricing-request",
+      "url": "https://api.codestra.agency/v1/forms/pricing-request",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    },
+    {
+      "route": "website-form-sales-contact",
+      "url": "https://api.codestra.agency/v1/forms/sales-contact",
+      "httpStatus": 404,
+      "remoteIp": "65.109.65.169",
+      "tlsVerifyResult": null,
+      "transportExit": 0
+    }
+  ]
+}
