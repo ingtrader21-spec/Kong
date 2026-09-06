@@ -17,6 +17,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / "config/kong-calling-routes.v1.json"
 LUA_PATH = ROOT / "deploy/kong/calling-policy.lua"
+CORRELATION_GUARD_PATH = ROOT / "deploy/kong/correlation-required.lua"
 
 
 def load_policy() -> dict[str, Any]:
@@ -69,6 +70,7 @@ def render() -> dict[str, Any]:
     identity = spec["identity"]
     common = spec["commonPolicy"]
     lua_source = LUA_PATH.read_text(encoding="utf-8")
+    correlation_guard = CORRELATION_GUARD_PATH.read_text(encoding="utf-8")
     return {
         "_format_version": "3.0",
         "_transform": True,
@@ -84,6 +86,10 @@ def render() -> dict[str, Any]:
                 "write_timeout": service["writeTimeoutMs"],
                 "routes": [route_entry(spec, route) for route in spec["routes"]],
                 "plugins": [
+                    {
+                        "name": "pre-function",
+                        "config": {"access": [correlation_guard]},
+                    },
                     {
                         "name": "openid-connect",
                         "config": {

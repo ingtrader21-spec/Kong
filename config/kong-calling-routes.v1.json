@@ -48,8 +48,10 @@
     "correlationRequired": true,
     "idempotencyHeader": "Idempotency-Key",
     "identityGuardSource": "deploy/kong/calling-policy.lua",
+    "correlationGuardSource": "deploy/kong/correlation-required.lua",
     "requiredPlugins": [
       "openid-connect",
+      "pre-function",
       "post-function",
       "correlation-id",
       "rate-limiting",
