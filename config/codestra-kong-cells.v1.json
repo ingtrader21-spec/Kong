@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "state": "DESIGN_ONLY",
+  "public_edge": {
+    "owner": "caddy",
+    "public_ports": [80, 443],
+    "kong_admin_public": false,
+    "kong_manager_public": false
+  },
+  "cells": [
+    {
+      "id": "core-communications",
+      "control_plane_database": "kong_core_cp",
+      "rate_limit_namespace": "kong:core",
+      "proxy_visibility": "CADDY_ONLY",
+      "admin_visibility": "LOOPBACK_OR_MANAGEMENT_PRIVATE",
+      "service_families": ["platform", "crm", "email", "sms", "social", "crawler", "forms", "provisioning"],
+      "allowed_n8n_cells": ["n8n-core"],
+      "direct_provider_routes": false
+    },
+    {
+      "id": "beyvra-financial",
+      "control_plane_database": "kong_beyvra_cp",
+      "rate_limit_namespace": "kong:beyvra",
+      "proxy_visibility": "CADDY_ONLY",
+      "admin_visibility": "LOOPBACK_OR_MANAGEMENT_PRIVATE",
+      "service_families": ["beyvra-public", "beyvra-automation-nonfinancial"],
+      "allowed_n8n_cells": ["n8n-beyvra"],
+      "direct_provider_routes": false,
+      "forbidden_n8n_prefixes": ["trade.", "order.", "wallet.", "ledger.", "hold.", "payment.", "withdrawal.", "deposit.", "transfer.", "custody.", "chain.", "broker.", "provider."]
+    },
+    {
+      "id": "telephony-private",
+      "control_plane_database": "kong_telephony_cp",
+      "rate_limit_namespace": "kong:telephony",
+      "proxy_visibility": "PRIVATE_VLAN_ONLY",
+      "admin_visibility": "LOOPBACK_OR_MANAGEMENT_PRIVATE",
+      "service_families": ["telephony-command", "telephony-event", "telephony-readback"],
+      "allowed_n8n_cells": ["n8n-contact-center"],
+      "direct_provider_routes": false,
+      "public_routes": false
+    }
+  ],
+  "capabilities": {
+    "EMAIL_DELIVERY": false,
+    "SMS_DELIVERY": false,
+    "SOCIAL_PUBLISH": false,
+    "CRAWLER_EXECUTION": false,
+    "CRAWLER_WRITEBACK": false,
+    "ODOO_WRITE": false,
+    "CALLBACK_DISPATCH": false,
+    "PRODUCTION_DIALING": false,
+    "BEYVRA_FINANCIAL_WRITE": false,
+    "DEAD_LETTER_REPLAY": false
+  }
+}
