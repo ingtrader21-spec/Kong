@@ -1,0 +1,31 @@
+name: Kong repair source snapshot
+on:
+  push:
+    branches: [repair/source-snapshot-20260907]
+    paths: [.github/workflows/repair-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: 5a106322062042aeef67c031ecdb42075741258e
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Capture tracked source and history only
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = 5a106322062042aeef67c031ecdb42075741258e
+          test -z "$(git status --porcelain)"
+          git bundle create "${RUNNER_TEMP}/kong-source.bundle" HEAD
+          sha256sum "${RUNNER_TEMP}/kong-source.bundle" > "${RUNNER_TEMP}/kong-source.sha256"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: kong-source-5a106322
+          path: |
+            ${{ runner.temp }}/kong-source.bundle
+            ${{ runner.temp }}/kong-source.sha256
+          if-no-files-found: error
+          retention-days: 1
