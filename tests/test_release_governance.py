@@ -47,7 +47,8 @@ def test_staging_promotion_requires_exact_main_head():
     assert 'test "$HEAD_REF" = main' in workflow
     assert 'git/ref/heads/main' in workflow
     assert 'test "$HEAD_SHA" = "$main_sha"' in workflow
-    assert 'compare/${staging_sha}...${HEAD_SHA}' in workflow
+    assert 'git/commits/${MERGE_SHA}' in workflow
+    assert 'test \"$merge_tree\"' in workflow
 
 
 def test_release_evidence_builds_exact_immutable_standby_image():
@@ -66,7 +67,8 @@ def test_staging_and_production_release_require_live_topology_gate():
     assert "python3 scripts/verify_runtime_integration.py" in workflow
     assert "needs: [runtime-topology]" in workflow
     assert "needs.runtime-topology.result == 'success'" in workflow
-    assert 'PASS:${EXPECTED_SHA}:' in workflow
+    assert 'PASS:${CERTIFIED_SOURCE_SHA}:' in workflow
+    assert '--candidate-manifest' in workflow
 
 
 def test_standby_compose_forbids_deploy_time_build_and_floating_tag():

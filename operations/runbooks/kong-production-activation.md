@@ -20,3 +20,9 @@ python3 scripts/verify_runtime_integration.py
 It requires healthy Caddy, Kong, Middleware, and Redis containers and shared
 networks for every required hop, including Kong to Redis. Any failure prohibits
 config application and traffic promotion.
+
+Before selecting a candidate, follow [immutable promotion and Admin isolation](../../docs/KONG_RELEASE_AND_ADMIN_BOUNDARIES.md).
+The Admin capture path is container-loopback, not a published host port.
+Keep the certified source SHA and destination promotion SHA distinct, verify
+identical trees and the original candidate artifact, and never rebuild during
+staging/production promotion. Configuration evidence is not a peer-denial proof.

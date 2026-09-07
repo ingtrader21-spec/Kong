@@ -15,20 +15,20 @@ files:
   sha256: e4b89f1903e190a767f95bf8a6dc0b1e0719c3aa69f382617a12b7d086565e49
   size: 1737
 - path: .github/workflows/release.yml
-  sha256: 4f764cd29a1e2c2fe83910acbd95204dc84920b736b785e9f2e36840b69dbdce
-  size: 7169
+  sha256: 90ee102b7092a0bdfd69f81eafd9fa6b280832788234d32921135a3d9b2176f5
+  size: 9933
 - path: .github/workflows/security.yml
   sha256: 6f5b172ee32bf6f358bd6ea876eae2c2f1c71b771dc0b5192fd8c6fa9505f6cf
   size: 4569
 - path: .github/workflows/server-drift.yml
-  sha256: 054e9cc6c2f6a1ffbf78730ef971ccc01ed9349e650574bd15fb49d3706234d5
-  size: 1055
+  sha256: c258b8b634938eb3ba797cdf280d34dc2afe0e1dad54ef64adc48013a0fa4e37
+  size: 1405
 - path: .github/workflows/staging-certification.yml
-  sha256: ac856b1c507fa1d61645ef050e117c349e4569cb42729a0b998f9da4b56ef6f7
-  size: 2517
+  sha256: 70a71fdbe70058516633b2814b30d0344bd951b7f4de09bd2bc2480bc9836d69
+  size: 2595
 - path: .github/workflows/validate.yml
-  sha256: 7ca7432013a81fb458faaf070a81e79399628f05109d0523d5a7dd6a5fb90799
-  size: 5047
+  sha256: 6cd0efb4047544f577a5e7da4bf211e89a50460537b9ea334c49acdff22c0d79
+  size: 5343
 - path: .gitignore
   sha256: 8c06027889bb245680b8a248468504a51ff8654fc6c800ea9ebd9f54213ddf9d
   size: 214
@@ -135,8 +135,8 @@ files:
   sha256: 90665911471901f8a2a41cb020cb0b742818c92b26904fe2164f3c9e487572d7
   size: 5994
 - path: deploy/kong/compose.kong.yaml
-  sha256: 3f7d42622c82eb7cd37c736e2e3b86cdcf682334ef8d8e76834159b81bd094a7
-  size: 5176
+  sha256: 4b8c785d5f00eb538e386e84736e8fedff04331ddc248b2d57b7b1ee2fd70abd
+  size: 5108
 - path: deploy/kong/control-plane.yml
   sha256: f1814c338b249a1154648d769ae1e7d4e2d0ae328133baf1253ff3a3d09a6ec6
   size: 12789
@@ -167,6 +167,9 @@ files:
 - path: docs/DECK-OIDC-COMPATIBILITY.md
   sha256: 3a44ab1f7bf6891b88a6106d9acda408a04b13d06331a69517bdf0c156d5c5ba
   size: 837
+- path: docs/KONG_RELEASE_AND_ADMIN_BOUNDARIES.md
+  sha256: a5f3afac7e146b333baff0bdbe4bf1078b5efc9e0f8a161e7182a08f92ec124b
+  size: 5799
 - path: docs/MARKETING-PLATFORM-EDGE-RESPONSIBILITIES.md
   sha256: 30aae02a42e87c7869f8c024fec15ecaa43c9e0c388883a5ab0faee2f0debd12
   size: 1436
@@ -309,8 +312,8 @@ files:
   sha256: 9ade0b191ff345001e86b60dcaf36b6343c011ea19e17ba33b12c9754dd176b9
   size: 6972
 - path: operations/runbooks/kong-production-activation.md
-  sha256: 93cab243f4d81c84871f33cf63237b273b8d57e44c15058b42cab11c9cad0211
-  size: 993
+  sha256: 921376433a6d1b0be4c0f1ad7593349076b3736eb5edf7f00f6e35b18db59f7e
+  size: 1432
 - path: operations/runbooks/kong-production-rollback.md
   sha256: 6aa80ee31d7fd5c30ba69bf38aa628fa2cb47bdf3ecc9d995d42d8724b2a3426
   size: 536
@@ -378,8 +381,8 @@ files:
   sha256: 4d1023ae0b53bdb0b76e5a0d9e435104066701d6250270e07cd21fa3700ca664
   size: 4635
 - path: scripts/verify_runtime_integration.py
-  sha256: aff5c4bb3aaff82bdbfddbcbfbeecd879ca569e657b87ad4df7668a676786e57
-  size: 2302
+  sha256: fdeba16420a50a705211c705ffd1786c6787e5d4a54a9f9809a084027439633d
+  size: 2764
 - path: tests/conftest.py
   sha256: 6722b11298cdd9cf814e072072bce7751f11dbbbd11177e42568471cfceb7b39
   size: 1364
@@ -389,6 +392,9 @@ files:
 - path: tests/test_community_n8n_egress.py
   sha256: a189aa86cab419b91e420472d72624aab6bf540a9ab653a4a8c9a4cf1b9069ad
   size: 10355
+- path: tests/test_gateway_release_boundaries.py
+  sha256: 509ed26f61246cba15b6eec1f6f0e647a829ec9480f9c51e8f5d2cb1a0031f90
+  size: 859
 - path: tests/test_kong_calling_policy.py
   sha256: e0e16fc21f6d8cea9349eae6e1d59e3f4b1895435930fa466b27cf2eb9023d5c
   size: 6365
@@ -417,8 +423,8 @@ files:
   sha256: 06cb5d31352a2783c2664d63accbf57b5d38b8c31839d331dc768f468df53098
   size: 1900
 - path: tests/test_kong_read_only_capture.py
-  sha256: 3f59b278563beb9e09aa113b07ebd6e8a188a62b237e2ce5ed608e3171f89f88
-  size: 899
+  sha256: c56784d677b20493ca13cc31a03429bd48dc8d450045907ff0c7cc49da180e57
+  size: 6909
 - path: tests/test_kong_route_authority_hardening.py
   sha256: cacf799c397fbd0c7634e59d1831b856eb50d84725fd9de89fc338ed45a61c7e
   size: 26864
@@ -431,26 +437,35 @@ files:
 - path: tests/test_oidc_auth.py
   sha256: 854d932c7337f03f29fc550f3ac134d27a950e13604ad74580c727be5a4ffeb7
   size: 2836
+- path: tests/test_release_candidate_promotion.py
+  sha256: 7d0d42a5fe4c097a2e1ddbf7e46748213b22a48a708fd8f3f8530a3babd7602d
+  size: 9274
 - path: tests/test_release_governance.py
-  sha256: d9ac6fa6727a087cdb6b68abbdb386d0fcd4885056795010da0b3d41e54b523a
-  size: 2949
+  sha256: 05c90fff6cef92af3a47ffec814a712ee2f978e951b798ba93e256a6de6f09f9
+  size: 3037
 - path: tests/test_runtime_integration_preflight.py
   sha256: 1f218f1bdc281f3880c5f5b923d0333cde17dc585d5be6eccd30f881090622f7
   size: 1668
+- path: tools/capture_kong_server_baseline.py
+  sha256: 236178d4e2cb796a61fe4821137adf23064974b8fc59ec11d42725eb0c0da7f8
+  size: 8642
 - path: tools/capture_kong_server_baseline.sh
-  sha256: a3b5314174edf63a850384b19fcea921ab4c33cac39a6edd7cdab601f4345404
-  size: 2541
+  sha256: aa7cdd4d792ea51c2f33369b9d272406653b24509d17bd6d98dc93e013be8e39
+  size: 428
 - path: tools/generate_migration_manifests.py
   sha256: 29288af99ef409b536033dae85a01e274b4116ba4e46f83107438769381c9e9b
   size: 21388
 - path: tools/generate_release_manifest.py
-  sha256: 9a3011b337a43684cfaabb3d2d116a998071fc944db93bd7cbedc265f934bd3a
-  size: 3915
+  sha256: 33754a8b81ed248f1aa494de6caa1916536a7c99bf1e118fad6f7b262bdd70b1
+  size: 7353
 - path: tools/verify_migration_manifest.py
   sha256: fd2007a9bb8e5db6aeed2bf72fcc4bbde3d586aad5a006febf71a442c9ae0960
   size: 4915
+- path: tools/verify_release_candidate.py
+  sha256: 8ba5e5a4f045ec9b78ed11af1fce8fc6a808857feebcd724c85266673b7cf890
+  size: 6613
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 3648184f1481e1dd370dfbc8cf86ce22624f363f1fe7699f3c39313a00ccfcef
+manifest_generation_id: 680874fcc98045afd5f7f7d88c33fbde91cee0d42c778441a761059f9f591b7c
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:

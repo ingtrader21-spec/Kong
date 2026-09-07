@@ -58,9 +58,9 @@ jobs:
           luac -p deploy/kong/moneybee-identity-policy.lua
       - name: Validate shell policies
         run: |
-          find operations deploy scripts -type f -name '*.sh' -print0 \
+          find operations deploy scripts tools -type f -name '*.sh' -print0 \
             | xargs -0 -r -n1 bash -n
-          find operations deploy scripts -type f -name '*.sh' -print0 \
+          find operations deploy scripts tools -type f -name '*.sh' -print0 \
             | xargs -0 -r shellcheck -x
       - name: Run Kong authority tests
         run: |
@@ -75,7 +75,7 @@ jobs:
             tests/test_release_governance.py \
             tests/test_kong_observability.py \
             tests/test_kong_calling_policy.py
-          pytest -q tests/test_runtime_integration_preflight.py
+          pytest -q tests/test_runtime_integration_preflight.py tests/test_kong_read_only_capture.py tests/test_gateway_release_boundaries.py tests/test_release_candidate_promotion.py
           pytest -q tests/test_community_n8n_egress.py
           python3 tools/generate_migration_manifests.py --check
           python3 tools/verify_migration_manifest.py
@@ -107,7 +107,7 @@ jobs:
           test -z "$(git status --porcelain)"
           python3 scripts/validate_kong_calling_policy.py
           luac -p deploy/kong/calling-policy.lua
-          pytest -q tests/test_kong_calling_policy.py
+          pytest -q tests/test_kong_calling_policy.py tests/test_kong_read_only_capture.py tests/test_gateway_release_boundaries.py tests/test_release_candidate_promotion.py tests/test_runtime_integration_preflight.py
           python3 tools/generate_migration_manifests.py --check
           python3 tools/verify_migration_manifest.py
           git diff --exit-code
