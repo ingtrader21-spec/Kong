@@ -2,26 +2,32 @@
 """Delete only objects tagged by the Kong standby release."""
 from __future__ import annotations
 
-import json
+import sys
 import urllib.parse
-import urllib.request
+from pathlib import Path
 
-ADMIN = "http://127.0.0.1:8001"
+SCRIPTS = str(Path(__file__).resolve().parent)
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
+
+from kong_admin_channel import admin_request, confirm_unchanged  # noqa: E402
+
 TAG = "codestra-kong-standby-20260820"
 
 
 def call(method, path):
-    req = urllib.request.Request(ADMIN + path, method=method)
-    with urllib.request.urlopen(req, timeout=10) as response:
-        return None if response.status == 204 else json.load(response)
+    # Admin has no host publication; every call enters the verified gateway
+    # container instead of crossing a management port.
+    return admin_request(method, path)
 
 
 def main():
     tagged = urllib.parse.quote(TAG, safe="")
     for collection in ("plugins", "routes", "services"):
-        data = call("GET", f"/{collection}?tags={tagged}").get("data", [])
+        data = (call("GET", f"/{collection}?tags={tagged}") or {}).get("data", [])
         for item in data:
             call("DELETE", f"/{collection}/{item['id']}")
+    confirm_unchanged()
     print("KONG_STANDBY_ROLLBACK=PASS")
 
 

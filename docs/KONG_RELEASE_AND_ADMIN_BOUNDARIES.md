@@ -39,6 +39,36 @@ preserved unchanged; it is not a new runtime observation. The production-read-on
 workflow runs only reviewed protected branches on the designated Kong runner and
 still requires its environment gate.
 
+## Operational clients use the same private channel
+
+Removing the published Admin port also removes it from the host-side operators
+that used to dial `http://127.0.0.1:8001`. `scripts/kong_admin_channel.py` is the
+single private path they now share. It verifies the running `kong-gateway`
+container exactly as the read-only capture does: runtime identity, Compose
+service, no host or shared network namespace, container-loopback Admin listener,
+disabled Manager and no published Admin port binding. It then runs one bounded
+`curl` inside that existing namespace over the pinned local Docker socket.
+
+Only `GET`, `POST`, `PATCH` and `DELETE` are offered, against checked Admin
+paths. There is no shell, redirect following, arbitrary URL or credential
+endpoint. Write bodies travel on stdin, so service, route and plugin payloads
+never reach argv or the host process table. Replies are bounded, non-2xx
+statuses fail closed with truncated detail, and `confirm_unchanged()` re-verifies
+the container before a client reports PASS, so a replaced runtime fails instead
+of being silently adopted.
+
+`scripts/apply_kong_standby.py` and `scripts/rollback_kong_standby.py` route every
+Admin call through that channel and keep their existing ownership, tagging,
+read-back and rollback contracts unchanged. The monthly root restore rehearsal
+reads the live services, routes and plugins inventory inside the verified gateway
+container and keeps its pagination-safety checks; the isolated restore gateway it
+creates still uses its own private-network endpoint, which was never published on
+the host. The standby applier's data-plane synchronization probe continues to use
+the retained `127.0.0.1:8000` proxy publication.
+
+This is a source change to management paths only. It grants no Docker, socket or
+sudo access, and authorizes no runtime mutation.
+
 ## Build on main, promote the same bytes
 
 The canonical `.github/workflows/release.yml` builds the standby image and resolves
