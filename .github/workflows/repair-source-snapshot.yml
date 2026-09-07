@@ -1,31 +1,86 @@
-name: Kong repair source snapshot
+name: Kong exact repair validation
 on:
   push:
     branches: [repair/source-snapshot-20260907]
     paths: [.github/workflows/repair-source-snapshot.yml]
 permissions:
-  contents: read
+  contents: write
 jobs:
   source:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           ref: 5a106322062042aeef67c031ecdb42075741258e
           fetch-depth: 0
           persist-credentials: false
-      - name: Capture tracked source and history only
+      - name: Install isolated test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends lua5.4 shellcheck
+          python3 -m pip install --disable-pip-version-check pytest PyYAML==6.0.3
+      - name: Reconstruct exactly the locally tested repair tree
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, gzip, hashlib, json, pathlib, subprocess
+          expected='07867894d8df9cca416b995086922b8d63223927'
+          parts=['996f8244d82dc3ae6bbfbf347cc6d14ded3313d2','fc8f6864c91b292e4bb11782dcee099ae4f33221','e2a2f9aa8121aa2a7c1df3fc0a7f5948c8bed70d','fd0b850b015864eb8c3392aa46557d0484604563']
+          def git(*args):
+              return subprocess.check_output(['git',*args],text=True).strip()
+          if git('rev-parse','HEAD')!='5a106322062042aeef67c031ecdb42075741258e' or git('status','--porcelain'):
+              raise SystemExit('original source mismatch')
+          encoded=b''
+          for sha in parts:
+              obj=json.loads(subprocess.check_output(['gh','api','repos/appolon1908-hue/Kong/git/blobs/'+sha]))
+              chunk=base64.b64decode(obj['content'])
+              actual=hashlib.sha1(b'blob '+str(len(chunk)).encode()+b'\0'+chunk).hexdigest()
+              if actual!=sha: raise SystemExit('transport blob mismatch')
+              encoded+=chunk
+          patch=gzip.decompress(base64.b64decode(encoded,validate=True))
+          if hashlib.sha256(patch).hexdigest()!='f6c728e7048cdb07dba6f3b3ed6e07c6914d537079165b7ef61acf860f5ea85e':
+              raise SystemExit('patch checksum mismatch')
+          subprocess.run(['git','apply','--index','-'],input=patch,check=True)
+          subprocess.run(['python3','tools/generate_migration_manifests.py'],check=True)
+          subprocess.run(['git','add','MIGRATION_MANIFEST.json','MIGRATION_MANIFEST.yaml'],check=True)
+          if git('write-tree')!=expected: raise SystemExit('candidate tree mismatch')
+          print('EXACT_REPAIR_TREE='+expected)
+          PY
+      - name: Run full source and integration validation without runtime access
         run: |
           set -Eeuo pipefail
-          test "$(git rev-parse HEAD)" = 5a106322062042aeef67c031ecdb42075741258e
-          test -z "$(git status --porcelain)"
-          git bundle create "${RUNNER_TEMP}/kong-source.bundle" HEAD
-          sha256sum "${RUNNER_TEMP}/kong-source.bundle" > "${RUNNER_TEMP}/kong-source.sha256"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: kong-source-5a106322
-          path: |
-            ${{ runner.temp }}/kong-source.bundle
-            ${{ runner.temp }}/kong-source.sha256
-          if-no-files-found: error
-          retention-days: 1
+          pytest -q
+          python3 scripts/validate_kong_calling_policy.py
+          python3 scripts/validate_kong_calling_policy.py --self-test
+          python3 scripts/validate_kong_production_inventory.py
+          python3 tools/generate_migration_manifests.py --check
+          python3 tools/verify_migration_manifest.py
+          find operations deploy scripts tools -type f -name '*.sh' -print0 | xargs -0 -r shellcheck -x
+          luac -p deploy/kong/scope-policy.lua
+          luac -p deploy/kong/calling-policy.lua
+          luac -p deploy/kong/correlation-required.lua
+          luac -p deploy/kong/moneybee-identity-policy.lua
+          git diff --exit-code
+          git diff --cached --check
+      - name: Publish only verified file objects, never refs or runtime
+        env:
+          GH_OBJECT_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, subprocess, urllib.request
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*args): raise RuntimeError('redirect refused')
+          def git(*args): return subprocess.check_output(['git',*args],text=True).strip()
+          if git('write-tree')!='07867894d8df9cca416b995086922b8d63223927': raise SystemExit('tested tree changed')
+          for path in git('diff','--cached','--name-only').splitlines():
+              raw=pathlib.Path(path).read_bytes()
+              sha=hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
+              payload=json.dumps({'content':base64.b64encode(raw).decode(),'encoding':'base64'}).encode()
+              req=urllib.request.Request('https://api.github.com/repos/appolon1908-hue/Kong/git/blobs',data=payload,method='POST',headers={'Authorization':'Bearer '+os.environ['GH_OBJECT_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'})
+              with urllib.request.build_opener(NoRedirect).open(req,timeout=30) as response: recorded=json.load(response)
+              if recorded['sha']!=sha: raise SystemExit('published blob mismatch')
+              print(sha+' '+path)
+          print('SOURCE_BLOB_PUBLICATION=PASS NO_REFS_CHANGED NO_RUNTIME_ACCESS')
+          PY
