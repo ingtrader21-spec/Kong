@@ -141,6 +141,11 @@
       "size": 2823
     },
     {
+      "path": "config/kong-public-readonly-canary.v1.json",
+      "sha256": "f2cb685f09f85a1edab027c216465b0a1310667fa7bb2bf27549001571279c7a",
+      "size": 1192
+    },
+    {
       "path": "config/marketing-stage4-routes.yaml",
       "sha256": "d03766281ac015edb9d22949e8d91ea3286d4e895a8dc520dd97c354c8007d40",
       "size": 1063
@@ -721,6 +726,11 @@
       "size": 2836
     },
     {
+      "path": "tests/test_public_readonly_canary.py",
+      "sha256": "30ba702cc8a35b6383a9e4d31719e6696cac5f98e30b21d03ea6fdac2cd90113",
+      "size": 1942
+    },
+    {
       "path": "tests/test_release_governance.py",
       "sha256": "d9ac6fa6727a087cdb6b68abbdb386d0fcd4885056795010da0b3d41e54b523a",
       "size": 2949
@@ -752,7 +762,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "3648184f1481e1dd370dfbc8cf86ce22624f363f1fe7699f3c39313a00ccfcef",
+  "manifest_generation_id": "e135d5040bfb6ca8be92c059dd46a65d074a284607e72b02ee441409b4123927",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
