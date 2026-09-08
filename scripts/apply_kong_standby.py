@@ -7,13 +7,19 @@ provider. It is safe to rerun and tags every object for exact rollback.
 from __future__ import annotations
 
 import json
+import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
 
-ADMIN = "http://127.0.0.1:8001"
+SCRIPTS = str(Path(__file__).resolve().parent)
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
+
+from kong_admin_channel import admin_request, confirm_unchanged, entity_id  # noqa: E402
+
 TAG = "codestra-kong-standby-20260820"
 HOST = "kong-standby.internal.codestra.agency"
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,21 +27,14 @@ CONFIG = json.loads((ROOT / "deploy/kong-production-standby/kong/standby.json").
 
 
 def request(method: str, path: str, payload=None):
-    data = None if payload is None else json.dumps(payload).encode()
-    req = urllib.request.Request(ADMIN + path, data=data, method=method)
-    if data is not None:
-        req.add_header("Content-Type", "application/json")
-    try:
-        with urllib.request.urlopen(req, timeout=10) as response:
-            return json.load(response)
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode(errors="replace")[:500]
-        raise RuntimeError(f"Kong Admin {method} {path}: {exc.code} {detail}") from exc
+    # Admin has no host publication; every call enters the verified gateway
+    # container instead of crossing a management port.
+    return admin_request(method, path, payload)
 
 
 def upsert(collection: str, name: str, payload: dict):
     query = urllib.parse.urlencode({"name": name})
-    existing = request("GET", f"/{collection}?{query}").get("data", [])
+    existing = (request("GET", f"/{collection}?{query}") or {}).get("data", [])
     if len(existing) > 1:
         raise RuntimeError(f"ambiguous Kong {collection} named {name}")
     if existing:
@@ -43,12 +42,14 @@ def upsert(collection: str, name: str, payload: dict):
             raise RuntimeError(
                 f"refusing to adopt unowned Kong {collection} named {name}"
             )
-        return request("PATCH", f"/{collection}/{existing[0]['id']}", payload)
+        identifier = entity_id(existing[0].get("id"), collection.rstrip("s"))
+        return request("PATCH", f"/{collection}/{identifier}", payload)
     return request("POST", f"/{collection}", payload)
 
 
 def plugin(route_id: str, name: str, config: dict):
-    current = request("GET", f"/routes/{route_id}/plugins").get("data", [])
+    route_id = entity_id(route_id, "route")
+    current = (request("GET", f"/routes/{route_id}/plugins") or {}).get("data", [])
     same_name = [item for item in current if item["name"] == name]
     unowned = [item for item in same_name if TAG not in (item.get("tags") or [])]
     if unowned:
@@ -58,7 +59,8 @@ def plugin(route_id: str, name: str, config: dict):
         raise RuntimeError(f"ambiguous managed route plugin {name}")
     payload = {"name": name, "enabled": True, "config": config, "tags": [TAG]}
     if matches:
-        return request("PATCH", f"/plugins/{matches[0]['id']}", payload)
+        identifier = entity_id(matches[0].get("id"), "plugin")
+        return request("PATCH", f"/plugins/{identifier}", payload)
     return request("POST", f"/routes/{route_id}/plugins", payload)
 
 
@@ -72,35 +74,38 @@ def main():
             "write_timeout": item["writeTimeoutMs"], "read_timeout": item["readTimeoutMs"],
             "tags": [TAG, "mock-only", "no-provider-delivery"],
         })
+        service_id = entity_id(service.get("id"), "service")
         route_name = item["name"] + "-route"
         route = upsert("routes", route_name, {
-            "name": route_name, "service": {"id": service["id"]},
+            "name": route_name, "service": {"id": service_id},
             "hosts": [HOST], "paths": [item["path"]], "methods": item["methods"],
             "protocols": ["http", "https"], "strip_path": False,
             "preserve_host": False, "tags": [TAG, "private-staging-only"],
         })
-        plugin(route["id"], "request-transformer", {
+        route_id = entity_id(route.get("id"), "route")
+        plugin(route_id, "request-transformer", {
             "remove": {"headers": CONFIG["trustedHeadersToStrip"]},
         })
-        plugin(route["id"], "ip-restriction", {"allow": ["127.0.0.1", "172.19.0.1"], "deny": None, "status": 403})
-        plugin(route["id"], "request-size-limiting", {
+        plugin(route_id, "ip-restriction", {"allow": ["127.0.0.1", "172.19.0.1"], "deny": None, "status": 403})
+        plugin(route_id, "request-size-limiting", {
             "allowed_payload_size": item["bodyLimitBytes"], "size_unit": "bytes",
             "require_content_length": True,
         })
-        plugin(route["id"], "rate-limiting", {
+        plugin(route_id, "rate-limiting", {
             "minute": item["ratePerMinute"], "limit_by": "ip", "policy": "local",
             "fault_tolerant": False, "hide_client_headers": False,
         })
         applied.append(route_name)
     expected_plugins = {"request-transformer", "ip-restriction", "request-size-limiting", "rate-limiting"}
     for route_name in applied:
-        routes = request("GET", "/routes?" + urllib.parse.urlencode({"name": route_name})).get("data", [])
+        routes = (request("GET", "/routes?" + urllib.parse.urlencode({"name": route_name})) or {}).get("data", [])
         if len(routes) != 1:
             raise RuntimeError(f"route read-back failed: {route_name}")
         route = routes[0]
         if route.get("hosts") != [HOST] or TAG not in (route.get("tags") or []):
             raise RuntimeError(f"route isolation read-back failed: {route_name}")
-        names = {item["name"] for item in request("GET", f"/routes/{route['id']}/plugins").get("data", []) if item.get("enabled")}
+        route_id = entity_id(route.get("id"), "route")
+        names = {item["name"] for item in (request("GET", f"/routes/{route_id}/plugins") or {}).get("data", []) if item.get("enabled")}
         if not expected_plugins.issubset(names):
             raise RuntimeError(f"plugin read-back failed: {route_name}: {sorted(names)}")
     # Kong workers update their router/plugin cache asynchronously.  Wait until
@@ -119,6 +124,7 @@ def main():
         if attempt == 9:
             raise RuntimeError("Kong data-plane policy synchronization failed")
         time.sleep(0.5)
+    confirm_unchanged()
     print("KONG_PRIVATE_STANDBY_APPLY=PASS")
     print("ROUTES=" + ",".join(applied))
     print("PUBLIC_HOST_ATTACHED=NO")
