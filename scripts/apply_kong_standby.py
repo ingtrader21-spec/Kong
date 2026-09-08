@@ -74,9 +74,10 @@ def main():
             "write_timeout": item["writeTimeoutMs"], "read_timeout": item["readTimeoutMs"],
             "tags": [TAG, "mock-only", "no-provider-delivery"],
         })
+        service_id = entity_id(service.get("id"), "service")
         route_name = item["name"] + "-route"
         route = upsert("routes", route_name, {
-            "name": route_name, "service": {"id": service["id"]},
+            "name": route_name, "service": {"id": service_id},
             "hosts": [HOST], "paths": [item["path"]], "methods": item["methods"],
             "protocols": ["http", "https"], "strip_path": False,
             "preserve_host": False, "tags": [TAG, "private-staging-only"],
@@ -103,7 +104,8 @@ def main():
         route = routes[0]
         if route.get("hosts") != [HOST] or TAG not in (route.get("tags") or []):
             raise RuntimeError(f"route isolation read-back failed: {route_name}")
-        names = {item["name"] for item in (request("GET", f"/routes/{route['id']}/plugins") or {}).get("data", []) if item.get("enabled")}
+        route_id = entity_id(route.get("id"), "route")
+        names = {item["name"] for item in (request("GET", f"/routes/{route_id}/plugins") or {}).get("data", []) if item.get("enabled")}
         if not expected_plugins.issubset(names):
             raise RuntimeError(f"plugin read-back failed: {route_name}: {sorted(names)}")
     # Kong workers update their router/plugin cache asynchronously.  Wait until

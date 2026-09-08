@@ -110,6 +110,19 @@ def test_standby_apply_updates_only_resources_it_already_owns(monkeypatch):
     assert result["id"] == owned_id
 
 
+def test_standby_apply_rejects_untrusted_owned_resource_identity(monkeypatch):
+    module = _load(STANDBY_APPLIER_PATH, "apply_kong_standby_invalid_identity")
+    monkeypatch.setattr(
+        module,
+        "request",
+        lambda method, path, payload=None: {
+            "data": [{"id": "../routes/production", "tags": [module.TAG]}]
+        },
+    )
+    with pytest.raises(RuntimeError, match="invalid Kong service identity"):
+        module.upsert("services", "standby-service", {"tags": [module.TAG]})
+
+
 def test_campaign_reconciler_validates_manifest_consumer_identity():
     source = CAMPAIGN_RECONCILER_PATH.read_text()
     assert 'f"/consumers/{consumer[\'id\']}"' in source
