@@ -18,7 +18,7 @@ SCRIPTS = str(Path(__file__).resolve().parent)
 if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
 
-from kong_admin_channel import admin_request, confirm_unchanged  # noqa: E402
+from kong_admin_channel import admin_request, confirm_unchanged, entity_id  # noqa: E402
 
 TAG = "codestra-kong-standby-20260820"
 HOST = "kong-standby.internal.codestra.agency"
@@ -42,11 +42,13 @@ def upsert(collection: str, name: str, payload: dict):
             raise RuntimeError(
                 f"refusing to adopt unowned Kong {collection} named {name}"
             )
-        return request("PATCH", f"/{collection}/{existing[0]['id']}", payload)
+        identifier = entity_id(existing[0].get("id"), collection.rstrip("s"))
+        return request("PATCH", f"/{collection}/{identifier}", payload)
     return request("POST", f"/{collection}", payload)
 
 
 def plugin(route_id: str, name: str, config: dict):
+    route_id = entity_id(route_id, "route")
     current = (request("GET", f"/routes/{route_id}/plugins") or {}).get("data", [])
     same_name = [item for item in current if item["name"] == name]
     unowned = [item for item in same_name if TAG not in (item.get("tags") or [])]
@@ -57,7 +59,8 @@ def plugin(route_id: str, name: str, config: dict):
         raise RuntimeError(f"ambiguous managed route plugin {name}")
     payload = {"name": name, "enabled": True, "config": config, "tags": [TAG]}
     if matches:
-        return request("PATCH", f"/plugins/{matches[0]['id']}", payload)
+        identifier = entity_id(matches[0].get("id"), "plugin")
+        return request("PATCH", f"/plugins/{identifier}", payload)
     return request("POST", f"/routes/{route_id}/plugins", payload)
 
 
@@ -78,15 +81,16 @@ def main():
             "protocols": ["http", "https"], "strip_path": False,
             "preserve_host": False, "tags": [TAG, "private-staging-only"],
         })
-        plugin(route["id"], "request-transformer", {
+        route_id = entity_id(route.get("id"), "route")
+        plugin(route_id, "request-transformer", {
             "remove": {"headers": CONFIG["trustedHeadersToStrip"]},
         })
-        plugin(route["id"], "ip-restriction", {"allow": ["127.0.0.1", "172.19.0.1"], "deny": None, "status": 403})
-        plugin(route["id"], "request-size-limiting", {
+        plugin(route_id, "ip-restriction", {"allow": ["127.0.0.1", "172.19.0.1"], "deny": None, "status": 403})
+        plugin(route_id, "request-size-limiting", {
             "allowed_payload_size": item["bodyLimitBytes"], "size_unit": "bytes",
             "require_content_length": True,
         })
-        plugin(route["id"], "rate-limiting", {
+        plugin(route_id, "rate-limiting", {
             "minute": item["ratePerMinute"], "limit_by": "ip", "policy": "local",
             "fault_tolerant": False, "hide_client_headers": False,
         })

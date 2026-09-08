@@ -182,6 +182,32 @@ def test_transport_and_response_failures_fail_closed(monkeypatch, stdout, return
         channel.admin_request("GET", "/status")
 
 
+def test_malformed_json_raises_the_channel_error(monkeypatch):
+    channel = module()
+    stubbed(channel, monkeypatch, stdout=b"{not-json}\n200")
+    with pytest.raises(channel.AdminError, match="invalid JSON"):
+        channel.admin_request("GET", "/status")
+
+
+def test_subprocess_failures_raise_the_channel_error(monkeypatch):
+    channel = module()
+
+    def fail(*args, **kwargs):
+        raise channel.subprocess.TimeoutExpired(args[0], kwargs.get("timeout"))
+
+    monkeypatch.setattr(channel.subprocess, "run", fail)
+    with pytest.raises(channel.AdminError, match="inspection failed"):
+        channel.verify_container("codestra-kong-kong-gateway-1")
+
+
+@pytest.mark.parametrize("value", [None, "", "../services", "a" * 64,
+                                    "00000000-0000-0000-0000-00000000000g"])
+def test_entity_ids_must_be_kong_uuids(value):
+    channel = module()
+    with pytest.raises(channel.AdminError):
+        channel.entity_id(value)
+
+
 def test_oversized_replies_fail_closed(monkeypatch):
     channel = module()
     stubbed(channel, monkeypatch, stdout=b"x" * (channel.MAX_BYTES + 1) + b"\n200")

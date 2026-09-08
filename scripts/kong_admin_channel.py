@@ -28,6 +28,9 @@ PROCESS_TIMEOUT = 20
 CONTAINER_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}\Z")
 ADMIN_PATH = re.compile(r"/[A-Za-z0-9._~%!$&'()*+,;:@/=?-]{0,2048}\Z")
 IDENTITY = re.compile(r"[0-9a-f]{64}\Z")
+ENTITY_ID = re.compile(
+    r"[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\Z", re.IGNORECASE
+)
 # Only the two listener settings are selected, never the whole environment.
 INSPECT_FORMAT = (
     '{"id":{{json .Id}},"running":{{json .State.Running}},'
@@ -48,11 +51,17 @@ class AdminError(RuntimeError):
 
 
 def run_json(argv: list[str]) -> dict:
-    result = subprocess.run(argv, input=b"", capture_output=True,
-                            timeout=PROCESS_TIMEOUT, check=False)
+    try:
+        result = subprocess.run(argv, input=b"", capture_output=True,
+                                timeout=PROCESS_TIMEOUT, check=False)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise AdminError("kong gateway inspection failed") from exc
     if result.returncode or len(result.stdout) > MAX_BYTES:
         raise AdminError("kong gateway inspection failed")
-    value = json.loads(result.stdout)
+    try:
+        value = json.loads(result.stdout)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise AdminError("invalid kong gateway metadata") from exc
     if not isinstance(value, dict):
         raise AdminError("invalid kong gateway metadata")
     return value
@@ -99,6 +108,13 @@ def confirm_unchanged(container: str = DEFAULT_CONTAINER) -> str:
     return current
 
 
+def entity_id(value, kind: str = "entity") -> str:
+    """Return a validated Kong UUID before it is interpolated into a path."""
+    if not isinstance(value, str) or not ENTITY_ID.fullmatch(value):
+        raise AdminError(f"invalid Kong {kind} identity")
+    return value
+
+
 def admin_request(method: str, path: str, payload=None, container: str = DEFAULT_CONTAINER):
     """Run one bounded Admin request inside the verified gateway container."""
     if method not in METHODS:
@@ -124,8 +140,13 @@ def admin_request(method: str, path: str, payload=None, container: str = DEFAULT
     if body is not None:
         argv += ["--header", "Content-Type: application/json", "--data-binary", "@-"]
     argv.append(ADMIN_ORIGIN + path)
-    result = subprocess.run(argv, input=body or b"", capture_output=True,
-                            timeout=PROCESS_TIMEOUT, check=False)
+    try:
+        result = subprocess.run(argv, input=body or b"", capture_output=True,
+                                timeout=PROCESS_TIMEOUT, check=False)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise AdminError(
+            f"Kong Admin {method} {path}: private channel transport failure"
+        ) from exc
     if result.returncode or len(result.stdout) > MAX_BYTES:
         raise AdminError(f"Kong Admin {method} {path}: private channel transport failure")
     raw, separator, status = result.stdout.rpartition(b"\n")
@@ -137,7 +158,10 @@ def admin_request(method: str, path: str, payload=None, container: str = DEFAULT
         raise AdminError(f"Kong Admin {method} {path}: {code} {raw.decode(errors='replace')[:500]}")
     if code == 204 or not raw.strip():
         return None
-    value = json.loads(raw)
+    try:
+        value = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise AdminError(f"Kong Admin {method} {path}: invalid JSON response") from exc
     if not isinstance(value, dict):
         raise AdminError(f"Kong Admin {method} {path}: unexpected response shape")
     return value
