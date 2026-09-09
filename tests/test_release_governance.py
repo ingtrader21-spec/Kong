@@ -42,13 +42,16 @@ def test_release_stage_is_explicit_and_fail_closed():
     assert not release.CERTIFICATION_ID.fullmatch("PENDING")
 
 
-def test_staging_promotion_requires_exact_main_head():
+def test_staging_promotion_requires_exact_main_tree():
     workflow = (ROOT / ".github/workflows/staging-certification.yml").read_text()
-    assert 'test "$HEAD_REF" = main' in workflow
     assert 'git/ref/heads/main' in workflow
     assert 'test "$HEAD_SHA" = "$main_sha"' in workflow
+    assert 'release/staging-main-${main_sha:0:12}' in workflow
+    assert '.commit.verification.verified' in workflow
+    assert 'test "$head_verified" = true' in workflow
+    assert 'test "$head_tree" = "$main_tree"' in workflow
     assert 'git/commits/${MERGE_SHA}' in workflow
-    assert 'test \"$merge_tree\"' in workflow
+    assert 'test \"$merge_tree\" = \"$main_tree\"' in workflow
 
 
 def test_release_evidence_builds_exact_immutable_standby_image():
