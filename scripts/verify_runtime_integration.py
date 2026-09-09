@@ -12,7 +12,7 @@ import sys
 DEFAULTS = {
     "caddy": "codestra-caddy-upstream-gateway",
     "kong": "codestra-kong-kong-gateway-1",
-    "middleware": "codestra-middleware-integration-api-1",
+    "middleware": "codestra-appolon-middleware-integration-api-1",
     "redis": "codestra-redis-1",
 }
 
@@ -28,7 +28,18 @@ def inspect(name: str) -> dict:
     if result.returncode:
         raise RuntimeError("container_unavailable")
     value = json.loads(result.stdout)
-    if not isinstance(value, dict):
+    if not isinstance(value, dict) or not isinstance(value.get("State"), dict):
+        raise RuntimeError("invalid_container_readback")
+    if not isinstance(value["State"].get("Health", {}), dict):
+        raise RuntimeError("invalid_container_readback")
+    network_settings = value.get("NetworkSettings")
+    if not isinstance(network_settings, dict):
+        raise RuntimeError("invalid_container_readback")
+    attached = network_settings.get("Networks")
+    if not isinstance(attached, dict) or not all(
+        isinstance(name, str) and name and isinstance(endpoint, dict)
+        for name, endpoint in attached.items()
+    ):
         raise RuntimeError("invalid_container_readback")
     return value
 
@@ -39,7 +50,12 @@ def networks(container: dict) -> set[str]:
 
 def healthy(container: dict) -> bool:
     state = container["State"]
-    return state.get("Running") is True and state.get("Health", {}).get("Status") == "healthy"
+    return (
+        state.get("Running") is True
+        and state.get("Paused") is False
+        and state.get("Restarting") is False
+        and state.get("Health", {}).get("Status") == "healthy"
+    )
 
 
 def main() -> int:
@@ -48,11 +64,13 @@ def main() -> int:
         parser.add_argument(f"--{role}", default=default)
     args = parser.parse_args()
     names = {role: getattr(args, role) for role in DEFAULTS}
-    try:
-        containers = {role: inspect(name) for role, name in names.items()}
-    except (RuntimeError, ValueError, OSError, subprocess.SubprocessError):
-        print("RUNTIME_INTEGRATION=FAIL reason=container_readback_unavailable")
-        return 2
+    containers = {}
+    for role, name in names.items():
+        try:
+            containers[role] = inspect(name)
+        except (RuntimeError, ValueError, OSError, subprocess.SubprocessError):
+            print(f"RUNTIME_INTEGRATION=FAIL reason={role}_container_readback_unavailable")
+            return 2
 
     failures: list[str] = []
     for role, container in containers.items():
