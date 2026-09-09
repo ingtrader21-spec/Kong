@@ -15,6 +15,7 @@ import zipfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import kong_certification as evidence
 from tools.verify_release_candidate import api, REPOSITORY
+from tools import verify_release_candidate as source_candidate
 
 WORKFLOW = ".github/workflows/runtime-certification.yml"
 RECEIPT_SCHEMA = "codestra.kong.staging-receipt.v1"
@@ -55,7 +56,7 @@ def select_artifact(page: dict, run: dict, source: str) -> dict:
     return item
 
 
-def verified_document(archive: bytes, artifact: dict, candidate_raw: bytes, inventory_raw: bytes, *, now=None):
+def extract_document(archive: bytes, artifact: dict) -> bytes:
     evidence.require(len(archive) <= 2 * evidence.MAX_DOCUMENT and
                      "sha256:" + hashlib.sha256(archive).hexdigest() == artifact["digest"],
                      "staging_artifact_digest_mismatch")
@@ -66,8 +67,35 @@ def verified_document(archive: bytes, artifact: dict, candidate_raw: bytes, inve
                          not entries[0].flag_bits & 1 and entries[0].file_size <= evidence.MAX_DOCUMENT,
                          "unsafe_staging_archive")
         raw = bundle.read(entries[0])
-    document = evidence.validate_bytes(raw, candidate_raw, inventory_raw, now=now)
+    return raw
+
+
+def verified_document(archive: bytes, artifact: dict, candidate_raw: bytes, inventory_raw: bytes, *, rollback_candidate=None, now=None):
+    raw = extract_document(archive, artifact)
+    document = evidence.validate_bytes(raw, candidate_raw, inventory_raw, rollback_candidate=rollback_candidate, now=now)
     return raw, document
+
+
+def load_rollback_candidate(source: str, run_id: int) -> tuple[bytes, dict]:
+    evidence.require(isinstance(source, str) and bool(evidence.SHA.fullmatch(source)) and
+                     type(run_id) is int and run_id > 0, "invalid_rollback_candidate_identity")
+    run = evidence.decode(api(f"actions/runs/{run_id}"))
+    source_candidate.validate_run(run, source, run_id)
+    commit = evidence.decode(api(f"commits/{source}"))
+    evidence.require(commit.get("sha") == source and
+                     commit.get("commit", {}).get("verification", {}).get("verified") is True,
+                     "unsigned_rollback_source")
+    artifact = source_candidate.select_artifact(
+        evidence.decode(api(f"actions/runs/{run_id}/artifacts?per_page=100")), source)
+    raw, _ = source_candidate.verified_manifest(api(f"actions/artifacts/{artifact['id']}/zip"), artifact, source)
+    manifest = evidence.decode(raw)
+    evidence.require(commit["commit"].get("tree", {}).get("sha") == manifest["source_tree"],
+                     "rollback_source_tree_mismatch")
+    evidence.require(isinstance(manifest.get("kong_declarative_config_sha256"), str) and
+                     bool(evidence.HASH.fullmatch(manifest["kong_declarative_config_sha256"])),
+                     "rollback_configuration_hash_missing")
+    return raw, {"source_sha": source, "run_id": run_id, "artifact_id": artifact["id"],
+        "artifact_digest": artifact["digest"], "manifest_sha256": hashlib.sha256(raw).hexdigest()}
 
 
 def certification_id(source: str, run_id: int, artifact_id: int) -> str:
@@ -75,12 +103,24 @@ def certification_id(source: str, run_id: int, artifact_id: int) -> str:
 
 
 def validate_receipt(receipt: dict, raw: bytes, candidate_raw: bytes, inventory_raw: bytes, *, now=None) -> dict:
-    document = evidence.validate_bytes(raw, candidate_raw, inventory_raw, now=now)
     required = {"schema", "repository", "workflow", "source_sha", "staging_sha", "run_id", "run_attempt",
-                "artifact_id", "artifact_digest", "certification_sha256", "certification_id"}
+                "artifact_id", "artifact_digest", "certification_sha256", "certification_id",
+                "rollback_manifest_json", "rollback_artifact"}
     evidence.require(isinstance(receipt, dict) and set(receipt) == required and
                      receipt["schema"] == RECEIPT_SCHEMA and receipt["repository"] == REPOSITORY and
                      receipt["workflow"] == WORKFLOW, "invalid_staging_receipt")
+    evidence.require(isinstance(receipt["rollback_manifest_json"], str), "rollback_manifest_missing")
+    rollback_raw = receipt["rollback_manifest_json"].encode("utf-8")
+    document = evidence.validate_bytes(raw, candidate_raw, inventory_raw,
+        rollback_candidate=evidence.decode(rollback_raw), now=now)
+    proof = receipt["rollback_artifact"]
+    evidence.require(isinstance(proof, dict) and set(proof) == {
+        "source_sha", "run_id", "artifact_id", "artifact_digest", "manifest_sha256"}, "invalid_rollback_receipt")
+    evidence.require(proof["source_sha"] == document["rollback"]["source_sha"] and
+                     type(proof["run_id"]) is int and proof["run_id"] == document["rollback"]["candidate_run_id"] and
+                     type(proof["artifact_id"]) is int and proof["artifact_id"] > 0 and
+                     isinstance(proof["artifact_digest"], str) and bool(evidence.DIGEST.fullmatch(proof["artifact_digest"])) and
+                     proof["manifest_sha256"] == hashlib.sha256(rollback_raw).hexdigest(), "rollback_receipt_mismatch")
     source = document["candidate"]["source_sha"]
     evidence.require(receipt["source_sha"] == source and isinstance(receipt["staging_sha"], str) and
                      bool(evidence.SHA.fullmatch(receipt["staging_sha"])), "receipt_source_mismatch")
@@ -113,14 +153,20 @@ def main() -> int:
         commit = evidence.decode(api(f"commits/{head}"))
         validate_run(run, args.run_id, commit, candidate)
         artifact = select_artifact(evidence.decode(api(f"actions/runs/{args.run_id}/artifacts?per_page=100")), run, args.source_sha)
-        raw, document = verified_document(api(f"actions/artifacts/{artifact['id']}/zip"), artifact, candidate_raw, inventory_raw)
+        raw = extract_document(api(f"actions/artifacts/{artifact['id']}/zip"), artifact)
+        provisional = evidence.decode(raw)
+        rollback_raw, rollback_artifact = load_rollback_candidate(candidate.get("rollback_source_sha"),
+            provisional.get("rollback", {}).get("candidate_run_id"))
+        document = evidence.validate_bytes(raw, candidate_raw, inventory_raw,
+            rollback_candidate=evidence.decode(rollback_raw))
         evidence.require(evidence.timestamp(document["completed_at"]) <= evidence.timestamp(run["updated_at"]),
                          "observation_after_run")
         receipt = {"schema": RECEIPT_SCHEMA, "repository": REPOSITORY, "workflow": WORKFLOW,
                    "source_sha": args.source_sha, "staging_sha": head, "run_id": args.run_id,
                    "run_attempt": run["run_attempt"], "artifact_id": artifact["id"],
                    "artifact_digest": artifact["digest"], "certification_sha256": hashlib.sha256(raw).hexdigest(),
-                   "certification_id": certification_id(args.source_sha, args.run_id, artifact["id"])}
+                   "certification_id": certification_id(args.source_sha, args.run_id, artifact["id"]),
+                   "rollback_manifest_json": rollback_raw.decode("utf-8"), "rollback_artifact": rollback_artifact}
         args.output_dir.mkdir(mode=0o700, parents=True, exist_ok=False)
         (args.output_dir / "certification.json").write_bytes(raw)
         (args.output_dir / "receipt.json").write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n")

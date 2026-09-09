@@ -105,7 +105,7 @@ def checks(observed, required) -> None:
                 bool(HASH.fullmatch(value["observation_sha256"])), "observation_reference_missing")
 
 
-def validate(document: dict, candidate: dict, inventory: dict, *, now=None) -> None:
+def validate(document: dict, candidate: dict, inventory: dict, *, rollback_candidate=None, now=None) -> None:
     fields = {"schema", "environment", "candidate", "candidate_manifest_sha256",
               "route_inventory_sha256", "started_at", "completed_at", "route_checks",
               "global_checks", "effects_before", "effects_after", "rollback",
@@ -141,12 +141,19 @@ def validate(document: dict, candidate: dict, inventory: dict, *, now=None) -> N
                 all(type(value) is int and value == 0 for value in values.values()), "external_effects_not_zero")
     rollback = document["rollback"]
     require(isinstance(rollback, dict) and set(rollback) == {
-        "source_sha", "image_digest", "config_sha256", "backup_sha256", "restore_observation_sha256"},
+        "source_sha", "candidate_run_id", "image_digest", "config_sha256", "backup_sha256", "restore_observation_sha256"},
         "invalid_rollback_proof")
     require(rollback["source_sha"] == candidate["rollback_source_sha"], "wrong_rollback_source")
+    require(type(rollback["candidate_run_id"]) is int and rollback["candidate_run_id"] > 0,
+            "invalid_rollback_run")
     for field, pattern in (("image_digest", DIGEST), ("config_sha256", HASH),
                            ("backup_sha256", HASH), ("restore_observation_sha256", HASH)):
         require(isinstance(rollback[field], str) and bool(pattern.fullmatch(rollback[field])), "incomplete_rollback_proof")
+    require(isinstance(rollback_candidate, dict), "authenticated_rollback_candidate_required")
+    require(rollback_candidate.get("source_sha") == candidate["rollback_source_sha"] and
+            rollback["image_digest"] == rollback_candidate.get("kong_image_digest") and
+            rollback["config_sha256"] == rollback_candidate.get("kong_declarative_config_sha256"),
+            "rollback_release_identity_mismatch")
     canary = document["canary"]
     require(isinstance(canary, dict) and set(canary) == {"methods", "traffic_basis_points", "observed_requests"},
             "invalid_canary_proof")
@@ -155,9 +162,9 @@ def validate(document: dict, candidate: dict, inventory: dict, *, now=None) -> N
             canary["observed_requests"] > 0, "unsafe_or_empty_canary")
 
 
-def validate_bytes(raw: bytes, candidate_raw: bytes, inventory_raw: bytes, *, now=None) -> dict:
+def validate_bytes(raw: bytes, candidate_raw: bytes, inventory_raw: bytes, *, rollback_candidate=None, now=None) -> dict:
     document, candidate, inventory = decode(raw), decode(candidate_raw), decode(inventory_raw)
-    validate(document, candidate, inventory, now=now)
+    validate(document, candidate, inventory, rollback_candidate=rollback_candidate, now=now)
     require(document["candidate_manifest_sha256"] == hashlib.sha256(candidate_raw).hexdigest(),
             "candidate_manifest_hash_mismatch")
     require(document["route_inventory_sha256"] == hashlib.sha256(inventory_raw).hexdigest(),

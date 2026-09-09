@@ -87,3 +87,19 @@ Errors do not print remote response bodies. A standalone run reports external
 effect counters as **not measured**, and cannot produce a full certification.
 It is one input to the isolated rehearsal, not proof of all 27 routes or a real
 zero-effect counter observation.
+
+Rollback observations must include `rollback.candidate_run_id`, identifying the
+successful canonical protected-main release run for `candidate.rollback_source_sha`.
+Both the protected observation packager and the consuming staging verifier recover
+that run's retained, digest-bound candidate artifact and require a GitHub-verified
+source commit with the same source tree. The reported rollback image digest and
+configuration SHA-256 must exactly equal that authenticated candidate. Format-only
+hashes, an arbitrary local manifest and a self-asserted rollback record cannot pass.
+The prior release artifact must remain available for the rollback retention period.
+
+The staging receipt carries the authenticated rollback manifest bytes and its run,
+artifact, digest and manifest-hash references. Offline manifest generation checks
+these bindings again. As with the rest of the receipt, this local consistency check
+is not standalone provenance: protected release admission first executes the live
+GitHub run/artifact verifier. No rollback or runtime probe is executed by these
+verification tools.
