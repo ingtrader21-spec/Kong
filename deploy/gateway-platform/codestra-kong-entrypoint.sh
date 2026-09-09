@@ -17,7 +17,8 @@ fi
 KONG_OIDC_CACHE_TOKENS_SALT=$(cat "$sx_oidc_salt_file")
 export KONG_OIDC_CACHE_TOKENS_SALT
 sx_webhook_secret_directory=/run/secrets/webhooks
-if [ ! -d "$sx_webhook_secret_directory" ]; then
+if [ ! -d "$sx_webhook_secret_directory" ] || [ ! -r "$sx_webhook_secret_directory" ] \
+    || [ ! -x "$sx_webhook_secret_directory" ]; then
   echo 'Required gateway webhook secret directory is unavailable' >&2
   exit 1
 fi
