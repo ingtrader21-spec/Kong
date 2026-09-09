@@ -27,8 +27,8 @@ files:
   sha256: b941ea0defa38ba1bf906d9640b0555ee3eeceb227169a8c2acc8ff0589f02f3
   size: 1706
 - path: .github/workflows/staging-certification.yml
-  sha256: a972e4f8b4071fba9225394107d8f36f3229a2441697bd1bca067f48d2a4da31
-  size: 3209
+  sha256: 9bb366d5b10186ab749adc24a5d868867467a6099b18485ebcc9a302dc6b2543
+  size: 3248
 - path: .github/workflows/validate.yml
   sha256: 672afba7212160bca70e505dcb4177660d19f04bf2b81f34123932497d9d1b6d
   size: 5923
@@ -618,7 +618,7 @@ files:
   sha256: d8eca1dd7a2b4e06db51a58a50f986e3fd47611344636c63363264c0c57d4692
   size: 11461
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: d1aa88921900151ed510d253fc18cecb7e269a3455c8ff986482db4547ad6f95
+manifest_generation_id: c7fa8599a63846444e0424e94f2f81fc9ef4decea1baa8c97beb5a382584cbc5
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
