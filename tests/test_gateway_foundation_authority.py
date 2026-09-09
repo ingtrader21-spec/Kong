@@ -77,6 +77,8 @@ def test_topology_is_private_bounded_and_nonactivated(topology):
     assert "/run/secrets/webhooks" in wrapper
     assert '[ ! -r "$sx_webhook_secret_directory" ]' in wrapper
     assert '[ ! -x "$sx_webhook_secret_directory" ]' in wrapper
+    assert 'sx_webhook_secret_count=$((sx_webhook_secret_count + 1))' in wrapper
+    assert '[ "$sx_webhook_secret_count" -eq 0 ]' in wrapper
     assert "^kong-webhook-[a-z][a-z0-9-]{1,96}$" in wrapper
     assert '"${#sx_webhook_secret_value}" -lt 32' in wrapper
     boundary = read("deploy/gateway-platform/network-boundaries.yaml")

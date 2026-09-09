@@ -22,6 +22,7 @@ if [ ! -d "$sx_webhook_secret_directory" ] || [ ! -r "$sx_webhook_secret_directo
   echo 'Required gateway webhook secret directory is unavailable' >&2
   exit 1
 fi
+sx_webhook_secret_count=0
 for sx_webhook_secret_file in "$sx_webhook_secret_directory"/*; do
   [ -e "$sx_webhook_secret_file" ] || break
   sx_webhook_secret_name=${sx_webhook_secret_file##*/}
@@ -45,6 +46,11 @@ for sx_webhook_secret_file in "$sx_webhook_secret_directory"/*; do
   fi
   sx_webhook_secret_environment=$(printf '%s' "$sx_webhook_secret_name" | tr 'a-z-' 'A-Z_')
   export "$sx_webhook_secret_environment=$sx_webhook_secret_value"
+  sx_webhook_secret_count=$((sx_webhook_secret_count + 1))
   unset sx_webhook_secret_value sx_webhook_secret_environment
 done
+if [ "$sx_webhook_secret_count" -eq 0 ]; then
+  echo 'At least one gateway webhook secret is required' >&2
+  exit 1
+fi
 exec /docker-entrypoint.sh "$@"
