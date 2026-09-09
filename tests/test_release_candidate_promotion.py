@@ -99,7 +99,7 @@ def git(root, *args):
 
 
 @pytest.fixture
-def release_repository(tmp_path, monkeypatch):
+def release_repository(tmp_path, monkeypatch, synthetic_certification):
     root=tmp_path/'repo'; root.mkdir()
     git(root,'init','-b','main'); git(root,'config','user.name','Synthetic Test')
     git(root,'config','user.email','test@example.invalid')
@@ -107,6 +107,10 @@ def release_repository(tmp_path, monkeypatch):
     (root/'deploy/kong/control-plane.yml').write_text('services: []\n')
     (root/'MIGRATION_MANIFEST.yaml').write_text('manifest_generation_id: synthetic-fixture\n')
     (root/'MIGRATION_MANIFEST.json').write_text('{"manifest_generation_id":"synthetic-fixture"}\n')
+    (root/'config').mkdir()
+    inventory = root/'config/kong-production-route-inventory.v2.json'
+    inventory.write_text(json.dumps({'schema':'codestra.kong.production-route-inventory.v2',
+        'expectedRouteCount':1,'routes':[{'name':'synthetic-route','plugins':['openid-connect']}]}))
     git(root,'add','.'); git(root,'commit','-m','base')
     base=git(root,'rev-parse','HEAD')
     (root/'payload').write_text('reviewed source bytes\n')
@@ -124,6 +128,10 @@ def release_repository(tmp_path, monkeypatch):
     args=['--certified-source-sha',source,'--candidate-manifest',str(candidate),
           '--candidate-manifest-sha256',hashlib.sha256(candidate.read_bytes()).hexdigest(),
           '--candidate-run-id','123','--candidate-artifact-id','42']
+    raw, receipt = synthetic_certification(candidate.read_bytes(), inventory.read_bytes())
+    observation = tmp_path/'synthetic-observation.json'; observation.write_bytes(raw)
+    proof = tmp_path/'synthetic-receipt.json'; proof.write_text(json.dumps(receipt))
+    args += ['--staging-evidence',str(observation),'--staging-receipt',str(proof)]
     return root, base, source, candidate, args, invoke, m
 
 
@@ -141,7 +149,7 @@ def test_normal_promotion_preserves_certified_source_and_exact_artifacts(release
     destination=git(root,'rev-parse','HEAD'); assert destination!=source
     assert git(root,'rev-parse','HEAD^{tree}')==git(root,'rev-parse',source+'^{tree}')
     output=tmp_path/'promotion.json'
-    assert invoke(m.STAGING_RELEASE_STAGE,output,'PASS:'+source+':synthetic-only',args)==0
+    assert invoke(m.STAGING_RELEASE_STAGE,output,'PASS:'+source+':github-actions/123/42',args)==0
     doc=json.loads(output.read_text()); original=json.loads(candidate.read_text())
     assert doc['source_sha']==source and doc['promotion_sha']==destination
     for key in ('kong_image_digest','standby_auth_image_digest','rollback_source_sha','source_tree'):
@@ -157,7 +165,7 @@ def test_changed_promotion_tuple_is_rejected(release_repository, tmp_path, damag
         (root/'payload').write_text('changed')
         git(root,'add','.'); git(root,'commit','-m','not certified')
     elif damage=='unbound-source': args[1]='b'*40
-    elif damage=='missing-artifact': args[-1]='0'
+    elif damage=='missing-artifact': args[9]='0'
     else:
         doc=json.loads(candidate.read_text())
         if damage=='digest': doc['kong_image_digest']='sha256:'+'c'*64
@@ -166,6 +174,12 @@ def test_changed_promotion_tuple_is_rejected(release_repository, tmp_path, damag
         candidate.write_text(json.dumps(doc))
         if damage!='manifest-checksum': args[5]=hashlib.sha256(candidate.read_bytes()).hexdigest()
     assert invoke(m.STAGING_RELEASE_STAGE,tmp_path/'blocked.json','PASS:'+source+':fixture',args)==2
+
+
+def test_bare_pass_label_is_not_staging_evidence(release_repository, tmp_path):
+    root,base,source,candidate,args,invoke,m=release_repository
+    assert invoke(m.STAGING_RELEASE_STAGE,tmp_path/'bare.json',
+                  'PASS:'+source+':github-actions/123/42',args[:-4])==2
 
 
 def test_every_build_and_tag_resolution_step_is_main_only():

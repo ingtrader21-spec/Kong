@@ -27,8 +27,13 @@
     },
     {
       "path": ".github/workflows/release.yml",
-      "sha256": "90ee102b7092a0bdfd69f81eafd9fa6b280832788234d32921135a3d9b2176f5",
-      "size": 9933
+      "sha256": "aa28c925d99385160cbbd09339ac2855c449682efe4662522f034605e33a9bb3",
+      "size": 11021
+    },
+    {
+      "path": ".github/workflows/runtime-certification.yml",
+      "sha256": "08919d25252f6be0f7cc8172749fb6f9669fe0d0dba68d9c030c976881871f04",
+      "size": 2775
     },
     {
       "path": ".github/workflows/security.yml",
@@ -47,8 +52,8 @@
     },
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "e5405c969ea6e964a3dde94a3ed1275317495a39457d3e83c2e1c76ef12e97d6",
-      "size": 5547
+      "sha256": "dbcb510c7bf18f49be1861abba6a1e69948bcc1d2de43986b86a1a3f79449ad7",
+      "size": 5629
     },
     {
       "path": ".gitignore",
@@ -289,6 +294,11 @@
       "path": "docs/KONG_RELEASE_AND_ADMIN_BOUNDARIES.md",
       "sha256": "85d08bc6c61d9db864b0151c02b7d03ca0eef8b5d8297cd3a39228489ffb93a5",
       "size": 9118
+    },
+    {
+      "path": "docs/KONG_RUNTIME_CERTIFICATION.md",
+      "sha256": "8638077eebded7557bf8423878b3846d36cf3baeb846fa0af3ecc6afbf9d702d",
+      "size": 5282
     },
     {
       "path": "docs/MARKETING-PLATFORM-EDGE-RESPONSIBILITIES.md",
@@ -607,8 +617,8 @@
     },
     {
       "path": "scripts/run_kong_standby_acceptance.py",
-      "sha256": "80a33b2a6b7286c3b42952b0e03502bfe8ae77ee4460ee3277d2de1912633cad",
-      "size": 4750
+      "sha256": "c3893d84560c86fed5746b05e79060e16d07d8ef7c56408b9da5763e2bed5fd6",
+      "size": 6812
     },
     {
       "path": "scripts/validate_codestra_cells.py",
@@ -652,8 +662,8 @@
     },
     {
       "path": "tests/conftest.py",
-      "sha256": "6722b11298cdd9cf814e072072bce7751f11dbbbd11177e42568471cfceb7b39",
-      "size": 1364
+      "sha256": "119909ae45021412f9aed06e19f167cf06270237e6933fddbfdc5803d6e98ab0",
+      "size": 3872
     },
     {
       "path": "tests/test_codestra_cells.py",
@@ -731,6 +741,11 @@
       "size": 27433
     },
     {
+      "path": "tests/test_kong_runtime_certification.py",
+      "sha256": "9a447ca6e8e66cf5d76d81250508d0f07a8652705a3159ac3ec2014a138afd23",
+      "size": 12598
+    },
+    {
       "path": "tests/test_kong_standby_apply.py",
       "sha256": "d9b05b55dc9b1948e1c354b937b4d1fad403f7927e3fdd666a2a73684002769b",
       "size": 2290
@@ -762,8 +777,8 @@
     },
     {
       "path": "tests/test_release_candidate_promotion.py",
-      "sha256": "7d0d42a5fe4c097a2e1ddbf7e46748213b22a48a708fd8f3f8530a3babd7602d",
-      "size": 9274
+      "sha256": "0b9a765f06de314b98dfa87b6f173e19350673411ed6bb188a92adee381309fc",
+      "size": 10224
     },
     {
       "path": "tests/test_release_governance.py",
@@ -792,8 +807,18 @@
     },
     {
       "path": "tools/generate_release_manifest.py",
-      "sha256": "33754a8b81ed248f1aa494de6caa1916536a7c99bf1e118fad6f7b262bdd70b1",
-      "size": 7353
+      "sha256": "aa6e29f76c34a16387356f0a00f2518e576cce9c740f6bb5e15f4fb571ed1fa8",
+      "size": 8853
+    },
+    {
+      "path": "tools/kong_certification.py",
+      "sha256": "4f61ed1f01868a69e5f443ab3a8b185a6b48aa0be75b9555c49dddf5a82b1e8d",
+      "size": 9768
+    },
+    {
+      "path": "tools/package_staging_certification.py",
+      "sha256": "b85ad1ff5e89f3236c9258a1eed236226bd24f0ae8ac81e515ebc52aaaf53910",
+      "size": 2611
     },
     {
       "path": "tools/verify_migration_manifest.py",
@@ -804,10 +829,15 @@
       "path": "tools/verify_release_candidate.py",
       "sha256": "8ba5e5a4f045ec9b78ed11af1fce8fc6a808857feebcd724c85266673b7cf890",
       "size": 6613
+    },
+    {
+      "path": "tools/verify_staging_certification.py",
+      "sha256": "08d5fb06716dfb265cbe4d17d69ab999a0728595f7bff465d5596c1c3daef366",
+      "size": 8234
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "0a787eec0599dbbe82bf19a9dd396f48bd33e49af1dedcd33345efd8763b1597",
+  "manifest_generation_id": "5fe81d5a8d17d594b9ecf123b0af0112920881df06917bf6d97e63fbde4d312a",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
