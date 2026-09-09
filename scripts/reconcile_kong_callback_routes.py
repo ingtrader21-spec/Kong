@@ -6,16 +6,24 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+SCRIPTS = str(Path(__file__).resolve().parent)
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
+
+from kong_admin_channel import PRIVATE_ADMIN_URL, admin_request, normalize_admin_reference
 from reconcile_kong_campaign_automation import active_rsa_key, rsa_public_key_pem
 
 
 def request(base, method, path, payload=None):
+    if base == PRIVATE_ADMIN_URL:
+        return admin_request(method, normalize_admin_reference(path), payload) or {}
     data = None if payload is None else urlencode(payload, doseq=True).encode()
     url = path if path.startswith(("http://", "https://")) else base.rstrip("/") + path
     try:
@@ -27,6 +35,8 @@ def request(base, method, path, payload=None):
 
 
 def request_json(base, method, path, payload):
+    if base == PRIVATE_ADMIN_URL:
+        return admin_request(method, normalize_admin_reference(path), payload) or {}
     url = path if path.startswith(("http://", "https://")) else base.rstrip("/") + path
     try:
         req = Request(
@@ -215,7 +225,7 @@ def verify_plugins(by_name, expected, spec):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--admin-url", required=True)
+    parser.add_argument("--admin-url", default=PRIVATE_ADMIN_URL)
     parser.add_argument("--manifest", type=Path, default=Path("config/kong-callback-routes.json"))
     parser.add_argument("--evidence", type=Path, required=True)
     parser.add_argument("--jwks-url", required=True)
