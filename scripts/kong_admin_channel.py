@@ -119,10 +119,13 @@ def verify_container(container: str) -> str:
 
 
 def container_identity(container: str = DEFAULT_CONTAINER) -> str:
-    """Verify once per process; confirm_unchanged re-checks before reporting PASS."""
-    if container not in _IDENTIFIED:
-        _IDENTIFIED[container] = verify_container(container)
-    return _IDENTIFIED[container]
+    """Resolve the named gateway and reject replacement during this process."""
+    previous = _IDENTIFIED.get(container)
+    current = verify_container(container)
+    if previous is not None and current != previous:
+        raise AdminError("kong gateway container changed during the operation")
+    _IDENTIFIED[container] = current
+    return current
 
 
 def confirm_unchanged(container: str = DEFAULT_CONTAINER) -> str:
