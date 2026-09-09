@@ -1,0 +1,10 @@
+{
+  "apiVersion": "codestra.gateway/v1",
+  "authenticationMode": "public",
+  "kind": "GatewayPolicy",
+  "maximumBodyBytes": 1048576,
+  "maximumTimeoutMs": 60000,
+  "name": "public-health",
+  "newProductionAllowed": true,
+  "plugins": []
+}

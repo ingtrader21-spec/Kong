@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 
@@ -17,12 +18,19 @@ DEFAULTS = {
 
 
 def inspect(name: str) -> dict:
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}", name):
+        raise RuntimeError("invalid_container_name")
+    template = '{"State":{{json .State}},"NetworkSettings":{"Networks":{{json .NetworkSettings.Networks}}}}'
     result = subprocess.run(
-        ["docker", "inspect", name], capture_output=True, text=True, check=False
+        ["docker", "--host", "unix:///var/run/docker.sock", "inspect", "--format", template, name],
+        capture_output=True, text=True, check=False, timeout=10
     )
     if result.returncode:
-        raise RuntimeError(f"container unavailable: {name}")
-    return json.loads(result.stdout)[0]
+        raise RuntimeError("container_unavailable")
+    value = json.loads(result.stdout)
+    if not isinstance(value, dict):
+        raise RuntimeError("invalid_container_readback")
+    return value
 
 
 def networks(container: dict) -> set[str]:
@@ -42,8 +50,8 @@ def main() -> int:
     names = {role: getattr(args, role) for role in DEFAULTS}
     try:
         containers = {role: inspect(name) for role, name in names.items()}
-    except (RuntimeError, json.JSONDecodeError) as error:
-        print(f"RUNTIME_INTEGRATION=FAIL reason={error}")
+    except (RuntimeError, ValueError, OSError, subprocess.SubprocessError):
+        print("RUNTIME_INTEGRATION=FAIL reason=container_readback_unavailable")
         return 2
 
     failures: list[str] = []

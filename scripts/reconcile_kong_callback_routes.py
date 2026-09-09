@@ -6,51 +6,44 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.error import HTTPError
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 
+SCRIPTS = str(Path(__file__).resolve().parent)
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
+
+from kong_admin_channel import (
+    PRIVATE_ADMIN_URL,
+    admin_request,
+    collect_admin_rows,
+    http_admin_request,
+    http_admin_url,
+    normalize_admin_reference,
+    open_admin_request as urlopen,
+)
 from reconcile_kong_campaign_automation import active_rsa_key, rsa_public_key_pem
 
 
 def request(base, method, path, payload=None):
-    data = None if payload is None else urlencode(payload, doseq=True).encode()
-    url = path if path.startswith(("http://", "https://")) else base.rstrip("/") + path
-    try:
-        with urlopen(Request(url, data=data, method=method), timeout=10) as response:
-            raw = response.read()
-            return json.loads(raw) if raw else {}
-    except HTTPError as error:
-        raise RuntimeError("Kong Admin API rejected %s %s (%s)" % (method, path, error.code)) from error
+    if base == PRIVATE_ADMIN_URL:
+        return admin_request(
+            method, normalize_admin_reference(path), payload, payload_encoding="form"
+        ) or {}
+    return http_admin_request(base, method, path, payload, opener=urlopen) or {}
 
 
 def request_json(base, method, path, payload):
-    url = path if path.startswith(("http://", "https://")) else base.rstrip("/") + path
-    try:
-        req = Request(
-            url, data=json.dumps(payload).encode(), method=method,
-            headers={"Content-Type": "application/json"},
-        )
-        with urlopen(req, timeout=10) as response:
-            raw = response.read()
-            return json.loads(raw) if raw else {}
-    except HTTPError as error:
-        raise RuntimeError("Kong Admin API rejected %s %s (%s)" % (method, path, error.code)) from error
+    if base == PRIVATE_ADMIN_URL:
+        return admin_request(method, normalize_admin_reference(path), payload) or {}
+    return http_admin_request(base, method, path, payload, payload_encoding="json", opener=urlopen) or {}
 
 
 def all_rows(base, path):
-    rows = []
-    seen = set()
-    while path:
-        if path in seen:
-            raise RuntimeError("Kong pagination loop detected")
-        seen.add(path)
-        page = request(base, "GET", path)
-        rows.extend(page.get("data", []))
-        path = page.get("next")
-    return rows
+    normalize = normalize_admin_reference if base == PRIVATE_ADMIN_URL else lambda value: http_admin_url(base, value)
+    return collect_admin_rows(lambda value: request(base, "GET", value), path, normalize)
 
 
 def singleton(base, resource, name):
@@ -215,7 +208,7 @@ def verify_plugins(by_name, expected, spec):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--admin-url", required=True)
+    parser.add_argument("--admin-url", default=PRIVATE_ADMIN_URL)
     parser.add_argument("--manifest", type=Path, default=Path("config/kong-callback-routes.json"))
     parser.add_argument("--evidence", type=Path, required=True)
     parser.add_argument("--jwks-url", required=True)

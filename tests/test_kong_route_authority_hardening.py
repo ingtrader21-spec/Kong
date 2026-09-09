@@ -98,15 +98,29 @@ def test_standby_apply_refuses_unowned_name_collisions(monkeypatch):
 
 def test_standby_apply_updates_only_resources_it_already_owns(monkeypatch):
     module = _load(STANDBY_APPLIER_PATH, "apply_kong_standby_owned")
+    owned_id = "00000000-0000-0000-0000-000000000001"
 
     def fake_request(method, path, payload=None):
         if method == "GET":
-            return {"data": [{"id": "owned", "tags": [module.TAG]}]}
-        return {"id": "owned", **payload}
+            return {"data": [{"id": owned_id, "tags": [module.TAG]}]}
+        return {"id": owned_id, **payload}
 
     monkeypatch.setattr(module, "request", fake_request)
     result = module.upsert("services", "standby-service", {"tags": [module.TAG]})
-    assert result["id"] == "owned"
+    assert result["id"] == owned_id
+
+
+def test_standby_apply_rejects_untrusted_owned_resource_identity(monkeypatch):
+    module = _load(STANDBY_APPLIER_PATH, "apply_kong_standby_invalid_identity")
+    monkeypatch.setattr(
+        module,
+        "request",
+        lambda method, path, payload=None: {
+            "data": [{"id": "../routes/production", "tags": [module.TAG]}]
+        },
+    )
+    with pytest.raises(RuntimeError, match="invalid Kong service identity"):
+        module.upsert("services", "standby-service", {"tags": [module.TAG]})
 
 
 def test_campaign_reconciler_validates_manifest_consumer_identity():

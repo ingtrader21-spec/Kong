@@ -6,17 +6,31 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import sys
 import textwrap
 from pathlib import Path
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import urlopen as open_jwks
+
+SCRIPTS = str(Path(__file__).resolve().parent)
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
+
+from kong_admin_channel import (
+    PRIVATE_ADMIN_URL,
+    admin_request,
+    http_admin_request,
+    normalize_admin_reference,
+    open_admin_request as urlopen,
+)
 
 
 def request(base: str, method: str, path: str, payload=None):
-    data = None if payload is None else urlencode(payload, doseq=True).encode()
-    with urlopen(Request(base.rstrip("/") + path, method=method, data=data), timeout=15) as response:
-        raw = response.read()
-        return json.loads(raw) if raw else None
+    if base == PRIVATE_ADMIN_URL:
+        return admin_request(
+            method, normalize_admin_reference(path), payload, payload_encoding="form"
+        )
+    return http_admin_request(base, method, path, payload, timeout=15, opener=urlopen)
 
 
 def _der_length(length: int) -> bytes:
@@ -51,7 +65,7 @@ def rsa_public_key_pem(jwk: dict[str, str]) -> str:
 
 
 def active_rsa_key(jwks_url: str, active_kid: str | None = None) -> dict[str, str]:
-    with urlopen(jwks_url, timeout=15) as response:
+    with open_jwks(jwks_url, timeout=15) as response:
         keys = json.load(response).get("keys", [])
     candidates = [
         key for key in keys
@@ -195,7 +209,7 @@ def ensure_plugin(admin: str, route_id: str, name: str, config: dict, apply: boo
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--admin-url", required=True)
+    parser.add_argument("--admin-url", default=PRIVATE_ADMIN_URL)
     parser.add_argument("--jwks-url", required=True)
     parser.add_argument("--manifest", type=Path, default=Path("config/kong-campaign-automation-routes.json"))
     parser.add_argument("--evidence", type=Path, required=True)
