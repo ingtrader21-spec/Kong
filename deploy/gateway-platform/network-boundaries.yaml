@@ -1,0 +1,55 @@
+schema: codestra.gateway.network-boundaries.v1
+state: SOURCE_ONLY
+public_listener_owner: host-caddy
+public_tcp_ports:
+- 80
+- 443
+ssh: existing approved host authority only
+mutually_exclusive_topologies:
+- hybrid
+- traditional
+networks:
+  edge_internal:
+    internal_required: true
+    docker_name: codestra_edge_internal
+  kong_proxy:
+    internal_required: true
+    docker_name: codestra_kong_proxy
+  kong_cluster:
+    internal_required: true
+    docker_name: codestra_kong_cluster
+  kong_admin:
+    internal_required: true
+    docker_name: codestra_kong_admin
+  kong_database:
+    internal_required: true
+    docker_name: codestra_kong_database
+  kong_rate_limit:
+    internal_required: true
+    docker_name: codestra_kong_rate_limit
+  observability:
+    internal_required: true
+    docker_name: codestra_observability
+  middleware_upstream:
+    internal_required: true
+    docker_name: codestra_middleware_upstream
+  backup_authority:
+    internal_required: true
+    docker_name: codestra_backup_authority
+  edge_public:
+    owner: host-caddy
+    compose_attachment_permitted: false
+dependency_owners:
+  postgresql: deploy/postgres and existing Kong database authority
+  redis: private designated rate-limit authority
+  upstream-gateway: existing private Caddy-to-Kong balancer authority
+private_balancer:
+  network: kong_proxy
+  targets:
+  - kong-dp-1:8443
+  - kong-dp-2:8443
+  traditional_targets:
+  - kong-proxy-1:8443
+  - kong-proxy-2:8443
+  tls_verify: true
+  host_ports: []

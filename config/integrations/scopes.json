@@ -1,0 +1,9 @@
+{
+  "apiVersion": "codestra.gateway/v1",
+  "scopes": [
+    "gateway.read",
+    "gateway.write",
+    "moneybee.account.bootstrap",
+    "webhook.receive"
+  ]
+}

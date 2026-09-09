@@ -1,0 +1,15 @@
+{
+  "apiVersion": "codestra.gateway/v1",
+  "authenticationMode": "mtls-oidc",
+  "kind": "GatewayPolicy",
+  "maximumBodyBytes": 1048576,
+  "maximumTimeoutMs": 60000,
+  "name": "private-mtls-api",
+  "newProductionAllowed": true,
+  "plugins": [
+    "openid-connect",
+    "codestra-authz",
+    "mtls-auth",
+    "ip-restriction"
+  ]
+}

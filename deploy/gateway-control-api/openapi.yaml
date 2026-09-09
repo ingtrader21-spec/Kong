@@ -1,0 +1,2042 @@
+openapi: 3.1.0
+info:
+  title: Codestra Gateway Control API
+  version: 1.0.0
+  description: Private control-plane source contract. Approval and deployment are
+    separate permissions. Runtime execution is disabled by default. Tenant/team authority
+    is application-owned. The API never accepts raw Kong Admin payloads or live Admin
+    credentials.
+servers:
+- url: https://gateway-control.internal.codestra
+paths:
+  /v1/integrations:
+    post:
+      operationId: post-v1-integrations
+      security:
+      - keycloak:
+        - gateway.write
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationCreate'
+    get:
+      operationId: get-v1-integrations
+      security:
+      - keycloak:
+        - gateway.read
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: cursor
+        in: query
+        schema:
+          type: string
+          maxLength: 256
+  /v1/integrations/{integration_id}:
+    get:
+      operationId: get-v1-integrations-integration_id
+      security:
+      - keycloak:
+        - gateway.read
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: integration_id
+        in: path
+        required: true
+        schema: &id001
+          type: string
+          pattern: ^[a-z][a-z0-9-]{1,62}$
+          maxLength: 63
+    patch:
+      operationId: patch-v1-integrations-integration_id
+      security:
+      - keycloak:
+        - gateway.write
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: integration_id
+        in: path
+        required: true
+        schema: *id001
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationUpdate'
+  /v1/integrations/{integration_id}/validate:
+    post:
+      operationId: post-v1-integrations-integration_id-validate
+      security:
+      - keycloak:
+        - gateway.validate
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: integration_id
+        in: path
+        required: true
+        schema: *id001
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionCommand'
+  /v1/integrations/{integration_id}/preview:
+    post:
+      operationId: post-v1-integrations-integration_id-preview
+      security:
+      - keycloak:
+        - gateway.validate
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: integration_id
+        in: path
+        required: true
+        schema: *id001
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionCommand'
+  /v1/integrations/{integration_id}/submit:
+    post:
+      operationId: post-v1-integrations-integration_id-submit
+      security:
+      - keycloak:
+        - gateway.submit
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: integration_id
+        in: path
+        required: true
+        schema: *id001
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionCommand'
+  /v1/integrations/{integration_id}/approve:
+    post:
+      operationId: post-v1-integrations-integration_id-approve
+      security:
+      - keycloak:
+        - gateway.approve
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: integration_id
+        in: path
+        required: true
+        schema: *id001
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalCommand'
+  /v1/integrations/{integration_id}/deployments:
+    post:
+      operationId: post-v1-integrations-integration_id-deployments
+      security:
+      - keycloak:
+        - gateway.deploy
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: integration_id
+        in: path
+        required: true
+        schema: *id001
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeploymentCommand'
+  /v1/integrations/{integration_id}/credentials/rotate:
+    post:
+      operationId: post-v1-integrations-integration_id-credentials-rotate
+      security:
+      - keycloak:
+        - gateway.rotate
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: integration_id
+        in: path
+        required: true
+        schema: *id001
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RotationCommand'
+  /v1/integrations/{integration_id}/certificates/rotate:
+    post:
+      operationId: post-v1-integrations-integration_id-certificates-rotate
+      security:
+      - keycloak:
+        - gateway.rotate
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: integration_id
+        in: path
+        required: true
+        schema: *id001
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RotationCommand'
+  /v1/integrations/{integration_id}/deprecate:
+    post:
+      operationId: post-v1-integrations-integration_id-deprecate
+      security:
+      - keycloak:
+        - gateway.write
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: integration_id
+        in: path
+        required: true
+        schema: *id001
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionCommand'
+  /v1/integrations/{integration_id}/status:
+    get:
+      operationId: get-v1-integrations-integration_id-status
+      security:
+      - keycloak:
+        - gateway.read
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: integration_id
+        in: path
+        required: true
+        schema: *id001
+  /v1/integrations/{integration_id}/drift:
+    get:
+      operationId: get-v1-integrations-integration_id-drift
+      security:
+      - keycloak:
+        - gateway.read
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: integration_id
+        in: path
+        required: true
+        schema: *id001
+  /v1/integrations/{integration_id}/metrics:
+    get:
+      operationId: get-v1-integrations-integration_id-metrics
+      security:
+      - keycloak:
+        - gateway.read
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: integration_id
+        in: path
+        required: true
+        schema: *id001
+  /v1/deployments/{deployment_id}:
+    get:
+      operationId: get-v1-deployments-deployment_id
+      security:
+      - keycloak:
+        - gateway.read
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: deployment_id
+        in: path
+        required: true
+        schema: &id002
+          type: string
+          format: uuid
+  /v1/deployments/{deployment_id}/rollback:
+    post:
+      operationId: post-v1-deployments-deployment_id-rollback
+      security:
+      - keycloak:
+        - gateway.rollback
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: deployment_id
+        in: path
+        required: true
+        schema: *id002
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RollbackCommand'
+  /v1/templates:
+    get:
+      operationId: get-v1-templates
+      security:
+      - keycloak:
+        - gateway.read
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: cursor
+        in: query
+        schema:
+          type: string
+          maxLength: 256
+  /v1/policies:
+    get:
+      operationId: get-v1-policies
+      security:
+      - keycloak:
+        - gateway.read
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: cursor
+        in: query
+        schema:
+          type: string
+          maxLength: 256
+  /v1/audit-events:
+    get:
+      operationId: get-v1-audit-events
+      security:
+      - keycloak:
+        - gateway.audit
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: cursor
+        in: query
+        schema:
+          type: string
+          maxLength: 256
+  /healthz:
+    get:
+      operationId: get-healthz
+      security: []
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /readyz:
+    get:
+      operationId: get-readyz
+      security:
+      - keycloak:
+        - gateway.read
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /version:
+    get:
+      operationId: get-version
+      security: []
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /metrics:
+    get:
+      operationId: get-metrics
+      security:
+      - keycloak:
+        - gateway.read
+      responses:
+        '200':
+          description: Source/control result; no runtime mutation is implied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient tenant, role or scope authority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource unavailable to caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Version, approval state or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency or runtime execution unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    IntegrationContract:
+      $id: urn:codestra:gateway-integration:v1
+      $schema: https://json-schema.org/draft/2020-12/schema
+      additionalProperties: false
+      properties:
+        apiVersion:
+          const: codestra.gateway/v1
+        kind:
+          const: GatewayIntegration
+        metadata:
+          additionalProperties: false
+          properties:
+            criticality:
+              enum:
+              - low
+              - medium
+              - high
+              - critical
+            dataClassification:
+              enum:
+              - public
+              - internal
+              - confidential
+              - restricted
+            environment:
+              enum:
+              - development
+              - staging
+              - production
+            id:
+              maxLength: 63
+              minLength: 1
+              pattern: ^[a-z][a-z0-9-]{1,62}$
+              type: string
+            owner:
+              maxLength: 63
+              minLength: 1
+              pattern: ^[a-z][a-z0-9-]{1,62}$
+              type: string
+            securityOwner:
+              maxLength: 63
+              minLength: 1
+              pattern: ^[a-z][a-z0-9-]{1,62}$
+              type: string
+            system:
+              maxLength: 63
+              minLength: 1
+              pattern: ^[a-z][a-z0-9-]{1,62}$
+              type: string
+          required:
+          - id
+          - system
+          - owner
+          - securityOwner
+          - criticality
+          - dataClassification
+          - environment
+          type: object
+        spec:
+          additionalProperties: false
+          properties:
+            authentication:
+              additionalProperties: false
+              properties:
+                audience:
+                  maxLength: 128
+                  minLength: 1
+                  pattern: ^[a-z][a-z0-9._:-]{0,127}$
+                  type: string
+                authorizedParties:
+                  items:
+                    maxLength: 128
+                    minLength: 1
+                    pattern: ^[a-z][a-z0-9._:-]{0,127}$
+                    type: string
+                  maxItems: 64
+                  minItems: 1
+                  type: array
+                  uniqueItems: true
+                caCertificateIds:
+                  items:
+                    maxLength: 36
+                    minLength: 1
+                    pattern: ^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$
+                    type: string
+                  maxItems: 64
+                  minItems: 1
+                  type: array
+                  uniqueItems: true
+                issuer:
+                  const: https://auth.codestra.co/realms/codestra
+                keyId:
+                  maxLength: 63
+                  minLength: 1
+                  pattern: ^[a-z][a-z0-9-]{1,62}$
+                  type: string
+                legacySunset:
+                  format: date
+                  type: string
+                roles:
+                  items:
+                    maxLength: 128
+                    minLength: 1
+                    pattern: ^[a-z][a-z0-9._:-]{0,127}$
+                    type: string
+                  maxItems: 64
+                  minItems: 1
+                  type: array
+                  uniqueItems: true
+                scopes:
+                  items:
+                    maxLength: 128
+                    minLength: 1
+                    pattern: ^[a-z][a-z0-9._:-]{0,127}$
+                    type: string
+                  maxItems: 64
+                  minItems: 0
+                  type: array
+                  uniqueItems: true
+                secretRef:
+                  maxLength: 160
+                  minLength: 1
+                  pattern: ^\{vault://env/[a-z][a-z0-9-]{1,126}\}$
+                  type: string
+                template:
+                  enum:
+                  - public-oidc-api
+                  - internal-service-jwt
+                  - private-mtls-api
+                  - signed-webhook
+                  - websocket-api
+                  - public-health
+                  - legacy-api-key
+                tenantClaim:
+                  enum:
+                  - tenant_id
+                  - tenant
+                  - org_id
+              required:
+              - template
+              type: object
+            exposure:
+              enum:
+              - public
+              - private
+            host:
+              maxLength: 253
+              minLength: 1
+              pattern: ^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$
+              type: string
+            operations:
+              additionalProperties: false
+              properties:
+                rollbackMaximumMinutes:
+                  maximum: 60
+                  minimum: 1
+                  type: integer
+                runbook:
+                  maxLength: 180
+                  minLength: 1
+                  pattern: ^operations/runbooks/[a-z0-9-]+\.md$
+                  type: string
+              required:
+              - runbook
+              - rollbackMaximumMinutes
+              type: object
+            policies:
+              additionalProperties: false
+              properties:
+                corsOrigins:
+                  items:
+                    maxLength: 253
+                    minLength: 1
+                    type: string
+                  maxItems: 64
+                  minItems: 0
+                  type: array
+                  uniqueItems: true
+                redisHost:
+                  maxLength: 253
+                  minLength: 1
+                  pattern: ^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$
+                  type: string
+                redisPasswordRef:
+                  maxLength: 160
+                  minLength: 1
+                  pattern: ^\{vault://env/[a-z][a-z0-9-]{1,126}\}$
+                  type: string
+                requireCorrelationId:
+                  type: boolean
+                sourceAllowlist:
+                  items:
+                    maxLength: 64
+                    minLength: 1
+                    type: string
+                  maxItems: 64
+                  minItems: 0
+                  type: array
+                  uniqueItems: true
+              required:
+              - sourceAllowlist
+              - corsOrigins
+              - requireCorrelationId
+              - redisHost
+              - redisPasswordRef
+              type: object
+            release:
+              additionalProperties: false
+              properties:
+                immutableImagesRequired:
+                  const: true
+                runtimeApplyAuthorized:
+                  const: false
+                signedSourceRequired:
+                  const: true
+              required:
+              - runtimeApplyAuthorized
+              - signedSourceRequired
+              - immutableImagesRequired
+              type: object
+            routes:
+              items:
+                additionalProperties: false
+                properties:
+                  id:
+                    maxLength: 63
+                    minLength: 1
+                    pattern: ^[a-z][a-z0-9-]{1,62}$
+                    type: string
+                  match:
+                    enum:
+                    - exact
+                    - prefix
+                  maxBodyBytes:
+                    maximum: 1048576
+                    minimum: 1
+                    type: integer
+                  methods:
+                    items:
+                      enum:
+                      - GET
+                      - HEAD
+                      - POST
+                      - PUT
+                      - PATCH
+                      - DELETE
+                      - OPTIONS
+                    maxItems: 7
+                    minItems: 1
+                    type: array
+                    uniqueItems: true
+                  operationIds:
+                    items:
+                      maxLength: 63
+                      minLength: 1
+                      pattern: ^[a-z][a-z0-9-]{1,62}$
+                      type: string
+                    maxItems: 7
+                    minItems: 1
+                    type: array
+                    uniqueItems: true
+                  path:
+                    maxLength: 256
+                    minLength: 1
+                    pattern: ^/[A-Za-z0-9_./{}-]*$
+                    type: string
+                  ratePerMinute:
+                    maximum: 10000
+                    minimum: 1
+                    type: integer
+                  scopes:
+                    items:
+                      maxLength: 128
+                      minLength: 1
+                      pattern: ^[a-z][a-z0-9._:-]{0,127}$
+                      type: string
+                    maxItems: 64
+                    minItems: 0
+                    type: array
+                    uniqueItems: true
+                required:
+                - id
+                - path
+                - match
+                - methods
+                - operationIds
+                - scopes
+                - maxBodyBytes
+                - ratePerMinute
+                type: object
+              maxItems: 64
+              minItems: 1
+              type: array
+              uniqueItems: true
+            upstream:
+              additionalProperties: false
+              properties:
+                dnsName:
+                  maxLength: 253
+                  minLength: 1
+                  pattern: ^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$
+                  type: string
+                healthPath:
+                  maxLength: 256
+                  minLength: 1
+                  pattern: ^/[A-Za-z0-9_./{}-]*$
+                  type: string
+                idempotencyAuthority:
+                  enum:
+                  - none
+                  - Middleware
+                port:
+                  maximum: 65535
+                  minimum: 1
+                  type: integer
+                protocol:
+                  enum:
+                  - http
+                  - https
+                readinessPath:
+                  maxLength: 256
+                  minLength: 1
+                  pattern: ^/[A-Za-z0-9_./{}-]*$
+                  type: string
+                retries:
+                  maximum: 3
+                  minimum: 0
+                  type: integer
+                service:
+                  maxLength: 63
+                  minLength: 1
+                  pattern: ^[a-z][a-z0-9-]{1,62}$
+                  type: string
+                timeouts:
+                  additionalProperties: false
+                  properties:
+                    connectMs:
+                      maximum: 10000
+                      minimum: 1
+                      type: integer
+                    readMs:
+                      maximum: 60000
+                      minimum: 1
+                      type: integer
+                    writeMs:
+                      maximum: 60000
+                      minimum: 1
+                      type: integer
+                  required:
+                  - connectMs
+                  - readMs
+                  - writeMs
+                  type: object
+                tlsServerName:
+                  maxLength: 253
+                  minLength: 1
+                  pattern: ^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$
+                  type: string
+              required:
+              - service
+              - dnsName
+              - protocol
+              - port
+              - healthPath
+              - readinessPath
+              - timeouts
+              - retries
+              - idempotencyAuthority
+              type: object
+          required:
+          - exposure
+          - host
+          - upstream
+          - routes
+          - authentication
+          - policies
+          - release
+          - operations
+          type: object
+      required:
+      - apiVersion
+      - kind
+      - metadata
+      - spec
+      type: object
+    ReleaseIdentity:
+      type: object
+      additionalProperties: false
+      properties:
+        source_sha: &id003
+          type: string
+          pattern: ^[0-9a-f]{40}$
+        source_tree: *id003
+        kong_image_digest: &id004
+          type: string
+          pattern: ^sha256:[0-9a-f]{64}$
+        release_run_id:
+          type: integer
+          minimum: 1
+        release_artifact_id:
+          type: integer
+          minimum: 1
+        release_artifact_digest: *id004
+      required:
+      - source_sha
+      - source_tree
+      - kong_image_digest
+      - release_run_id
+      - release_artifact_id
+      - release_artifact_digest
+    Error:
+      type: object
+      additionalProperties: false
+      properties:
+        error:
+          type: string
+        request_id:
+          type: string
+      required:
+      - error
+    IntegrationCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        contract:
+          $ref: '#/components/schemas/IntegrationContract'
+      required:
+      - contract
+    IntegrationUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        expected_version:
+          type: integer
+          minimum: 1
+        contract:
+          $ref: '#/components/schemas/IntegrationContract'
+      required:
+      - expected_version
+      - contract
+    VersionCommand:
+      type: object
+      additionalProperties: false
+      properties:
+        expected_version:
+          type: integer
+          minimum: 1
+      required:
+      - expected_version
+    ApprovalCommand:
+      type: object
+      additionalProperties: false
+      properties:
+        expected_version:
+          type: integer
+          minimum: 1
+        preview_sha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        release:
+          $ref: '#/components/schemas/ReleaseIdentity'
+      required:
+      - expected_version
+      - preview_sha256
+      - release
+    DeploymentCommand:
+      type: object
+      additionalProperties: false
+      properties:
+        environment:
+          enum:
+          - staging
+          - production
+        approval_id: *id002
+        release:
+          $ref: '#/components/schemas/ReleaseIdentity'
+      required:
+      - environment
+      - approval_id
+      - release
+    RotationCommand:
+      type: object
+      additionalProperties: false
+      properties:
+        expected_version:
+          type: integer
+          minimum: 1
+        secret_reference:
+          type: string
+          pattern: ^\{vault://env/[a-z][a-z0-9-]{1,126}\}$
+        change_reference:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - expected_version
+      - secret_reference
+      - change_reference
+    RollbackCommand:
+      type: object
+      additionalProperties: false
+      properties:
+        approval_id: *id002
+        release:
+          $ref: '#/components/schemas/ReleaseIdentity'
+        previous_deployment_id: *id002
+      required:
+      - approval_id
+      - release
+      - previous_deployment_id
+    Resource:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        version:
+          type: integer
+        state:
+          type: string
+        runtime_apply_authorized:
+          const: false
+        runtime_certified:
+          const: false
+        result:
+          type: object
+      required:
+      - id
+      - state
+      - runtime_apply_authorized
+      - runtime_certified
+    Collection:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Resource'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      required:
+      - items
+      - next_cursor
+  securitySchemes:
+    keycloak:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.codestra.co/realms/codestra/protocol/openid-connect/token
+          scopes:
+            gateway.read: Gateway read authority
+            gateway.write: Gateway write authority
+            gateway.validate: Gateway validate authority
+            gateway.submit: Gateway submit authority
+            gateway.approve: Gateway approve authority
+            gateway.deploy: Gateway deploy authority
+            gateway.rotate: Gateway rotate authority
+            gateway.rollback: Gateway rollback authority
+            gateway.audit: Gateway audit authority
+x-codestra-runtime-defaults:
+  GATEWAY_DEPLOYMENT_ENABLED: false
+  LIVE_KONG_MUTATION_ENABLED: false
+x-codestra-authentication:
+  issuer: https://auth.codestra.co/realms/codestra
+  audience: codestra-gateway-control
+  authorized_party_registry: protected application configuration
+  tenant_authority: application-owned membership; deny missing or mismatched tenant
+  approval_separation: author cannot approve own contract; approval does not grant
+    deployment permission
