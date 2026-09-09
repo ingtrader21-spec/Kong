@@ -7,9 +7,14 @@ import hashlib
 import json
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tools.kong_certification import decode
+from tools.verify_staging_certification import validate_receipt
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -81,6 +86,8 @@ def main() -> int:
     parser.add_argument("--candidate-manifest-sha256")
     parser.add_argument("--candidate-run-id", type=int)
     parser.add_argument("--candidate-artifact-id", type=int)
+    parser.add_argument("--staging-evidence", type=Path)
+    parser.add_argument("--staging-receipt", type=Path)
     args = parser.parse_args()
 
     authority = yaml.safe_load((ROOT / "MIGRATION_MANIFEST.yaml").read_text())
@@ -119,8 +126,28 @@ def main() -> int:
                         candidate_manifest_sha256=args.candidate_manifest_sha256,
                         candidate_run_id=args.candidate_run_id,
                         candidate_artifact_id=args.candidate_artifact_id,
-                        source_commit_verification_status=candidate["commit_verification_status"],
-                        staging_certification_verification="PROTECTED_ENVIRONMENT_REFERENCE_ONLY")
+                        source_commit_verification_status=candidate["commit_verification_status"])
+        try:
+            if args.staging_evidence is None or args.staging_receipt is None:
+                raise ValueError("missing_staging_artifact")
+            receipt = decode(args.staging_receipt.read_bytes())
+            observed = validate_receipt(
+                receipt, args.staging_evidence.read_bytes(), args.candidate_manifest.read_bytes(),
+                (ROOT / "config/kong-production-route-inventory.v2.json").read_bytes(),
+            )
+            if args.staging_certification != receipt["certification_id"]:
+                raise ValueError("certification_reference_mismatch")
+            document.update(
+                staging_certification_verification="PROTECTED_RUN_ARTIFACT_VERIFIED",
+                staging_certification_run_id=receipt["run_id"],
+                staging_certification_artifact_id=receipt["artifact_id"],
+                staging_certification_artifact_digest=receipt["artifact_digest"],
+                staging_certification_sha256=receipt["certification_sha256"],
+                staging_certification_completed_at=observed["completed_at"],
+            )
+        except (OSError, ValueError, TypeError, KeyError, AttributeError, RecursionError):
+            print("RELEASE_MANIFEST=INCOMPLETE\nUNRESOLVED=staging_artifact_authority")
+            return 2
     document.update(runtime_apply_authorized=False, external_effects_enabled=False)
 
     unresolved = {key for key, value in document.items() if value == "UNRESOLVED"}
