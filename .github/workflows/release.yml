@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
   packages: write
 
@@ -33,6 +34,7 @@ jobs:
       - name: Require healthy designated runtime networks
         run: |
           set -Eeuo pipefail
+          test "${GITHUB_REF_PROTECTED}" = true
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
           python3 scripts/verify_runtime_integration.py
 
@@ -43,24 +45,28 @@ jobs:
       always() &&
       (github.ref_name == 'main' || needs.runtime-topology.result == 'success')
     runs-on: ubuntu-24.04
+    environment: ${{ github.ref_name }}
     timeout-minutes: 30
     env:
       EXPECTED_SHA: ${{ github.sha }}
       KONG_IMAGE_REF: kong/kong-gateway:3.14.0.1-ubuntu
       STANDBY_IMAGE_REPOSITORY: ghcr.io/appolon1908-hue/kong-standby-auth
       CONFIGURED_STAGING_CERTIFICATION: ${{ vars.STAGING_CERTIFICATION }}
+      CERTIFIED_SOURCE_SHA: ${{ vars.KONG_CERTIFIED_SOURCE_SHA }}
+      KONG_CANDIDATE_RUN_ID: ${{ vars.KONG_CANDIDATE_RUN_ID }}
     steps:
       - name: Check out exact protected source
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           ref: ${{ env.EXPECTED_SHA }}
-          fetch-depth: 2
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Prove exact source and protected branch
         run: |
           set -Eeuo pipefail
           test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
+          test "${GITHUB_REF_PROTECTED}" = true
           case "${GITHUB_REF_NAME}" in
             main|staging|production) ;;
             *) echo "release evidence refuses non-environment branch ${GITHUB_REF_NAME}" >&2; exit 1 ;;
@@ -80,7 +86,24 @@ jobs:
           [[ "${rollback_source_sha}" =~ ^[0-9a-f]{40}$ ]]
           echo "rollback_source_sha=${rollback_source_sha}" >> "${GITHUB_OUTPUT}"
 
+      - name: Verify and recover original protected-main candidate
+        id: candidate
+        if: github.ref_name != 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          [[ "${CERTIFIED_SOURCE_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          [[ "${KONG_CANDIDATE_RUN_ID}" =~ ^[1-9][0-9]*$ ]]
+          test "$(git rev-parse "${CERTIFIED_SOURCE_SHA}^{tree}")" = "$(git rev-parse 'HEAD^{tree}')"
+          python3 tools/verify_release_candidate.py \
+            --source-sha "${CERTIFIED_SOURCE_SHA}" \
+            --run-id "${KONG_CANDIDATE_RUN_ID}" \
+            --output-dir "${RUNNER_TEMP}/candidate" \
+            --github-output "${GITHUB_OUTPUT}"
+
       - name: Authenticate to GHCR for immutable candidate publication
+        if: github.ref_name == 'main'
         env:
           GHCR_TOKEN: ${{ github.token }}
         run: |
@@ -88,6 +111,7 @@ jobs:
           printf '%s' "${GHCR_TOKEN}" | docker login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
 
       - name: Build and publish exact standby auth image
+        if: github.ref_name == 'main'
         id: standby
         run: |
           set -Eeuo pipefail
@@ -116,6 +140,7 @@ jobs:
           printf '%s@%s\n' "${STANDBY_IMAGE_REPOSITORY}" "${digest}" > "${RUNNER_TEMP}/standby-image.txt"
 
       - name: Resolve the exact upstream Kong image digest
+        if: github.ref_name == 'main'
         id: kong
         run: |
           set -Eeuo pipefail
@@ -125,12 +150,30 @@ jobs:
           echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
           printf '%s@%s\n' "${KONG_IMAGE_REF}" "${digest}" > "${RUNNER_TEMP}/kong-image.txt"
 
+      - name: Verify promoted image digests remain registry-readable
+        if: github.ref_name != 'main'
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+          KONG_DIGEST: ${{ steps.candidate.outputs.kong_digest }}
+          STANDBY_DIGEST: ${{ steps.candidate.outputs.standby_digest }}
+        run: |
+          set -Eeuo pipefail
+          printf '%s' "${GHCR_TOKEN}" | docker login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
+          for image in "kong/kong-gateway@${KONG_DIGEST}" "${STANDBY_IMAGE_REPOSITORY}@${STANDBY_DIGEST}"; do
+            expected="${image##*@}"
+            docker buildx imagetools inspect "$image" > "${RUNNER_TEMP}/promoted-image-inspect.txt"
+            actual="$(awk '$1 == "Digest:" {print $2; exit}' "${RUNNER_TEMP}/promoted-image-inspect.txt")"
+            test "$actual" = "$expected"
+          done
+
       - name: Generate stage-aware immutable release manifest
         env:
           COMMIT_VERIFICATION: ${{ steps.commit.outputs.verification }}
-          ROLLBACK_SOURCE_SHA: ${{ steps.commit.outputs.rollback_source_sha }}
-          KONG_IMAGE_DIGEST: ${{ steps.kong.outputs.digest }}
-          STANDBY_AUTH_IMAGE_DIGEST: ${{ steps.standby.outputs.digest }}
+          ROLLBACK_SOURCE_SHA: ${{ steps.candidate.outputs.rollback_source_sha || steps.commit.outputs.rollback_source_sha }}
+          KONG_IMAGE_DIGEST: ${{ steps.candidate.outputs.kong_digest || steps.kong.outputs.digest }}
+          STANDBY_AUTH_IMAGE_DIGEST: ${{ steps.candidate.outputs.standby_digest || steps.standby.outputs.digest }}
+          CANDIDATE_MANIFEST_SHA256: ${{ steps.candidate.outputs.manifest_sha256 }}
+          CANDIDATE_ARTIFACT_ID: ${{ steps.candidate.outputs.artifact_id }}
         run: |
           set -Eeuo pipefail
           python3 -m pip install --disable-pip-version-check --no-input PyYAML
@@ -148,8 +191,16 @@ jobs:
               staging_certification="${CONFIGURED_STAGING_CERTIFICATION}"
               ;;
           esac
+          promotion_args=()
           if [[ "${release_stage}" != protected-main-source-candidate ]]; then
-            [[ "${staging_certification}" == "PASS:${EXPECTED_SHA}:"* ]]
+            [[ "${staging_certification}" == "PASS:${CERTIFIED_SOURCE_SHA}:"* ]]
+            promotion_args=(
+              --certified-source-sha "${CERTIFIED_SOURCE_SHA}"
+              --candidate-manifest "${RUNNER_TEMP}/candidate/release-manifest.json"
+              --candidate-manifest-sha256 "${CANDIDATE_MANIFEST_SHA256}"
+              --candidate-run-id "${KONG_CANDIDATE_RUN_ID}"
+              --candidate-artifact-id "${CANDIDATE_ARTIFACT_ID}"
+            )
           fi
           python3 tools/generate_release_manifest.py \
             --output "${RUNNER_TEMP}/release-manifest.json" \
@@ -158,7 +209,8 @@ jobs:
             --kong-image-digest "${KONG_IMAGE_DIGEST}" \
             --standby-auth-image-digest "${STANDBY_AUTH_IMAGE_DIGEST}" \
             --staging-certification "${staging_certification}" \
-            --rollback-source-sha "${ROLLBACK_SOURCE_SHA}"
+            --rollback-source-sha "${ROLLBACK_SOURCE_SHA}" \
+            "${promotion_args[@]}"
 
       - name: Upload bounded immutable release evidence
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
@@ -170,6 +222,7 @@ jobs:
             ${{ runner.temp }}/standby-image.txt
             ${{ runner.temp }}/kong-image.txt
             ${{ runner.temp }}/kong-image-inspect.txt
+            ${{ runner.temp }}/candidate/receipt.json
           if-no-files-found: error
           retention-days: 90
 

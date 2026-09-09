@@ -31,6 +31,7 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MERGE_SHA: ${{ github.sha }}
         run: |
           set -Eeuo pipefail
           if [[ "$EVENT_NAME" == pull_request ]]; then
@@ -38,10 +39,11 @@ jobs:
             test "$HEAD_REF" = main
             test "$HEAD_SHA" = "$(git rev-parse HEAD)"
             main_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)"
-            staging_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/staging" --jq .object.sha)"
             test "$HEAD_SHA" = "$main_sha"
-            comparison="$(gh api "repos/${GITHUB_REPOSITORY}/compare/${staging_sha}...${HEAD_SHA}" --jq .status)"
-            [[ "$comparison" == ahead || "$comparison" == identical ]]
+            # Normal/squash/rebase promotions can diverge in commit identity.
+            # The synthetic merge must preserve exactly the tested source tree.
+            merge_tree="$(gh api "repos/${GITHUB_REPOSITORY}/git/commits/${MERGE_SHA}" --jq .tree.sha)"
+            test "$merge_tree" = "$(git rev-parse 'HEAD^{tree}')"
           else
             test "${GITHUB_REF_NAME}" = staging
             test "$(git rev-parse HEAD)" = "$GITHUB_SHA"

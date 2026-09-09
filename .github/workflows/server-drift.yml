@@ -8,12 +8,20 @@ permissions:
 
 jobs:
   server-drift:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux, kong-runtime]
+    timeout-minutes: 10
     environment: production-read-only
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
       - name: Enforce capture-only boundary
         run: |
+          set -Eeuo pipefail
+          test "${GITHUB_REF_PROTECTED}" = true
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          case "${GITHUB_REF_NAME}" in main|staging|production) ;; *) exit 2 ;; esac
           echo 'Server capture is intentionally manual and read-only.'
           echo 'No POST, PUT, PATCH, DELETE, restart, reload, DNS, firewall, or traffic action is authorized.'
       - name: Require reviewed capture implementation
