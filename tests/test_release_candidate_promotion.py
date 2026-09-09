@@ -179,3 +179,4 @@ def test_every_build_and_tag_resolution_step_is_main_only():
     capture=yaml.safe_load((ROOT/'.github/workflows/server-drift.yml').read_text())['jobs']['server-drift']
     assert capture['runs-on']==['self-hosted','linux','kong-runtime']
     assert 'GITHUB_REF_PROTECTED' in capture['steps'][1]['run']
+    assert '--expected-route-count 29' in capture['steps'][2]['run']

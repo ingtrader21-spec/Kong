@@ -21,8 +21,8 @@ files:
   sha256: 6f5b172ee32bf6f358bd6ea876eae2c2f1c71b771dc0b5192fd8c6fa9505f6cf
   size: 4569
 - path: .github/workflows/server-drift.yml
-  sha256: c258b8b634938eb3ba797cdf280d34dc2afe0e1dad54ef64adc48013a0fa4e37
-  size: 1405
+  sha256: 04e4eaba071b1f5fba57358b48ebf6597a8a9104e6c73aae0623ff2a3aedd72f
+  size: 1617
 - path: .github/workflows/staging-certification.yml
   sha256: a972e4f8b4071fba9225394107d8f36f3229a2441697bd1bca067f48d2a4da31
   size: 3209
@@ -336,8 +336,8 @@ files:
   sha256: 7b6410aa7a55414f24b48f270800fbdf83ede229a1aa86d04cea918e4d9a2634
   size: 8761
 - path: scripts/kong_admin_channel.py
-  sha256: 75c1be491e95435c83f65bf9c5129c4603b6488f93777b3c1ecf2b9cb15ec67f
-  size: 16009
+  sha256: 0e9e62b7f2c202285ed499b9f3bc1098c1f1d0f75ba44db84293c8c54288ce73
+  size: 16144
 - path: scripts/probe_n8n_production_routes.py
   sha256: 10aa8dc945108439d5ec45fc0b1834ab0d01c7455cd974cc63d947f452e606a0
   size: 1991
@@ -402,8 +402,8 @@ files:
   sha256: 509ed26f61246cba15b6eec1f6f0e647a829ec9480f9c51e8f5d2cb1a0031f90
   size: 859
 - path: tests/test_kong_admin_channel.py
-  sha256: 1608cd523e11413fd5fb9640183d06077742d148fc5199409c4f480388fc886a
-  size: 22666
+  sha256: e10d19f18bf26f4897539b133f0be9f482556858dc12b05bba3fd01d924055c6
+  size: 23153
 - path: tests/test_kong_calling_policy.py
   sha256: e0e16fc21f6d8cea9349eae6e1d59e3f4b1895435930fa466b27cf2eb9023d5c
   size: 6365
@@ -456,8 +456,8 @@ files:
   sha256: 30ba702cc8a35b6383a9e4d31719e6696cac5f98e30b21d03ea6fdac2cd90113
   size: 1942
 - path: tests/test_release_candidate_promotion.py
-  sha256: 7d0d42a5fe4c097a2e1ddbf7e46748213b22a48a708fd8f3f8530a3babd7602d
-  size: 9274
+  sha256: d66735255a735580dcb9c101b048c0b740790ea7e55a734be58ffd4954528a3d
+  size: 9343
 - path: tests/test_release_governance.py
   sha256: 21db2f6d65f2ad9b2d8f6e2babec557a242631f02840d7e027c6398527ec3149
   size: 3235
@@ -483,7 +483,7 @@ files:
   sha256: 8ba5e5a4f045ec9b78ed11af1fce8fc6a808857feebcd724c85266673b7cf890
   size: 6613
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 0a787eec0599dbbe82bf19a9dd396f48bd33e49af1dedcd33345efd8763b1597
+manifest_generation_id: ac85b2a58dab9b03ce6c5d14a9fae51d14c6e80c80d41fa8fcb082d009b23706
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
