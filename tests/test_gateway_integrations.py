@@ -1,5 +1,7 @@
 import copy
 import json
+import os
+import stat
 import subprocess
 import sys
 import zipfile
@@ -243,6 +245,16 @@ def test_packager_does_not_publish_partial_archive_on_io_failure(contract, tmp_p
         package_release(compiled(contract), target, "a" * 40, "sha256:" + "b" * 64, "c" * 40)
     assert not target.exists()
     assert list(tmp_path.iterdir()) == []
+
+
+def test_packager_publishes_with_creation_mode_from_umask(contract, tmp_path):
+    target = tmp_path / "release.zip"
+    previous_mask = os.umask(0o027)
+    try:
+        package_release(compiled(contract), target, "a" * 40, "sha256:" + "b" * 64, "c" * 40)
+    finally:
+        os.umask(previous_mask)
+    assert stat.S_IMODE(target.stat().st_mode) == 0o640
 
 
 def test_cli_validates_and_refuses_overwrite(tmp_path):

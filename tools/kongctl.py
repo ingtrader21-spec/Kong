@@ -56,6 +56,11 @@ def package_release(compilation, output, source_sha, image_digest, rollback_sha)
     if len(package) > MAX_PACKAGE_BYTES:
         raise ContractError("package_too_large")
     target = Path(output)
+    # Match exclusive file creation semantics while keeping the temporary inode
+    # private until its complete contents and final permissions are durable.
+    creation_mask = os.umask(0o077)
+    os.umask(creation_mask)
+    publication_mode = 0o666 & ~creation_mask
     descriptor, temporary_name = tempfile.mkstemp(prefix=f".{target.name}.", dir=target.parent)
     temporary = Path(temporary_name)
     try:
@@ -63,6 +68,7 @@ def package_release(compilation, output, source_sha, image_digest, rollback_sha)
             descriptor = -1
             handle.write(package)
             handle.flush()
+            os.fchmod(handle.fileno(), publication_mode)
             os.fsync(handle.fileno())
         # A same-filesystem hard link atomically publishes without overwriting an
         # existing release. The private temporary inode is always removed below.
