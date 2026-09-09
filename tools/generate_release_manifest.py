@@ -144,6 +144,11 @@ def main() -> int:
                 staging_certification_artifact_digest=receipt["artifact_digest"],
                 staging_certification_sha256=receipt["certification_sha256"],
                 staging_certification_completed_at=observed["completed_at"],
+                rollback_image_digest=observed["rollback"]["image_digest"],
+                rollback_configuration_sha256=observed["rollback"]["config_sha256"],
+                rollback_candidate_run_id=receipt["rollback_artifact"]["run_id"],
+                rollback_candidate_artifact_id=receipt["rollback_artifact"]["artifact_id"],
+                rollback_candidate_artifact_digest=receipt["rollback_artifact"]["artifact_digest"],
             )
         except (OSError, ValueError, TypeError, KeyError, AttributeError, RecursionError):
             print("RELEASE_MANIFEST=INCOMPLETE\nUNRESOLVED=staging_artifact_authority")

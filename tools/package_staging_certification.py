@@ -11,6 +11,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import kong_certification as evidence
+from tools.verify_staging_certification import load_rollback_candidate
 
 
 def read_observation(path: Path, expected_hash: str) -> bytes:
@@ -42,7 +43,9 @@ def main() -> int:
         candidate_raw = args.candidate_manifest.read_bytes()
         evidence.require(evidence.decode(candidate_raw).get("source_sha") == args.source_sha, "wrong_candidate")
         inventory_raw = (evidence.ROOT / "config/kong-production-route-inventory.v2.json").read_bytes()
-        evidence.validate_bytes(raw, candidate_raw, inventory_raw)
+        rollback_raw, _ = load_rollback_candidate(evidence.decode(candidate_raw).get("rollback_source_sha"),
+            evidence.decode(raw).get("rollback", {}).get("candidate_run_id"))
+        evidence.validate_bytes(raw, candidate_raw, inventory_raw, rollback_candidate=evidence.decode(rollback_raw))
         with args.output.open("xb") as output:
             output.write(raw)
         print("KONG_STAGING_OBSERVATIONS=VALIDATED")
