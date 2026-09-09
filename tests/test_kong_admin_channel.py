@@ -184,14 +184,21 @@ def test_write_payloads_travel_on_stdin_not_argv(monkeypatch):
 def test_form_payloads_preserve_kong_field_encoding(monkeypatch):
     channel = module()
     calls = stubbed(channel, monkeypatch, stdout=b'{"id": "created"}\n201')
-    payload = {"config.redis.host": "redis", "hosts[]": ["a.example", "b.example"]}
+    payload = {
+        "config.redis.host": "redis",
+        "config.fault_tolerant": False,
+        "config.flags[]": [True, False],
+        "hosts[]": ["a.example", "b.example"],
+    }
     assert channel.admin_request(
         "POST", "/plugins", payload, payload_encoding="form"
     ) == {"id": "created"}
     argv, kwargs = calls[0]
     assert "Content-Type: application/x-www-form-urlencoded" in argv
     assert kwargs["input"] == (
-        b"config.redis.host=redis&hosts%5B%5D=a.example&hosts%5B%5D=b.example"
+        b"config.redis.host=redis&config.fault_tolerant=false&"
+        b"config.flags%5B%5D=true&config.flags%5B%5D=false&"
+        b"hosts%5B%5D=a.example&hosts%5B%5D=b.example"
     )
     assert not any("redis" in item or "a.example" in item for item in argv)
 

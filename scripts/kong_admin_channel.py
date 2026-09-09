@@ -57,6 +57,23 @@ class AdminError(RuntimeError):
     """Raised for any channel, topology, or Kong Admin failure."""
 
 
+def form_payload(payload: dict, path: str) -> bytes:
+    """Encode Kong's flat form contract with canonical boolean tokens."""
+    normalized = {}
+    for key, value in payload.items():
+        if not isinstance(key, str):
+            raise AdminError(f"invalid Kong Admin form payload: {path}")
+        values = value if isinstance(value, (list, tuple)) else (value,)
+        normalized[key] = [
+            "true" if item is True else "false" if item is False else item
+            for item in values
+        ]
+    try:
+        return urlencode(normalized, doseq=True).encode()
+    except (TypeError, UnicodeError) as exc:
+        raise AdminError(f"invalid Kong Admin form payload: {path}") from exc
+
+
 def run_json(argv: list[str]) -> dict:
     try:
         result = subprocess.run(argv, input=b"", capture_output=True,
@@ -168,7 +185,7 @@ def admin_request(
         if payload_encoding == "form":
             if not isinstance(payload, dict):
                 raise AdminError(f"invalid Kong Admin form payload: {path}")
-            body = urlencode(payload, doseq=True).encode()
+            body = form_payload(payload, path)
             content_type = "application/x-www-form-urlencoded"
         else:
             body = json.dumps(payload).encode()
