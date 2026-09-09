@@ -47,8 +47,8 @@
     },
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "c8e1ad1d2db4ea2f96fd0a362bcef840e07ba6bd853f013744d0d7983e457fed",
-      "size": 5481
+      "sha256": "e5405c969ea6e964a3dde94a3ed1275317495a39457d3e83c2e1c76ef12e97d6",
+      "size": 5547
     },
     {
       "path": ".gitignore",
@@ -552,8 +552,8 @@
     },
     {
       "path": "scripts/apply_kong_standby.py",
-      "sha256": "b7db8507d64cf3233155b6ede2df07766cde87aa2cf1fc0db9ebf9ec5ea621eb",
-      "size": 6066
+      "sha256": "4a0dafb58aa6e4b5b1741380831d90f0a708b1268c3beb64ebdbea07ab04b76a",
+      "size": 7140
     },
     {
       "path": "scripts/export_kong_public_route_contracts.py",
@@ -731,6 +731,11 @@
       "size": 27433
     },
     {
+      "path": "tests/test_kong_standby_apply.py",
+      "sha256": "eff09d3a853eab7e4ce4652779387fc6f265960b0a13dddabd3cbe4cb65d0b5c",
+      "size": 1852
+    },
+    {
       "path": "tests/test_kong_standby_rollback.py",
       "sha256": "e1fc9ce86a2594974543c9503df9cd6e9ca546bdb4a516f2c462aae05550cef2",
       "size": 1887
@@ -802,7 +807,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "58c4ba8b4c021e513ce433f4455cf70a9afe2b4f2399be5ddb0a550e730ca9c4",
+  "manifest_generation_id": "3e7b0b2c53cf16a0e9f18db295ca29abeb529672ce45126164367f2ca88e04ac",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

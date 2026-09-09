@@ -32,9 +32,21 @@ def request(method: str, path: str, payload=None):
     return admin_request(method, path, payload)
 
 
+def collection_rows(response, context: str) -> list[dict]:
+    """Return one complete, structurally valid Kong collection page."""
+    if not isinstance(response, dict):
+        raise RuntimeError(f"invalid Kong {context} response")
+    data = response.get("data")
+    if (not isinstance(data, list) or not all(isinstance(item, dict) for item in data)
+            or response.get("next")):
+        raise RuntimeError(f"incomplete or invalid Kong {context} collection")
+    return data
+
+
 def upsert(collection: str, name: str, payload: dict):
-    query = urllib.parse.urlencode({"name": name})
-    existing = (request("GET", f"/{collection}?{query}") or {}).get("data", [])
+    query = urllib.parse.urlencode({"name": name, "size": 1000})
+    collection_page = request("GET", f"/{collection}?{query}")
+    existing = collection_rows(collection_page, collection)
     if len(existing) > 1:
         raise RuntimeError(f"ambiguous Kong {collection} named {name}")
     if existing:
@@ -49,8 +61,10 @@ def upsert(collection: str, name: str, payload: dict):
 
 def plugin(route_id: str, name: str, config: dict):
     route_id = entity_id(route_id, "route")
-    current = (request("GET", f"/routes/{route_id}/plugins") or {}).get("data", [])
-    same_name = [item for item in current if item["name"] == name]
+    current = collection_rows(
+        request("GET", f"/routes/{route_id}/plugins?size=1000"), "route plugins"
+    )
+    same_name = [item for item in current if item.get("name") == name]
     unowned = [item for item in same_name if TAG not in (item.get("tags") or [])]
     if unowned:
         raise RuntimeError(f"refusing to replace unowned route plugin {name}")
@@ -98,14 +112,23 @@ def main():
         applied.append(route_name)
     expected_plugins = {"request-transformer", "ip-restriction", "request-size-limiting", "rate-limiting"}
     for route_name in applied:
-        routes = (request("GET", "/routes?" + urllib.parse.urlencode({"name": route_name})) or {}).get("data", [])
+        routes = collection_rows(
+            request("GET", "/routes?" + urllib.parse.urlencode({"name": route_name, "size": 1000})),
+            "route read-back",
+        )
         if len(routes) != 1:
             raise RuntimeError(f"route read-back failed: {route_name}")
         route = routes[0]
         if route.get("hosts") != [HOST] or TAG not in (route.get("tags") or []):
             raise RuntimeError(f"route isolation read-back failed: {route_name}")
         route_id = entity_id(route.get("id"), "route")
-        names = {item["name"] for item in (request("GET", f"/routes/{route_id}/plugins") or {}).get("data", []) if item.get("enabled")}
+        plugins = collection_rows(
+            request("GET", f"/routes/{route_id}/plugins?size=1000"),
+            "plugin read-back",
+        )
+        names = {item.get("name") for item in plugins if item.get("enabled")}
+        if not all(isinstance(name, str) for name in names):
+            raise RuntimeError(f"invalid plugin read-back: {route_name}")
         if not expected_plugins.issubset(names):
             raise RuntimeError(f"plugin read-back failed: {route_name}: {sorted(names)}")
     # Kong workers update their router/plugin cache asynchronously.  Wait until
@@ -117,10 +140,16 @@ def main():
             headers={"Host": HOST, "Content-Type": "application/json", "Idempotency-Key": "apply-probe"},
         )
         try:
-            urllib.request.urlopen(probe, timeout=2)
+            with urllib.request.urlopen(probe, timeout=2):
+                pass
         except urllib.error.HTTPError as exc:
-            if exc.code == 401:
+            code = exc.code
+            exc.close()
+            if code == 401:
                 break
+        except urllib.error.URLError:
+            # The router can briefly refuse connections while workers reload.
+            pass
         if attempt == 9:
             raise RuntimeError("Kong data-plane policy synchronization failed")
         time.sleep(0.5)
