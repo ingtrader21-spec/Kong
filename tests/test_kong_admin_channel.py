@@ -2,8 +2,12 @@
 from __future__ import annotations
 import importlib.util
 import json
+import io
 from pathlib import Path
 from types import SimpleNamespace
+import traceback
+from urllib.error import HTTPError
+from urllib.request import Request
 
 import pytest
 import yaml
@@ -111,13 +115,15 @@ def test_reconcilers_normalize_form_booleans_on_direct_transport(monkeypatch, na
     calls = []
 
     class Response:
+        status = 200
+
         def __enter__(self):
             return self
 
         def __exit__(self, *_args):
             return False
 
-        def read(self):
+        def read(self, _limit):
             return b'{"id":"updated"}'
 
     def open_request(request, timeout):
@@ -340,3 +346,211 @@ def test_container_replacement_during_the_operation_is_detected(monkeypatch):
     assert channel.container_identity() == "a" * 64
     with pytest.raises(channel.AdminError):
         channel.confirm_unchanged()
+
+
+def test_private_errors_never_disclose_response_body_or_query(monkeypatch):
+    channel = module()
+    stubbed(channel, monkeypatch, stdout=b'{"password":"response-sentinel"}\n400')
+    path = "/plugins/abc?token=query-sentinel"
+    with pytest.raises(channel.AdminError) as error:
+        channel.admin_request("PATCH", path, {})
+    rendered = "".join(traceback.format_exception(error.value))
+    assert "400" in str(error.value)
+    assert "response-sentinel" not in rendered
+    assert "query-sentinel" not in rendered
+
+
+@pytest.mark.parametrize("path", ["https://other.invalid/plugins", "//other.invalid/plugins",
+                                  "/routes/%2e%2e/plugins", "/routes#fragment"])
+@pytest.mark.parametrize("name", PRIVATE_CLIENTS)
+def test_direct_clients_reject_unsafe_references_before_opening(monkeypatch, name, path):
+    client = load(ROOT / name, "unsafe_direct_" + Path(name).stem)
+    calls = []
+    monkeypatch.setattr(client, "urlopen", lambda *a, **k: calls.append(a))
+    with pytest.raises(RuntimeError):
+        if name == PRIVATE_CLIENTS[-1]:
+            client.request(HOST_ADMIN, path)
+        else:
+            client.request(HOST_ADMIN, "GET", path)
+    assert calls == []
+
+
+def test_direct_errors_suppress_untrusted_http_reason_and_url(monkeypatch):
+    client = load(ROOT / PRIVATE_CLIENTS[1], "direct_http_error")
+
+    def rejected(request, timeout):
+        raise HTTPError(request.full_url, 400, "reason-sentinel", {}, io.BytesIO(b"body-sentinel"))
+
+    monkeypatch.setattr(client, "urlopen", rejected)
+    path = "/plugins/abc?token=query-sentinel"
+    with pytest.raises(RuntimeError) as error:
+        client.request(HOST_ADMIN, "PATCH", path, {})
+    rendered = "".join(traceback.format_exception(error.value))
+    assert "400" in str(error.value)
+    for secret in ("reason-sentinel", "body-sentinel", "query-sentinel"):
+        assert secret not in rendered
+
+
+def test_direct_callback_json_keeps_content_type_and_boolean_encoding(monkeypatch):
+    client = load(ROOT / PRIVATE_CLIENTS[1], "direct_callback_json")
+    requests = []
+
+    class Response(io.BytesIO):
+        status = 200
+
+    def accepted(request, timeout):
+        requests.append(request)
+        return Response(b'{"id":"updated"}')
+
+    monkeypatch.setattr(client, "urlopen", accepted)
+    payload = {"enabled": False, "config": {"anonymous": None}}
+    assert client.request_json(HOST_ADMIN, "PATCH", "/plugins/abc", payload) == {"id": "updated"}
+    assert requests[0].get_header("Content-type") == "application/json"
+    assert json.loads(requests[0].data) == payload
+
+
+def test_canonical_drift_errors_handle_sets_and_redact_values():
+    client = load(ROOT / PRIVATE_CLIENTS[0], "canonical_redacted_drift")
+    for actual, expected in [({"unexpected"}, {"required"}),
+                             ({"password": "actual-sentinel"}, {"password": "expected-sentinel"})]:
+        with pytest.raises(RuntimeError, match="route_plugins drift") as error:
+            client.require_equal(actual, expected, "route_plugins")
+        assert "actual-sentinel" not in str(error.value)
+        assert "expected-sentinel" not in str(error.value)
+
+
+@pytest.mark.parametrize("status,body", [(200, b""), (200, b"[]"), (201, b"{}"),
+                                        (302, b"{}"), (200, b"not-json")])
+def test_direct_get_requires_a_successful_json_object(status, body):
+    channel = module()
+
+    class Response(io.BytesIO):
+        pass
+
+    response = Response(body)
+    response.status = status
+    with pytest.raises(channel.AdminError):
+        channel.http_admin_request(HOST_ADMIN, "GET", "/routes",
+                                   opener=lambda *a, **k: response)
+
+
+def test_direct_response_read_is_bounded_and_oversize_is_rejected():
+    channel = module()
+    sizes = []
+
+    class Response(io.BytesIO):
+        status = 200
+
+        def read(self, size=-1):
+            sizes.append(size)
+            return super().read(size)
+
+    with pytest.raises(channel.AdminError, match="oversized response"):
+        channel.http_admin_request(HOST_ADMIN, "GET", "/routes",
+            opener=lambda *a, **k: Response(b"x" * (channel.MAX_BYTES + 5)))
+    assert sizes == [channel.MAX_BYTES + 1]
+
+
+@pytest.mark.parametrize("target", [HOST_ADMIN + "/routes", "https://other.invalid/routes"])
+def test_admin_opener_rejects_redirects_without_a_second_request(monkeypatch, target):
+    import urllib.request
+    from email.message import Message
+    channel = module()
+    calls = []
+
+    def redirect(_handler, request):
+        assert request.host == "127.0.0.1:8001"
+        calls.append(request.full_url)
+        headers = Message()
+        headers["Location"] = target
+        reply = urllib.request.addinfourl(io.BytesIO(b""), headers, request.full_url, code=302)
+        reply.msg = "Found"
+        return reply
+
+    monkeypatch.setattr(urllib.request.HTTPHandler, "http_open", redirect)
+    monkeypatch.setenv("HTTP_PROXY", "http://unselected-proxy.invalid:8080")
+    with pytest.raises(channel.AdminError, match="redirect rejected"):
+        channel.http_admin_request(HOST_ADMIN, "POST", "/plugins", {"enabled": False})
+    assert calls == [HOST_ADMIN + "/plugins"]
+
+
+@pytest.mark.parametrize("base", ["file:///tmp/admin", "https://user:secret@admin.invalid",
+                                  "http://admin.invalid?token=secret", "http://admin.invalid/prefix",
+                                  "http://admin.invalid:bad", "http://admin.invalid\n"])
+def test_direct_admin_origin_must_be_explicit_and_credential_free(base):
+    channel = module()
+    with pytest.raises(channel.AdminError):
+        channel.http_admin_url(base, "/routes")
+
+
+COLLECTION_CLIENTS = (PRIVATE_CLIENTS[0], PRIVATE_CLIENTS[1], PRIVATE_CLIENTS[3], PRIVATE_CLIENTS[4])
+
+
+@pytest.mark.parametrize("name", COLLECTION_CLIENTS)
+@pytest.mark.parametrize("page", [{}, {"data": {}}, {"data": ["not-an-entity"]},
+                                  {"data": [], "next": False}])
+def test_collection_clients_reject_malformed_inventory(monkeypatch, name, page):
+    client = load(ROOT / name, "malformed_collection_" + Path(name).stem)
+    monkeypatch.setattr(client, "request", lambda *a: page)
+    with pytest.raises(RuntimeError):
+        client.all_rows(client.PRIVATE_ADMIN_URL, "/routes")
+
+
+@pytest.mark.parametrize("name", COLLECTION_CLIENTS)
+@pytest.mark.parametrize("base", [HOST_ADMIN, "container://kong-gateway"])
+def test_collection_clients_accept_same_origin_absolute_pagination(monkeypatch, name, base):
+    client = load(ROOT / name, "paginated_" + Path(name).stem)
+    replies = iter([{"data": [{"id": "first"}], "next": HOST_ADMIN + "/routes?offset=next"},
+                    {"data": [{"id": "second"}], "next": None}])
+    monkeypatch.setattr(client, "request", lambda *a: next(replies))
+    assert client.all_rows(base, "/routes") == [{"id": "first"}, {"id": "second"}]
+
+
+@pytest.mark.parametrize("name", COLLECTION_CLIENTS)
+def test_collection_clients_reject_normalized_pagination_loops(monkeypatch, name):
+    client = load(ROOT / name, "loop_collection_" + Path(name).stem)
+    calls = []
+
+    def page(*args):
+        calls.append(args)
+        return {"data": [], "next": HOST_ADMIN + "/routes"}
+
+    monkeypatch.setattr(client, "request", page)
+    with pytest.raises(RuntimeError, match="pagination loop"):
+        client.all_rows(client.PRIVATE_ADMIN_URL, "/routes")
+    assert len(calls) == 1
+
+
+def test_collection_limits_and_duplicate_identities_fail_closed():
+    channel = module()
+    pages = iter([{"data": [{"id": "same"}], "next": "/routes?offset=next"},
+                  {"data": [{"id": "same"}], "next": None}])
+    with pytest.raises(channel.AdminError, match="duplicate"):
+        channel.collect_admin_rows(lambda _: next(pages), "/routes", channel.normalize_admin_reference)
+    with pytest.raises(channel.AdminError, match="row limit"):
+        channel.collect_admin_rows(lambda _: {"data": [{}, {}]}, "/routes",
+                                   channel.normalize_admin_reference, max_rows=1)
+    calls = []
+
+    def changing_page(path):
+        calls.append(path)
+        return {"data": [], "next": f"/routes?offset={len(calls)}"}
+
+    with pytest.raises(channel.AdminError, match="page limit"):
+        channel.collect_admin_rows(changing_page, "/routes", channel.normalize_admin_reference, max_pages=2)
+    assert len(calls) == 2
+
+
+@pytest.mark.parametrize("name", COLLECTION_CLIENTS)
+def test_collection_rejects_pagination_traversal_before_second_fetch(monkeypatch, name):
+    client = load(ROOT / name, "traversal_collection_" + Path(name).stem)
+    calls = []
+
+    def page(*args):
+        calls.append(args)
+        return {"data": [], "next": "/routes/../plugins"}
+
+    monkeypatch.setattr(client, "request", page)
+    with pytest.raises(RuntimeError):
+        client.all_rows(HOST_ADMIN, "/routes")
+    assert len(calls) == 1
