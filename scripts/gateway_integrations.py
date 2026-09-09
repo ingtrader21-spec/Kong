@@ -144,6 +144,8 @@ def validate(document, *, today=None):
             fields.add("caCertificateIds")
     elif template == "signed-webhook":
         fields |= {"secretRef", "keyId"}
+        _require(auth["secretRef"] == f"{{vault://env/kong-webhook-{meta['id']}}}",
+                 "webhook_secret_reference_mismatch")
         _require(upstream["idempotencyAuthority"] == "Middleware", "webhook_replay_authority_required")
         _require(not policies["corsOrigins"], "webhook_cors_forbidden")
     elif template == "legacy-api-key":

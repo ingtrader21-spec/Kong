@@ -16,11 +16,34 @@ if [ ! -r "$sx_oidc_salt_file" ] || [ ! -s "$sx_oidc_salt_file" ]; then
 fi
 KONG_OIDC_CACHE_TOKENS_SALT=$(cat "$sx_oidc_salt_file")
 export KONG_OIDC_CACHE_TOKENS_SALT
-sx_webhook_secret_file=/run/secrets/webhook_signing_secret
-if [ ! -r "$sx_webhook_secret_file" ] || [ ! -s "$sx_webhook_secret_file" ]; then
-  echo 'Required gateway webhook signing credential is unavailable' >&2
+sx_webhook_secret_directory=/run/secrets/webhooks
+if [ ! -d "$sx_webhook_secret_directory" ]; then
+  echo 'Required gateway webhook secret directory is unavailable' >&2
   exit 1
 fi
-KONG_WEBHOOK_SIGNING_SECRET=$(cat "$sx_webhook_secret_file")
-export KONG_WEBHOOK_SIGNING_SECRET
+for sx_webhook_secret_file in "$sx_webhook_secret_directory"/*; do
+  [ -e "$sx_webhook_secret_file" ] || break
+  sx_webhook_secret_name=${sx_webhook_secret_file##*/}
+  if [ -L "$sx_webhook_secret_file" ] || [ ! -f "$sx_webhook_secret_file" ] \
+      || [ ! -r "$sx_webhook_secret_file" ] \
+      || ! printf '%s\n' "$sx_webhook_secret_name" | grep -Eq '^kong-webhook-[a-z][a-z0-9-]{1,96}$'; then
+    echo 'Invalid gateway webhook secret file' >&2
+    exit 1
+  fi
+  sx_webhook_secret_value=$(cat "$sx_webhook_secret_file")
+  case "$sx_webhook_secret_value" in
+    *"
+"*)
+      echo 'Gateway webhook secret must contain exactly one line' >&2
+      exit 1
+      ;;
+  esac
+  if [ "${#sx_webhook_secret_value}" -lt 32 ]; then
+    echo 'Gateway webhook secret does not meet the minimum length' >&2
+    exit 1
+  fi
+  sx_webhook_secret_environment=$(printf '%s' "$sx_webhook_secret_name" | tr 'a-z-' 'A-Z_')
+  export "$sx_webhook_secret_environment=$sx_webhook_secret_value"
+  unset sx_webhook_secret_value sx_webhook_secret_environment
+done
 exec /docker-entrypoint.sh "$@"

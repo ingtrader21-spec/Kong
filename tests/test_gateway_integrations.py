@@ -6,6 +6,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
+import tools.kongctl as kongctl
 from scripts.gateway_integrations import (AUTHORITY, ROOT, ContractError, canonical,
     compile_integrations, digest, load_json, validate, validate_set)
 from tools.kongctl import package_release, verify_package
@@ -60,7 +61,7 @@ def test_every_policy_template_compiles(contract, template):
         route["scopes"] = []
     if template == "signed-webhook":
         spec["authentication"].update(
-            secretRef="{vault://env/kong-webhook-signing-secret}", keyId="webhook-v1"
+            secretRef="{vault://env/kong-webhook-moneybee-account-bootstrap}", keyId="webhook-v1"
         )
         spec["policies"]["corsOrigins"] = []
     if template == "legacy-api-key":
@@ -180,6 +181,18 @@ def test_write_retry_and_auth_fields_fail_closed(contract):
         validate(contract)
 
 
+def test_signed_webhook_cannot_reference_another_integrations_secret(contract):
+    contract["spec"]["authentication"] = {
+        "template": "signed-webhook",
+        "secretRef": "{vault://env/kong-webhook-another-integration}",
+        "keyId": "webhook-v1",
+    }
+    contract["spec"]["routes"][0]["scopes"] = []
+    contract["spec"]["policies"]["corsOrigins"] = []
+    with pytest.raises(ContractError, match="webhook_secret_reference_mismatch"):
+        validate(contract)
+
+
 @pytest.mark.parametrize("raw", ['{"key":1,"key":2}', '{"key":NaN}', '[', '"' + 'x' * 1_048_576 + '"'])
 def test_bounded_unambiguous_json(tmp_path, raw):
     path = tmp_path / "input.json"
@@ -215,6 +228,15 @@ def test_packager_rejects_oversized_member_before_creating_archive(contract, tmp
     with pytest.raises(ContractError, match="package_member_too_large"):
         package_release(output, target, "a" * 40, "sha256:" + "b" * 64, "c" * 40)
     assert not target.exists()
+
+
+def test_packager_does_not_publish_partial_archive_on_io_failure(contract, tmp_path, monkeypatch):
+    target = tmp_path / "release.zip"
+    monkeypatch.setattr(kongctl.os, "link", lambda *_: (_ for _ in ()).throw(OSError("injected")))
+    with pytest.raises(OSError, match="injected"):
+        package_release(compiled(contract), target, "a" * 40, "sha256:" + "b" * 64, "c" * 40)
+    assert not target.exists()
+    assert list(tmp_path.iterdir()) == []
 
 
 def test_cli_validates_and_refuses_overwrite(tmp_path):

@@ -67,12 +67,16 @@ services:
     - redis_password
     - kong_license
     - oidc_cache_tokens_salt
-    - webhook_signing_secret
     entrypoint:
     - /usr/local/bin/codestra-kong-entrypoint
     command:
     - kong
     - docker-start
+    volumes:
+    - type: bind
+      source: ${GATEWAY_WEBHOOK_SECRET_DIRECTORY:?approved per-integration webhook secret directory required}
+      target: /run/secrets/webhooks
+      read_only: true
   kong-dp-1:
     read_only: true
     user: 1000:1000
@@ -137,7 +141,6 @@ services:
     - redis_password
     - kong_license
     - oidc_cache_tokens_salt
-    - webhook_signing_secret
     entrypoint:
     - /usr/local/bin/codestra-kong-entrypoint
     command:
@@ -145,6 +148,10 @@ services:
     - docker-start
     volumes:
     - dp1_prefix:/usr/local/kong
+    - type: bind
+      source: ${GATEWAY_WEBHOOK_SECRET_DIRECTORY:?approved per-integration webhook secret directory required}
+      target: /run/secrets/webhooks
+      read_only: true
   kong-dp-2:
     read_only: true
     user: 1000:1000
@@ -209,7 +216,6 @@ services:
     - redis_password
     - kong_license
     - oidc_cache_tokens_salt
-    - webhook_signing_secret
     entrypoint:
     - /usr/local/bin/codestra-kong-entrypoint
     command:
@@ -217,6 +223,10 @@ services:
     - docker-start
     volumes:
     - dp2_prefix:/usr/local/kong
+    - type: bind
+      source: ${GATEWAY_WEBHOOK_SECRET_DIRECTORY:?approved per-integration webhook secret directory required}
+      target: /run/secrets/webhooks
+      read_only: true
 networks:
   edge_internal:
     external: true
@@ -274,8 +284,6 @@ secrets:
     file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/kong_license
   oidc_cache_tokens_salt:
     file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/oidc_cache_tokens_salt
-  webhook_signing_secret:
-    file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/webhook_signing_secret
 volumes:
   dp1_prefix:
     external: true
