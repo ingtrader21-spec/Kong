@@ -60,3 +60,14 @@ def test_upsert_rejects_hidden_later_matches(monkeypatch):
     )
     with pytest.raises(RuntimeError, match="incomplete"):
         apply.upsert("services", "standby", {"name": "standby"})
+
+
+def test_plugin_readback_requires_exact_expected_set():
+    apply = load_apply()
+    expected = [{"name": name, "enabled": True} for name in apply.EXPECTED_PLUGINS]
+    apply.verify_plugin_set(expected, "standby-route")
+    with pytest.raises(RuntimeError, match="plugin read-back failed"):
+        apply.verify_plugin_set(
+            expected + [{"name": "unexpected-plugin", "enabled": True}],
+            "standby-route",
+        )

@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+from urllib.parse import unquote, urlsplit
 
 DOCKER = ["docker", "--host", "unix:///var/run/docker.sock"]
 ADMIN_ORIGIN = "http://127.0.0.1:8001"
@@ -20,7 +21,12 @@ COMPOSE_SERVICE = "kong-gateway"
 REQUIRED_LISTENERS = {"KONG_ADMIN_LISTEN=127.0.0.1:8001", "KONG_ADMIN_GUI_LISTEN=off"}
 ADMIN_PORTS = ("8001/tcp", "8444/tcp", "8002/tcp", "8445/tcp")
 METHODS = frozenset({"GET", "POST", "PATCH", "DELETE"})
-SUCCESS = frozenset({200, 201, 204})
+SUCCESS_BY_METHOD = {
+    "GET": frozenset({200}),
+    "POST": frozenset({200, 201}),
+    "PATCH": frozenset({200}),
+    "DELETE": frozenset({200, 204}),
+}
 MAX_BYTES = 2 * 1024 * 1024
 CONNECT_TIMEOUT = "2"
 REQUEST_TIMEOUT = "10"
@@ -115,13 +121,24 @@ def entity_id(value, kind: str = "entity") -> str:
     return value
 
 
+def validate_admin_path(path) -> str:
+    """Accept only a bounded origin-relative path without traversal."""
+    if not isinstance(path, str) or not ADMIN_PATH.fullmatch(path):
+        raise AdminError("unsafe Kong Admin path")
+    parsed = urlsplit(path)
+    decoded_path = unquote(parsed.path)
+    if (parsed.scheme or parsed.netloc or parsed.fragment or path.startswith("//")
+            or any(segment in {".", ".."} for segment in decoded_path.split("/"))
+            or any(ord(character) < 32 or ord(character) == 127 for character in decoded_path)):
+        raise AdminError("unsafe Kong Admin path")
+    return path
+
+
 def admin_request(method: str, path: str, payload=None, container: str = DEFAULT_CONTAINER):
     """Run one bounded Admin request inside the verified gateway container."""
     if method not in METHODS:
         raise AdminError(f"unsupported Kong Admin method: {method}")
-    if (not isinstance(path, str) or path.startswith("//") or ".." in path
-            or not ADMIN_PATH.fullmatch(path)):
-        raise AdminError("unsafe Kong Admin path")
+    path = validate_admin_path(path)
     if payload is not None and method == "GET":
         raise AdminError(f"Kong Admin GET must not carry a body: {path}")
     identifier = container_identity(container)
@@ -153,7 +170,7 @@ def admin_request(method: str, path: str, payload=None, container: str = DEFAULT
     if not separator or not re.fullmatch(rb"[0-9]{3}", status):
         raise AdminError(f"Kong Admin {method} {path}: unreadable response")
     code = int(status)
-    if code not in SUCCESS:
+    if code not in SUCCESS_BY_METHOD[method]:
         # Redirects are neither followed nor accepted; only 2xx replies proceed.
         raise AdminError(f"Kong Admin {method} {path}: {code} {raw.decode(errors='replace')[:500]}")
     if code == 204 or not raw.strip():

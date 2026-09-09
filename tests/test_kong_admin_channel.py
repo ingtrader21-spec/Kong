@@ -144,6 +144,7 @@ def test_unsupported_methods_are_refused(method):
 
 @pytest.mark.parametrize("path", [
     "services", "//evil.invalid/services", "/routes/../consumers",
+    "/routes/%2e%2e/consumers", "/routes/%2E/consumers",
     "http://evil.invalid/services", "/routes\n/x", "/routes?tags=a b", "/" + "a" * 4096])
 def test_unsafe_admin_paths_are_refused(path):
     channel = module()
@@ -157,7 +158,7 @@ def test_get_must_not_carry_a_body():
         channel.admin_request("GET", "/services", {"name": "x"})
 
 
-@pytest.mark.parametrize("status", [b"301", b"302", b"400", b"409", b"500"])
+@pytest.mark.parametrize("status", [b"201", b"204", b"301", b"302", b"400", b"409", b"500"])
 def test_non_success_status_raises_with_bounded_detail(monkeypatch, status):
     channel = module()
     stubbed(channel, monkeypatch, stdout=b"x" * 4000 + b"\n" + status)

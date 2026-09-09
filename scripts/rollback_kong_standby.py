@@ -13,6 +13,7 @@ if SCRIPTS not in sys.path:
 from kong_admin_channel import admin_request, confirm_unchanged, entity_id  # noqa: E402
 
 TAG = "codestra-kong-standby-20260820"
+PAGE_SIZE = 1000
 
 
 def call(method, path):
@@ -28,7 +29,7 @@ def main():
         # the same collection can skip rows as the result set contracts.
         deleted: set[str] = set()
         while True:
-            response = call("GET", f"/{collection}?tags={tagged}&size=1000") or {}
+            response = call("GET", f"/{collection}?tags={tagged}&size={PAGE_SIZE}") or {}
             data = response.get("data")
             if not isinstance(data, list):
                 raise RuntimeError(f"invalid Kong {collection} collection")

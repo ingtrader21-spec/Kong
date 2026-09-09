@@ -22,6 +22,13 @@ from kong_admin_channel import admin_request, confirm_unchanged, entity_id  # no
 
 TAG = "codestra-kong-standby-20260820"
 HOST = "kong-standby.internal.codestra.agency"
+PAGE_SIZE = 1000
+EXPECTED_PLUGINS = frozenset({
+    "request-transformer",
+    "ip-restriction",
+    "request-size-limiting",
+    "rate-limiting",
+})
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = json.loads((ROOT / "deploy/kong-production-standby/kong/standby.json").read_text())
 
@@ -43,8 +50,16 @@ def collection_rows(response, context: str) -> list[dict]:
     return data
 
 
+def verify_plugin_set(plugins: list[dict], route_name: str) -> None:
+    names = {item.get("name") for item in plugins if item.get("enabled")}
+    if not all(isinstance(name, str) for name in names):
+        raise RuntimeError(f"invalid plugin read-back: {route_name}")
+    if names != EXPECTED_PLUGINS:
+        raise RuntimeError(f"plugin read-back failed: {route_name}: {sorted(names)}")
+
+
 def upsert(collection: str, name: str, payload: dict):
-    query = urllib.parse.urlencode({"name": name, "size": 1000})
+    query = urllib.parse.urlencode({"name": name, "size": PAGE_SIZE})
     collection_page = request("GET", f"/{collection}?{query}")
     existing = collection_rows(collection_page, collection)
     if len(existing) > 1:
@@ -62,7 +77,7 @@ def upsert(collection: str, name: str, payload: dict):
 def plugin(route_id: str, name: str, config: dict):
     route_id = entity_id(route_id, "route")
     current = collection_rows(
-        request("GET", f"/routes/{route_id}/plugins?size=1000"), "route plugins"
+        request("GET", f"/routes/{route_id}/plugins?size={PAGE_SIZE}"), "route plugins"
     )
     same_name = [item for item in current if item.get("name") == name]
     unowned = [item for item in same_name if TAG not in (item.get("tags") or [])]
@@ -110,10 +125,12 @@ def main():
             "fault_tolerant": False, "hide_client_headers": False,
         })
         applied.append(route_name)
-    expected_plugins = {"request-transformer", "ip-restriction", "request-size-limiting", "rate-limiting"}
     for route_name in applied:
         routes = collection_rows(
-            request("GET", "/routes?" + urllib.parse.urlencode({"name": route_name, "size": 1000})),
+            request(
+                "GET",
+                "/routes?" + urllib.parse.urlencode({"name": route_name, "size": PAGE_SIZE}),
+            ),
             "route read-back",
         )
         if len(routes) != 1:
@@ -123,14 +140,10 @@ def main():
             raise RuntimeError(f"route isolation read-back failed: {route_name}")
         route_id = entity_id(route.get("id"), "route")
         plugins = collection_rows(
-            request("GET", f"/routes/{route_id}/plugins?size=1000"),
+            request("GET", f"/routes/{route_id}/plugins?size={PAGE_SIZE}"),
             "plugin read-back",
         )
-        names = {item.get("name") for item in plugins if item.get("enabled")}
-        if not all(isinstance(name, str) for name in names):
-            raise RuntimeError(f"invalid plugin read-back: {route_name}")
-        if not expected_plugins.issubset(names):
-            raise RuntimeError(f"plugin read-back failed: {route_name}: {sorted(names)}")
+        verify_plugin_set(plugins, route_name)
     # Kong workers update their router/plugin cache asynchronously.  Wait until
     # the data plane observes the newly applied policy before reporting PASS.
     for attempt in range(10):
