@@ -155,16 +155,39 @@ def capture(container: str, expected: int) -> dict:
     }
 
 
+def require_reviewed_routes(result: dict, authority: Path) -> None:
+    """Bind a live capture to the complete reviewed active-route authority."""
+    raw = authority.read_bytes()
+    if len(raw) > MAX_BYTES:
+        raise CaptureError('invalid_active_route_authority')
+    expected = json.loads(raw)
+    routes = expected.get('routes') if isinstance(expected, dict) else None
+    if (expected.get('schema') != 'codestra.kong.production-route-readback.v1'
+            or expected.get('expectedRouteCount') != 29
+            or expected.get('actualRouteCount') != 29
+            or expected.get('secretsCaptured') is not False
+            or expected.get('runtimeMutated') is not False
+            or not isinstance(routes, list) or len(routes) != 29
+            or not all(isinstance(route, dict) for route in routes)):
+        raise CaptureError('invalid_active_route_authority')
+    reviewed = sorted(routes, key=lambda route: route.get('name', ''))
+    if result.get('routes') != reviewed:
+        raise CaptureError('active_route_contract_mismatch')
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output', type=Path)
     parser.add_argument('--container', default='codestra-kong-kong-gateway-1')
     parser.add_argument('--expected-route-count', type=int, choices=(27, 29), default=27)
+    parser.add_argument('--expected-inventory', type=Path)
     args = parser.parse_args()
     try:
         if os.getenv('KONG_ADMIN_READ_ONLY_URL'):
             raise CaptureError('legacy_host_admin_path_not_supported')
         result = capture(args.container, args.expected_route_count)
+        if args.expected_inventory is not None:
+            require_reviewed_routes(result, args.expected_inventory)
         raw = json.dumps(result, sort_keys=True, indent=2) + '\n'
         fd, temporary = tempfile.mkstemp(prefix='.kong-readback-', dir=args.output.parent)
         try:
