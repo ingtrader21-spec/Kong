@@ -1,0 +1,13 @@
+{
+  "apiVersion": "codestra.gateway/v1",
+  "authenticationMode": "oidc",
+  "kind": "GatewayPolicy",
+  "maximumBodyBytes": 1048576,
+  "maximumTimeoutMs": 60000,
+  "name": "public-oidc-api",
+  "newProductionAllowed": true,
+  "plugins": [
+    "openid-connect",
+    "codestra-authz"
+  ]
+}

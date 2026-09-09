@@ -41,7 +41,7 @@ Routes and protects platform APIs through authentication integration, authorizat
 
 ## Governance and safety
 
-- Promotion model: `feature/docs/fix/security/upgrade -> development -> test -> staging -> production -> main`.
+- Promotion model: `feature/*` or `fix/*` -> reviewed `main` -> `staging` -> `production`, as defined in `docs/branch-governance.md`.
 - Every apply must use the exact accepted configuration SHA and an independently reviewed drift plan.
 - Never commit credentials, private keys, database dumps, provider secrets, or live token material.
 - Merge is gateway source acceptance only; production apply remains separately approved.

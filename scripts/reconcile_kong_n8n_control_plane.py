@@ -5,11 +5,24 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 
+SCRIPTS = str(Path(__file__).resolve().parent)
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
+
+from kong_admin_channel import (
+    PRIVATE_ADMIN_URL,
+    admin_request,
+    collect_admin_rows,
+    http_admin_request,
+    http_admin_url,
+    normalize_admin_reference,
+    open_admin_request as urlopen,
+)
 from reconcile_kong_campaign_automation import (
     active_rsa_key,
     plugin_form,
@@ -20,32 +33,16 @@ from reconcile_kong_campaign_automation import (
 
 
 def request(base: str, method: str, path: str, payload=None) -> dict:
-    normalized = None
-    if payload is not None:
-        normalized = {
-            key: "true" if value is True else "false" if value is False else value
-            for key, value in payload.items()
-        }
-    data = None if normalized is None else urlencode(normalized, doseq=True).encode()
-    with urlopen(Request(base.rstrip("/") + path, method=method, data=data), timeout=15) as response:
-        raw = response.read()
-        return json.loads(raw) if raw else {}
+    if base == PRIVATE_ADMIN_URL:
+        return admin_request(
+            method, normalize_admin_reference(path), payload, payload_encoding="form"
+        ) or {}
+    return http_admin_request(base, method, path, payload, timeout=15, opener=urlopen) or {}
 
 
 def all_rows(base: str, path: str) -> list[dict]:
-    rows: list[dict] = []
-    seen: set[str] = set()
-    while path:
-        if path in seen:
-            raise RuntimeError("Kong pagination loop detected")
-        seen.add(path)
-        page = request(base, "GET", path)
-        rows.extend(page.get("data", []))
-        next_path = page.get("next")
-        if next_path and not str(next_path).startswith("/"):
-            raise RuntimeError("unsafe Kong pagination URL")
-        path = next_path
-    return rows
+    normalize = normalize_admin_reference if base == PRIVATE_ADMIN_URL else lambda value: http_admin_url(base, value)
+    return collect_admin_rows(lambda value: request(base, "GET", value), path, normalize)
 
 
 def one(rows: list[dict], label: str) -> dict | None:
@@ -310,7 +307,7 @@ def ensure_route(admin: str, spec: dict, service: dict, expected: dict, apply: b
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--admin-url", required=True)
+    parser.add_argument("--admin-url", default=PRIVATE_ADMIN_URL)
     parser.add_argument("--jwks-url", required=True)
     parser.add_argument("--manifest", type=Path, default=Path("config/kong-n8n-control-plane-routes.json"))
     parser.add_argument("--evidence", type=Path, required=True)

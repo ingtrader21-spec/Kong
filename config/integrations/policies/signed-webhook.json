@@ -1,0 +1,12 @@
+{
+  "apiVersion": "codestra.gateway/v1",
+  "authenticationMode": "hmac",
+  "kind": "GatewayPolicy",
+  "maximumBodyBytes": 1048576,
+  "maximumTimeoutMs": 60000,
+  "name": "signed-webhook",
+  "newProductionAllowed": true,
+  "plugins": [
+    "codestra-webhook-verifier"
+  ]
+}

@@ -13,10 +13,19 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 from pathlib import Path
-from urllib.parse import urljoin, urlsplit
-from urllib.request import Request, urlopen
+from urllib.parse import urlsplit
 
+SCRIPTS = str(Path(__file__).resolve().parent)
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
+
+from kong_admin_channel import (
+    PRIVATE_ADMIN_URL, AdminError, admin_request, collect_admin_rows, http_admin_request,
+    http_admin_url, normalize_admin_reference,
+    open_admin_request as urlopen,
+)
 
 SENSITIVE_KEYS = {
     "api_key",
@@ -64,34 +73,25 @@ PRIVATE_KEY_MARKER = re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY--
 
 
 def request(base: str, path: str) -> dict:
-    url = path if path.startswith(("http://", "https://")) else base.rstrip("/") + path
-    with urlopen(Request(url, method="GET"), timeout=10) as response:
-        raw = response.read()
-        return json.loads(raw) if raw else {}
+    if base == PRIVATE_ADMIN_URL:
+        return admin_request("GET", normalize_admin_reference(path)) or {}
+    return http_admin_request(base, method="GET", path=path, opener=urlopen) or {}
 
 
 def safe_next(base: str, value: str | None) -> str | None:
     if not value:
         return None
-    base_url = urlsplit(base)
-    resolved = urlsplit(urljoin(base.rstrip("/") + "/", value))
-    if (resolved.scheme, resolved.netloc) != (base_url.scheme, base_url.netloc):
-        raise RuntimeError("unsafe Kong pagination URL")
-    return resolved.geturl()
+    if base == PRIVATE_ADMIN_URL:
+        return normalize_admin_reference(value)
+    try:
+        return http_admin_url(base, value)
+    except AdminError:
+        raise RuntimeError("unsafe Kong pagination URL") from None
 
 
 def all_rows(base: str, path: str) -> list[dict]:
-    rows: list[dict] = []
-    seen: set[str] = set()
-    next_url: str | None = path
-    while next_url:
-        if next_url in seen:
-            raise RuntimeError("Kong pagination loop detected")
-        seen.add(next_url)
-        page = request(base, next_url)
-        rows.extend(page.get("data", []))
-        next_url = safe_next(base, page.get("next"))
-    return rows
+    return collect_admin_rows(lambda value: request(base, value), path,
+                              lambda value: safe_next(base, value))
 
 
 def sensitive_key(key: str) -> bool:
@@ -207,7 +207,7 @@ def route_record(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--admin-url", required=True)
+    parser.add_argument("--admin-url", default=PRIVATE_ADMIN_URL)
     parser.add_argument(
         "--manifest",
         type=Path,

@@ -1,0 +1,61 @@
+name: Authenticate isolated staging observations
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  certify-runtime-observations:
+    if: github.ref_name == 'staging'
+    runs-on: [self-hosted, linux, kong-runtime]
+    environment: staging
+    timeout-minutes: 10
+    env:
+      CERTIFIED_SOURCE_SHA: ${{ vars.KONG_CERTIFIED_SOURCE_SHA }}
+      CANDIDATE_RUN_ID: ${{ vars.KONG_CANDIDATE_RUN_ID }}
+      OBSERVATION_SHA256: ${{ vars.KONG_STAGING_OBSERVATION_SHA256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify protected source and recover immutable candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          test "${GITHUB_REF_PROTECTED}" = true
+          test "${GITHUB_REF_NAME}" = staging
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain)"
+          [[ "${CERTIFIED_SOURCE_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          [[ "${CANDIDATE_RUN_ID}" =~ ^[1-9][0-9]*$ ]]
+          [[ "${OBSERVATION_SHA256}" =~ ^[0-9a-f]{64}$ ]]
+          test "$(git rev-parse "${CERTIFIED_SOURCE_SHA}^{tree}")" = "$(git rev-parse 'HEAD^{tree}')"
+          test "$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}" --jq .commit.verification.verified)" = true
+          python3 tools/verify_release_candidate.py \
+            --source-sha "${CERTIFIED_SOURCE_SHA}" --run-id "${CANDIDATE_RUN_ID}" \
+            --output-dir "${RUNNER_TEMP}/staging-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --github-output "${GITHUB_OUTPUT}"
+      - name: Validate approved complete runtime observations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          mkdir -m 700 "${RUNNER_TEMP}/staging-proof-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          python3 tools/package_staging_certification.py \
+            --source-sha "${CERTIFIED_SOURCE_SHA}" \
+            --observation-sha256 "${OBSERVATION_SHA256}" \
+            --candidate-manifest "${RUNNER_TEMP}/staging-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/release-manifest.json" \
+            --output "${RUNNER_TEMP}/staging-proof-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/certification.json"
+      - name: Publish authenticated observation artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: kong-staging-certification-${{ env.CERTIFIED_SOURCE_SHA }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/staging-proof-${{ github.run_id }}-${{ github.run_attempt }}/certification.json
+          if-no-files-found: error
+          retention-days: 7

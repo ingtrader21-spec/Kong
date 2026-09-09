@@ -1,0 +1,8 @@
+{
+  "apiVersion": "codestra.gateway/v1",
+  "roles": [
+    "borrower",
+    "service",
+    "operator"
+  ]
+}
