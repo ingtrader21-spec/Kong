@@ -144,13 +144,14 @@ def validate(document, *, today=None):
             fields.add("caCertificateIds")
     elif template == "signed-webhook":
         fields |= {"secretRef", "keyId"}
+    elif template == "legacy-api-key":
+        fields.add("legacySunset")
+    _require(set(auth) == fields, "authentication_fields_mismatch")
+    if template == "signed-webhook":
         _require(auth["secretRef"] == f"{{vault://env/kong-webhook-{meta['id']}}}",
                  "webhook_secret_reference_mismatch")
         _require(upstream["idempotencyAuthority"] == "Middleware", "webhook_replay_authority_required")
         _require(not policies["corsOrigins"], "webhook_cors_forbidden")
-    elif template == "legacy-api-key":
-        fields.add("legacySunset")
-    _require(set(auth) == fields, "authentication_fields_mismatch")
     if template == "legacy-api-key":
         _require(date.fromisoformat(auth["legacySunset"]) > (today or date.today()), "legacy_sunset_expired")
     known_scopes = set(load_json(AUTHORITY / "scopes.json")["scopes"])

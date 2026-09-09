@@ -722,8 +722,8 @@
     },
     {
       "path": "scripts/gateway_integrations.py",
-      "sha256": "3a9787dbff51024cc8d1db05571d387f4b827483865ca405dab37438ee2958f1",
-      "size": 20259
+      "sha256": "725194204f5a76f2009973c67002f4eba729cfd57c9f60095c7c95b2bc98fa8e",
+      "size": 20296
     },
     {
       "path": "scripts/kong_admin_channel.py",
@@ -837,8 +837,8 @@
     },
     {
       "path": "tests/test_gateway_integrations.py",
-      "sha256": "ac28cd258fc8375daaf849aace0e98dedf2831818372f2a3999a47dc48abefeb",
-      "size": 12348
+      "sha256": "f9bf85bb94e7dd8d359da554a577ea5d00dc9d9727ea78b66d42d0dfb56d9c57",
+      "size": 12630
     },
     {
       "path": "tests/test_gateway_plugins.py",
@@ -1002,7 +1002,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "6ac683829718d183a9bc7b3f9b41860a57f9e88099ef924bbd9c51fa53ad0d54",
+  "manifest_generation_id": "eadec8713408c47e3124438a24214a9ae38374e9cc4b97f2cbf8ee800fa38673",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

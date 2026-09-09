@@ -193,6 +193,12 @@ def test_signed_webhook_cannot_reference_another_integrations_secret(contract):
         validate(contract)
 
 
+def test_signed_webhook_missing_secret_uses_stable_validation_error(contract):
+    contract["spec"]["authentication"] = {"template": "signed-webhook", "keyId": "webhook-v1"}
+    with pytest.raises(ContractError, match="authentication_fields_mismatch"):
+        validate(contract)
+
+
 @pytest.mark.parametrize("raw", ['{"key":1,"key":2}', '{"key":NaN}', '[', '"' + 'x' * 1_048_576 + '"'])
 def test_bounded_unambiguous_json(tmp_path, raw):
     path = tmp_path / "input.json"
