@@ -78,6 +78,7 @@ def hostname(value):
 
 def path_segments(path):
     _require(path.startswith("/") and "//" not in path, "invalid_route_path")
+    _require(path == "/" or not path.endswith("/"), "trailing_slash_not_supported")
     parts = path.strip("/").split("/") if path != "/" else []
     _require(not any(p in {".", ".."} for p in parts), "invalid_route_path")
     params = []
@@ -169,6 +170,7 @@ def validate(document, *, today=None):
         if set(route["methods"]) - {"GET", "HEAD", "OPTIONS"}:
             _require(not upstream["retries"] or upstream["idempotencyAuthority"] == "Middleware", "unsafe_write_retry")
         if template == "public-health":
+            _require(policies["requireCorrelationId"] is False, "public_health_correlation_must_be_optional")
             _require(set(route["methods"]) <= {"GET", "HEAD"} and route["match"] == "exact"
                      and route["path"] in {"/healthz", "/readyz", "/version"}
                      and meta["dataClassification"] == "public", "public_health_boundary")
@@ -266,6 +268,7 @@ def compile_integrations(documents, *, environment):
                     date.fromisoformat(auth["legacySunset"]), datetime.min.time(), tzinfo=timezone.utc).timestamp())
             if template in OIDC:
                 plugins.extend([_plugin("openid-connect", {"issuer": auth["issuer"] + "/.well-known/openid-configuration", "auth_methods": ["bearer"],
+                    "cache_tokens_salt": "{vault://env/kong-oidc-cache-tokens-salt}",
                     "bearer_token_param_type": ["header"], "audience_required": [auth["audience"]], "consumer_claim": ["azp"],
                     "scopes_required": sorted(route["scopes"]), "ssl_verify": True}),
                     _plugin("codestra-authz", {"issuer": auth["issuer"], "audience": auth["audience"],

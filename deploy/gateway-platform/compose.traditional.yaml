@@ -66,6 +66,7 @@ services:
     - proxy_key
     - redis_password
     - kong_license
+    - oidc_cache_tokens_salt
     command:
     - kong
     - docker-start
@@ -131,6 +132,7 @@ services:
     - proxy_key
     - redis_password
     - kong_license
+    - oidc_cache_tokens_salt
     command:
     - kong
     - docker-start
@@ -184,6 +186,7 @@ services:
     - kong_runtime_password
     - redis_password
     - kong_license
+    - oidc_cache_tokens_salt
     entrypoint:
     - /usr/local/bin/codestra-kong-entrypoint
     command:
@@ -244,3 +247,5 @@ secrets:
     file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/redis_password
   kong_license:
     file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/kong_license
+  oidc_cache_tokens_salt:
+    file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/oidc_cache_tokens_salt

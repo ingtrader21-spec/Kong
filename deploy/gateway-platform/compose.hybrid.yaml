@@ -66,6 +66,7 @@ services:
     - cp_key
     - redis_password
     - kong_license
+    - oidc_cache_tokens_salt
     entrypoint:
     - /usr/local/bin/codestra-kong-entrypoint
     command:
@@ -134,6 +135,7 @@ services:
     - proxy_key
     - redis_password
     - kong_license
+    - oidc_cache_tokens_salt
     entrypoint:
     - /usr/local/bin/codestra-kong-entrypoint
     command:
@@ -204,6 +206,7 @@ services:
     - proxy_key
     - redis_password
     - kong_license
+    - oidc_cache_tokens_salt
     entrypoint:
     - /usr/local/bin/codestra-kong-entrypoint
     command:
@@ -266,6 +269,8 @@ secrets:
     file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/redis_password
   kong_license:
     file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/kong_license
+  oidc_cache_tokens_salt:
+    file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/oidc_cache_tokens_salt
 volumes:
   dp1_prefix:
     external: true
