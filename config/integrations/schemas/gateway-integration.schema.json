@@ -145,9 +145,7 @@
               "uniqueItems": true
             },
             "secretRef": {
-              "maxLength": 160,
-              "minLength": 1,
-              "pattern": "^\\{vault://env/[a-z][a-z0-9-]{1,126}\\}$",
+              "const": "{vault://env/kong-webhook-signing-secret}",
               "type": "string"
             },
             "template": {

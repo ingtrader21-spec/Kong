@@ -16,4 +16,11 @@ if [ ! -r "$sx_oidc_salt_file" ] || [ ! -s "$sx_oidc_salt_file" ]; then
 fi
 KONG_OIDC_CACHE_TOKENS_SALT=$(cat "$sx_oidc_salt_file")
 export KONG_OIDC_CACHE_TOKENS_SALT
+sx_webhook_secret_file=/run/secrets/webhook_signing_secret
+if [ ! -r "$sx_webhook_secret_file" ] || [ ! -s "$sx_webhook_secret_file" ]; then
+  echo 'Required gateway webhook signing credential is unavailable' >&2
+  exit 1
+fi
+KONG_WEBHOOK_SIGNING_SECRET=$(cat "$sx_webhook_secret_file")
+export KONG_WEBHOOK_SIGNING_SECRET
 exec /docker-entrypoint.sh "$@"

@@ -59,6 +59,10 @@ configuration explicitly enables its global Prometheus metrics plugin.
 The `oidc_cache_tokens_salt` secret is stable across CP/DP nodes and configuration
 synchronizations. The entrypoint exports `KONG_OIDC_CACHE_TOKENS_SALT` for the
 established env Vault reference; no generated salt or secret value is committed.
+The separately provisioned `webhook_signing_secret` is exported only in-process as
+`KONG_WEBHOOK_SIGNING_SECRET`. Signed-webhook contracts must use the fixed
+`{vault://env/kong-webhook-signing-secret}` reference; arbitrary environment Vault
+keys are rejected because the topology cannot prove that they are provisioned.
 Public health templates require optional caller correlation IDs. Route contracts
 reject trailing slashes other than `/`, so compilation cannot silently change a
 reviewed path.

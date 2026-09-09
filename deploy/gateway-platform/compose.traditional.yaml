@@ -67,6 +67,7 @@ services:
     - redis_password
     - kong_license
     - oidc_cache_tokens_salt
+    - webhook_signing_secret
     command:
     - kong
     - docker-start
@@ -133,6 +134,7 @@ services:
     - redis_password
     - kong_license
     - oidc_cache_tokens_salt
+    - webhook_signing_secret
     command:
     - kong
     - docker-start
@@ -187,6 +189,7 @@ services:
     - redis_password
     - kong_license
     - oidc_cache_tokens_salt
+    - webhook_signing_secret
     entrypoint:
     - /usr/local/bin/codestra-kong-entrypoint
     command:
@@ -249,3 +252,5 @@ secrets:
     file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/kong_license
   oidc_cache_tokens_salt:
     file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/oidc_cache_tokens_salt
+  webhook_signing_secret:
+    file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/webhook_signing_secret

@@ -59,7 +59,9 @@ def test_every_policy_template_compiles(contract, template):
         spec["authentication"] = {"template": template}
         route["scopes"] = []
     if template == "signed-webhook":
-        spec["authentication"].update(secretRef="{vault://env/webhook-key}", keyId="webhook-v1")
+        spec["authentication"].update(
+            secretRef="{vault://env/kong-webhook-signing-secret}", keyId="webhook-v1"
+        )
         spec["policies"]["corsOrigins"] = []
     if template == "legacy-api-key":
         spec["authentication"]["legacySunset"] = "2099-01-01"
@@ -204,6 +206,15 @@ def test_package_determinism_integrity_and_no_certification(contract, tmp_path):
             archive.writestr(info, data)
     with pytest.raises(ContractError, match="package_integrity_mismatch"):
         verify_package(tampered)
+
+
+def test_packager_rejects_oversized_member_before_creating_archive(contract, tmp_path):
+    output = compiled(contract)
+    output["untrusted_padding"] = "x" * (2 * 1_048_576)
+    target = tmp_path / "oversized.zip"
+    with pytest.raises(ContractError, match="package_member_too_large"):
+        package_release(output, target, "a" * 40, "sha256:" + "b" * 64, "c" * 40)
+    assert not target.exists()
 
 
 def test_cli_validates_and_refuses_overwrite(tmp_path):

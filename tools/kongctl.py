@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import re
 import shutil
@@ -14,6 +15,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.gateway_integrations import (AUTHORITY, ContractError, canonical, compile_integrations,
                                          digest, load_json, validate_set)
+
+MAX_PACKAGE_BYTES = 8 * 1_048_576
+MAX_PACKAGE_MEMBER_BYTES = 2 * 1_048_576
 
 
 def emit(value):
@@ -38,16 +42,24 @@ def package_release(compilation, output, source_sha, image_digest, rollback_sha)
         "runtime_certified": False, "runtime_apply_authorized": False,
         "files": {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}}
     files["manifest.json"] = canonical(manifest)
-    with zipfile.ZipFile(output, "x", compression=zipfile.ZIP_STORED) as archive:
+    if any(len(data) > MAX_PACKAGE_MEMBER_BYTES for data in files.values()):
+        raise ContractError("package_member_too_large")
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_STORED) as archive:
         for name, data in sorted(files.items()):
             info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
             info.external_attr = 0o100644 << 16
             archive.writestr(info, data)
+    package = buffer.getvalue()
+    if len(package) > MAX_PACKAGE_BYTES:
+        raise ContractError("package_too_large")
+    with Path(output).open("xb") as handle:
+        handle.write(package)
     return manifest
 
 
 def verify_package(path):
-    if Path(path).stat().st_size > 8 * 1_048_576:
+    if Path(path).stat().st_size > MAX_PACKAGE_BYTES:
         raise ContractError("package_too_large")
     try:
         with zipfile.ZipFile(path) as archive:
@@ -55,7 +67,8 @@ def verify_package(path):
             if sorted(names) != ["compilation.json", "kong.json", "manifest.json", "test-matrix.json"]:
                 raise ContractError("invalid_package_members")
             for info in archive.infolist():
-                if info.file_size > 2 * 1_048_576 or info.flag_bits & 1 or (info.external_attr >> 16) != 0o100644:
+                if (info.file_size > MAX_PACKAGE_MEMBER_BYTES or info.flag_bits & 1
+                        or (info.external_attr >> 16) != 0o100644):
                     raise ContractError("invalid_package_member")
             raw = {name: archive.read(name) for name in names}
         # Compare canonical bytes too: duplicate keys and ambiguous encodings fail.
