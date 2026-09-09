@@ -252,8 +252,8 @@
     },
     {
       "path": "deploy/gateway-platform/network-boundaries.yaml",
-      "sha256": "971a1f10e1ed3ed3fa138e4bd4b0410668ec4703bed4fdc3f164c6d36d2143d5",
-      "size": 1483
+      "sha256": "b4730c593b6838b6b5498e0cc5f6007f37b8b9e82f47c6ab935be884c9c59a16",
+      "size": 1455
     },
     {
       "path": "deploy/kong-production-standby/README.md",
@@ -1002,7 +1002,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "07c5d23d17371bb29bc5cefb68bc2717931090556ca42266855fd111070ca6f0",
+  "manifest_generation_id": "a1ad3fb343ac720a8af43c861c305405f8123f7ec25e741e0e53ad9c3fa47f79",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

@@ -40,7 +40,7 @@ networks:
     owner: host-caddy
     compose_attachment_permitted: false
 dependency_owners:
-  postgresql: deploy/postgres and existing Kong database authority
+  postgresql: operations/kong-database
   redis: private designated rate-limit authority
   upstream-gateway: existing private Caddy-to-Kong balancer authority
 private_balancer:
