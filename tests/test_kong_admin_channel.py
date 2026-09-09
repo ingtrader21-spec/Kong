@@ -95,10 +95,14 @@ def test_reconcilers_dispatch_private_requests_without_urlopen(monkeypatch, name
     monkeypatch.setattr(
         client,
         "admin_request",
-        lambda method, path, payload=None: calls.append((method, path, payload)) or {"data": []},
+        lambda method, path, payload=None, **kwargs: calls.append(
+            (method, path, payload, kwargs)
+        ) or {"data": []},
     )
     assert client.request(client.PRIVATE_ADMIN_URL, "GET", "/routes?size=1000") == {"data": []}
-    assert calls == [("GET", "/routes?size=1000", None)]
+    assert calls == [
+        ("GET", "/routes?size=1000", None, {"payload_encoding": "form"})
+    ]
 
 
 def test_exporter_dispatches_private_get_without_urlopen(monkeypatch):
@@ -175,6 +179,34 @@ def test_write_payloads_travel_on_stdin_not_argv(monkeypatch):
     assert argv[argv.index("--data-binary") + 1] == "@-"
     assert kwargs["input"] == json.dumps(payload).encode()
     assert not any("standby" in item for item in argv)
+
+
+def test_form_payloads_preserve_kong_field_encoding(monkeypatch):
+    channel = module()
+    calls = stubbed(channel, monkeypatch, stdout=b'{"id": "created"}\n201')
+    payload = {
+        "config.redis.host": "redis",
+        "config.fault_tolerant": False,
+        "config.flags[]": [True, False],
+        "hosts[]": ["a.example", "b.example"],
+    }
+    assert channel.admin_request(
+        "POST", "/plugins", payload, payload_encoding="form"
+    ) == {"id": "created"}
+    argv, kwargs = calls[0]
+    assert "Content-Type: application/x-www-form-urlencoded" in argv
+    assert kwargs["input"] == (
+        b"config.redis.host=redis&config.fault_tolerant=false&"
+        b"config.flags%5B%5D=true&config.flags%5B%5D=false&"
+        b"hosts%5B%5D=a.example&hosts%5B%5D=b.example"
+    )
+    assert not any("redis" in item or "a.example" in item for item in argv)
+
+
+def test_unknown_payload_encoding_is_refused():
+    channel = module()
+    with pytest.raises(channel.AdminError, match="payload encoding"):
+        channel.admin_request("POST", "/services", {}, payload_encoding="yaml")
 
 
 @pytest.mark.parametrize("method", ["PUT", "OPTIONS", "HEAD", "get", "POST;rm"])
