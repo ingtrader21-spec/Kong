@@ -9,7 +9,6 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 
 SCRIPTS = str(Path(__file__).resolve().parent)
 if SCRIPTS not in sys.path:
@@ -18,8 +17,11 @@ if SCRIPTS not in sys.path:
 from kong_admin_channel import (
     PRIVATE_ADMIN_URL,
     admin_request,
-    form_payload,
+    collect_admin_rows,
+    http_admin_request,
+    http_admin_url,
     normalize_admin_reference,
+    open_admin_request as urlopen,
 )
 from reconcile_kong_campaign_automation import (
     active_rsa_key,
@@ -35,26 +37,12 @@ def request(base: str, method: str, path: str, payload=None) -> dict:
         return admin_request(
             method, normalize_admin_reference(path), payload, payload_encoding="form"
         ) or {}
-    data = None if payload is None else form_payload(payload, path)
-    with urlopen(Request(base.rstrip("/") + path, method=method, data=data), timeout=15) as response:
-        raw = response.read()
-        return json.loads(raw) if raw else {}
+    return http_admin_request(base, method, path, payload, timeout=15, opener=urlopen) or {}
 
 
 def all_rows(base: str, path: str) -> list[dict]:
-    rows: list[dict] = []
-    seen: set[str] = set()
-    while path:
-        if path in seen:
-            raise RuntimeError("Kong pagination loop detected")
-        seen.add(path)
-        page = request(base, "GET", path)
-        rows.extend(page.get("data", []))
-        next_path = page.get("next")
-        if next_path and not str(next_path).startswith("/"):
-            raise RuntimeError("unsafe Kong pagination URL")
-        path = next_path
-    return rows
+    normalize = normalize_admin_reference if base == PRIVATE_ADMIN_URL else lambda value: http_admin_url(base, value)
+    return collect_admin_rows(lambda value: request(base, "GET", value), path, normalize)
 
 
 def one(rows: list[dict], label: str) -> dict | None:

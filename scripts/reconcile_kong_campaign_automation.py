@@ -10,7 +10,7 @@ import sys
 import textwrap
 from pathlib import Path
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import urlopen as open_jwks
 
 SCRIPTS = str(Path(__file__).resolve().parent)
 if SCRIPTS not in sys.path:
@@ -19,8 +19,9 @@ if SCRIPTS not in sys.path:
 from kong_admin_channel import (
     PRIVATE_ADMIN_URL,
     admin_request,
-    form_payload,
+    http_admin_request,
     normalize_admin_reference,
+    open_admin_request as urlopen,
 )
 
 
@@ -29,10 +30,7 @@ def request(base: str, method: str, path: str, payload=None):
         return admin_request(
             method, normalize_admin_reference(path), payload, payload_encoding="form"
         )
-    data = None if payload is None else form_payload(payload, path)
-    with urlopen(Request(base.rstrip("/") + path, method=method, data=data), timeout=15) as response:
-        raw = response.read()
-        return json.loads(raw) if raw else None
+    return http_admin_request(base, method, path, payload, timeout=15, opener=urlopen)
 
 
 def _der_length(length: int) -> bytes:
@@ -67,7 +65,7 @@ def rsa_public_key_pem(jwk: dict[str, str]) -> str:
 
 
 def active_rsa_key(jwks_url: str, active_kid: str | None = None) -> dict[str, str]:
-    with urlopen(jwks_url, timeout=15) as response:
+    with open_jwks(jwks_url, timeout=15) as response:
         keys = json.load(response).get("keys", [])
     candidates = [
         key for key in keys

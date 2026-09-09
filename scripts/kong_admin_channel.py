@@ -13,6 +13,8 @@ import json
 import re
 import subprocess
 from urllib.parse import unquote, urlencode, urlsplit
+from urllib.error import HTTPError, URLError
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 DOCKER = ["docker", "--host", "unix:///var/run/docker.sock"]
 ADMIN_ORIGIN = "http://127.0.0.1:8001"
@@ -59,6 +61,7 @@ class AdminError(RuntimeError):
 
 def form_payload(payload: dict, path: str) -> bytes:
     """Encode Kong's flat form contract with canonical boolean tokens."""
+    path = urlsplit(path).path
     normalized = {}
     for key, value in payload.items():
         if not isinstance(key, str):
@@ -70,8 +73,8 @@ def form_payload(payload: dict, path: str) -> bytes:
         ]
     try:
         return urlencode(normalized, doseq=True).encode()
-    except (TypeError, UnicodeError) as exc:
-        raise AdminError(f"invalid Kong Admin form payload: {path}") from exc
+    except (TypeError, UnicodeError):
+        raise AdminError(f"invalid Kong Admin form payload: {path}") from None
 
 
 def run_json(argv: list[str]) -> dict:
@@ -154,11 +157,136 @@ def validate_admin_path(path) -> str:
 
 def normalize_admin_reference(value: str) -> str:
     """Convert Kong's same-origin pagination URL to a private-channel path."""
+    if not isinstance(value, str):
+        raise AdminError("unsafe Kong Admin URL")
     if value.startswith(ADMIN_ORIGIN + "/"):
         value = value[len(ADMIN_ORIGIN):]
     elif value.startswith(("http://", "https://")):
         raise AdminError("unsafe Kong Admin URL")
     return validate_admin_path(value)
+
+
+def http_admin_url(base: str, reference: str) -> str:
+    """Bind direct requests, including absolute pagination, to one Admin origin."""
+    try:
+        if not isinstance(base, str) or any(c.isspace() for c in base):
+            raise ValueError
+        origin = urlsplit(base)
+        if (origin.scheme not in {"http", "https"} or not origin.hostname
+                or origin.username is not None or origin.password is not None
+                or origin.path not in {"", "/"} or origin.query or origin.fragment):
+            raise ValueError
+        port = origin.port or (443 if origin.scheme == "https" else 80)
+        if not isinstance(reference, str) or not reference or any(c.isspace() for c in reference):
+            raise ValueError
+        target = urlsplit(reference)
+        if target.scheme or target.netloc:
+            target_port = target.port or (443 if target.scheme == "https" else 80)
+            if (target.scheme, target.hostname, target_port) != (origin.scheme, origin.hostname, port):
+                raise ValueError
+            if target.username is not None or target.password is not None or target.fragment:
+                raise ValueError
+            reference = target.path + ("?" + target.query if target.query else "")
+        path = validate_admin_path(reference)
+        return origin._replace(path="", query="", fragment="").geturl() + path
+    except (ValueError, TypeError):
+        raise AdminError("unsafe Kong Admin URL") from None
+
+
+class RejectAdminRedirects(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise AdminError("Kong Admin redirect rejected")
+
+
+def open_admin_request(request: Request, timeout: float):
+    # Private management traffic must not inherit a caller's HTTP proxy or
+    # follow a redirect. HTTPS keeps urllib's default certificate validation.
+    return build_opener(ProxyHandler({}), RejectAdminRedirects()).open(request, timeout=timeout)
+
+
+def response_value(method: str, path: str, code: int, raw: bytes):
+    label = f"Kong Admin {method} {urlsplit(path).path}"
+    if code not in SUCCESS_BY_METHOD[method]:
+        raise AdminError(f"{label}: HTTP {code}")
+    if len(raw) > MAX_BYTES:
+        raise AdminError(f"{label}: oversized response")
+    if code == 204 or (not raw.strip() and method != "GET"):
+        return None
+    try:
+        value = json.loads(raw)
+    except (UnicodeDecodeError, ValueError, RecursionError):
+        raise AdminError(f"{label}: invalid JSON response") from None
+    if not isinstance(value, dict):
+        raise AdminError(f"{label}: unexpected response shape")
+    return value
+
+
+def http_admin_request(base: str, method: str, path: str, payload=None, *,
+                       payload_encoding: str = "form", timeout: float = 10,
+                       opener=None):
+    """Direct isolated-runner transport with the same response/body contract."""
+    if method not in METHODS or payload_encoding not in {"json", "form"}:
+        raise AdminError("unsupported Kong Admin request")
+    url = http_admin_url(base, path)
+    label = f"Kong Admin {method} {urlsplit(url).path}"
+    if payload is not None and method == "GET":
+        raise AdminError(f"{label}: GET must not carry a body")
+    data, headers = None, {}
+    if payload is not None:
+        try:
+            if payload_encoding == "form":
+                if not isinstance(payload, dict):
+                    raise ValueError
+                data = form_payload(payload, urlsplit(url).path)
+                headers["Content-Type"] = "application/x-www-form-urlencoded"
+            else:
+                data = json.dumps(payload, allow_nan=False).encode()
+                headers["Content-Type"] = "application/json"
+        except (ValueError, TypeError, UnicodeError, RecursionError):
+            raise AdminError(f"{label}: invalid payload") from None
+        if len(data) > MAX_BYTES:
+            raise AdminError(f"{label}: oversized payload")
+    try:
+        with (opener or open_admin_request)(Request(url, data=data, method=method, headers=headers),
+                                           timeout=timeout) as response:
+            return response_value(method, url, response.status, response.read(MAX_BYTES + 1))
+    except HTTPError as error:
+        code = error.code
+        error.close()
+        raise AdminError(f"{label}: HTTP {code}") from None
+    except (URLError, OSError, ValueError):
+        raise AdminError(f"{label}: direct channel transport failure") from None
+
+
+def collect_admin_rows(fetch_page, path: str, normalize, *, max_pages: int = 100,
+                       max_rows: int = 10000) -> list[dict]:
+    """Reject incomplete/malformed inventory and bound changing pagination."""
+    rows, seen, identities = [], set(), set()
+    for _ in range(max_pages):
+        path = normalize(path)
+        if not isinstance(path, str) or not path:
+            raise AdminError("unsafe Kong pagination URL")
+        if path in seen:
+            raise AdminError("Kong pagination loop detected")
+        seen.add(path)
+        page = fetch_page(path)
+        if (not isinstance(page, dict) or not isinstance(page.get("data"), list)
+                or any(not isinstance(row, dict) for row in page["data"])):
+            raise AdminError("invalid Kong collection response")
+        if len(rows) + len(page["data"]) > max_rows:
+            raise AdminError("Kong collection row limit exceeded")
+        for row in page["data"]:
+            if "id" in row:
+                if not isinstance(row["id"], str) or not row["id"] or row["id"] in identities:
+                    raise AdminError("invalid or duplicate Kong collection identity")
+                identities.add(row["id"])
+        rows.extend(page["data"])
+        path = page.get("next")
+        if path is None or path == "":
+            return rows
+        if not isinstance(path, str):
+            raise AdminError("unsafe Kong pagination URL")
+    raise AdminError("Kong collection page limit exceeded")
 
 
 def admin_request(
@@ -175,23 +303,27 @@ def admin_request(
     if payload_encoding not in {"json", "form"}:
         raise AdminError(f"unsupported Kong Admin payload encoding: {payload_encoding}")
     path = validate_admin_path(path)
+    label = f"Kong Admin {method} {urlsplit(path).path}"
     if payload is not None and method == "GET":
-        raise AdminError(f"Kong Admin GET must not carry a body: {path}")
+        raise AdminError(f"{label}: GET must not carry a body")
     identifier = container_identity(container)
     argv = DOCKER + ["exec"]
     body = None
     content_type = None
     if payload is not None:
-        if payload_encoding == "form":
-            if not isinstance(payload, dict):
-                raise AdminError(f"invalid Kong Admin form payload: {path}")
-            body = form_payload(payload, path)
-            content_type = "application/x-www-form-urlencoded"
-        else:
-            body = json.dumps(payload).encode()
-            content_type = "application/json"
+        try:
+            if payload_encoding == "form":
+                if not isinstance(payload, dict):
+                    raise ValueError
+                body = form_payload(payload, path)
+                content_type = "application/x-www-form-urlencoded"
+            else:
+                body = json.dumps(payload, allow_nan=False).encode()
+                content_type = "application/json"
+        except (ValueError, TypeError, UnicodeError, RecursionError):
+            raise AdminError(f"{label}: invalid payload") from None
         if len(body) > MAX_BYTES:
-            raise AdminError(f"oversized Kong Admin payload: {path}")
+            raise AdminError(f"{label}: oversized payload")
         # Bodies travel on stdin so they never reach argv or the process table.
         argv.append("--interactive")
     argv += [identifier, "curl", "--disable", "--noproxy", "*", "--proto", "=http",
@@ -204,25 +336,13 @@ def admin_request(
     try:
         result = subprocess.run(argv, input=body or b"", capture_output=True,
                                 timeout=PROCESS_TIMEOUT, check=False)
-    except (OSError, subprocess.SubprocessError) as exc:
+    except (OSError, subprocess.SubprocessError):
         raise AdminError(
-            f"Kong Admin {method} {path}: private channel transport failure"
-        ) from exc
+            f"{label}: private channel transport failure"
+        ) from None
     if result.returncode or len(result.stdout) > MAX_BYTES:
-        raise AdminError(f"Kong Admin {method} {path}: private channel transport failure")
+        raise AdminError(f"{label}: private channel transport failure")
     raw, separator, status = result.stdout.rpartition(b"\n")
     if not separator or not re.fullmatch(rb"[0-9]{3}", status):
-        raise AdminError(f"Kong Admin {method} {path}: unreadable response")
-    code = int(status)
-    if code not in SUCCESS_BY_METHOD[method]:
-        # Redirects are neither followed nor accepted; only 2xx replies proceed.
-        raise AdminError(f"Kong Admin {method} {path}: {code} {raw.decode(errors='replace')[:500]}")
-    if code == 204 or not raw.strip():
-        return None
-    try:
-        value = json.loads(raw)
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise AdminError(f"Kong Admin {method} {path}: invalid JSON response") from exc
-    if not isinstance(value, dict):
-        raise AdminError(f"Kong Admin {method} {path}: unexpected response shape")
-    return value
+        raise AdminError(f"{label}: unreadable response")
+    return response_value(method, path, int(status), raw)

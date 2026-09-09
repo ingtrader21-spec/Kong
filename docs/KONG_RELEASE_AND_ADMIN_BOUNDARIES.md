@@ -53,7 +53,7 @@ Only `GET`, `POST`, `PATCH` and `DELETE` are offered, against checked Admin
 paths. There is no shell, redirect following, arbitrary URL or credential
 endpoint. Write bodies travel on stdin, so service, route and plugin payloads
 never reach argv or the host process table. Replies are bounded, non-2xx
-statuses fail closed with truncated detail, and `confirm_unchanged()` re-verifies
+statuses fail closed with the method, endpoint path and status only, and `confirm_unchanged()` re-verifies
 the container before a client reports PASS, so a replaced runtime fails instead
 of being silently adopted.
 
@@ -68,6 +68,29 @@ the retained `127.0.0.1:8000` proxy publication.
 
 This is a source change to management paths only. It grants no Docker, socket or
 sudo access, and authorizes no runtime mutation.
+
+### Direct transport and collection validation
+
+The explicitly selected HTTP(S) Admin transport used by isolated runners shares
+the private channel's method, payload encoding, status and JSON-object checks.
+It binds every request and pagination reference to the selected origin, rejects
+userinfo and non-root Admin base URLs, refuses redirects, and disables inherited
+HTTP proxies. HTTPS certificate verification remains enabled. These choices use
+the standard-library [urllib handler interfaces](https://docs.python.org/3.12/library/urllib.request.html).
+Response reads are limited to 2 MiB plus one overflow-detection byte. Request
+bodies retain canonical form booleans or explicit JSON encoding as selected by
+the client. A failed GET or an empty/non-object GET response cannot become an
+empty successful inventory.
+
+Neither raw Admin error bodies, query parameters, untrusted HTTP reason text nor
+actual/expected plugin configuration values belong in diagnostic messages.
+Drift errors identify the mismatched field and support set-valued comparisons.
+
+Canonical, callback, n8n and export inventory pagination validates every page and
+entity, detects repeated normalized references and duplicate entity IDs, and
+stops after 100 pages or 10,000 rows. A malformed page or exceeded bound fails the
+operation; it is never accepted as an empty or complete inventory. This remains
+bounded read-back, not an atomic snapshot or proof of staging certification.
 
 ## Build on main, promote the same bytes
 
