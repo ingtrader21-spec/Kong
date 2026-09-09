@@ -348,6 +348,27 @@ def test_container_replacement_during_the_operation_is_detected(monkeypatch):
         channel.confirm_unchanged()
 
 
+def test_every_private_request_rechecks_the_named_container(monkeypatch):
+    channel = module()
+    calls = stubbed(channel, monkeypatch)
+    identities = iter(["a" * 64, "a" * 64, "b" * 64])
+    monkeypatch.setattr(channel, "verify_container", lambda container: next(identities))
+    assert channel.admin_request("GET", "/status") == {"data": []}
+    with pytest.raises(channel.AdminError, match="container changed"):
+        channel.admin_request("GET", "/status")
+    assert len(calls) == 1
+
+
+def test_private_response_is_rejected_if_container_changes_during_request(monkeypatch):
+    channel = module()
+    calls = stubbed(channel, monkeypatch)
+    identities = iter(["a" * 64, "b" * 64])
+    monkeypatch.setattr(channel, "verify_container", lambda container: next(identities))
+    with pytest.raises(channel.AdminError, match="container changed"):
+        channel.admin_request("GET", "/status")
+    assert len(calls) == 1
+
+
 def test_private_errors_never_disclose_response_body_or_query(monkeypatch):
     channel = module()
     stubbed(channel, monkeypatch, stdout=b'{"password":"response-sentinel"}\n400')

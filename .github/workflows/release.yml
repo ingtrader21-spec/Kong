@@ -51,7 +51,7 @@ jobs:
       EXPECTED_SHA: ${{ github.sha }}
       KONG_IMAGE_REF: kong/kong-gateway:3.14.0.1-ubuntu
       STANDBY_IMAGE_REPOSITORY: ghcr.io/appolon1908-hue/kong-standby-auth
-      CONFIGURED_STAGING_CERTIFICATION: ${{ vars.STAGING_CERTIFICATION }}
+      STAGING_CERTIFICATION_RUN_ID: ${{ vars.KONG_STAGING_CERTIFICATION_RUN_ID }}
       CERTIFIED_SOURCE_SHA: ${{ vars.KONG_CERTIFIED_SOURCE_SHA }}
       KONG_CANDIDATE_RUN_ID: ${{ vars.KONG_CANDIDATE_RUN_ID }}
     steps:
@@ -100,6 +100,21 @@ jobs:
             --source-sha "${CERTIFIED_SOURCE_SHA}" \
             --run-id "${KONG_CANDIDATE_RUN_ID}" \
             --output-dir "${RUNNER_TEMP}/candidate" \
+            --github-output "${GITHUB_OUTPUT}"
+
+      - name: Authenticate complete isolated staging evidence
+        id: runtime_certification
+        if: github.ref_name != 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          [[ "${STAGING_CERTIFICATION_RUN_ID}" =~ ^[1-9][0-9]*$ ]]
+          python3 tools/verify_staging_certification.py \
+            --source-sha "${CERTIFIED_SOURCE_SHA}" \
+            --run-id "${STAGING_CERTIFICATION_RUN_ID}" \
+            --candidate-manifest "${RUNNER_TEMP}/candidate/release-manifest.json" \
+            --output-dir "${RUNNER_TEMP}/staging-certification" \
             --github-output "${GITHUB_OUTPUT}"
 
       - name: Authenticate to GHCR for immutable candidate publication
@@ -174,6 +189,7 @@ jobs:
           STANDBY_AUTH_IMAGE_DIGEST: ${{ steps.candidate.outputs.standby_digest || steps.standby.outputs.digest }}
           CANDIDATE_MANIFEST_SHA256: ${{ steps.candidate.outputs.manifest_sha256 }}
           CANDIDATE_ARTIFACT_ID: ${{ steps.candidate.outputs.artifact_id }}
+          VERIFIED_STAGING_CERTIFICATION: ${{ steps.runtime_certification.outputs.staging_certification }}
         run: |
           set -Eeuo pipefail
           python3 -m pip install --disable-pip-version-check --no-input PyYAML
@@ -184,11 +200,11 @@ jobs:
               ;;
             staging)
               release_stage=staging-certified
-              staging_certification="${CONFIGURED_STAGING_CERTIFICATION}"
+              staging_certification="${VERIFIED_STAGING_CERTIFICATION}"
               ;;
             production)
               release_stage=production
-              staging_certification="${CONFIGURED_STAGING_CERTIFICATION}"
+              staging_certification="${VERIFIED_STAGING_CERTIFICATION}"
               ;;
           esac
           promotion_args=()
@@ -200,6 +216,8 @@ jobs:
               --candidate-manifest-sha256 "${CANDIDATE_MANIFEST_SHA256}"
               --candidate-run-id "${KONG_CANDIDATE_RUN_ID}"
               --candidate-artifact-id "${CANDIDATE_ARTIFACT_ID}"
+              --staging-evidence "${RUNNER_TEMP}/staging-certification/certification.json"
+              --staging-receipt "${RUNNER_TEMP}/staging-certification/receipt.json"
             )
           fi
           python3 tools/generate_release_manifest.py \
@@ -223,6 +241,8 @@ jobs:
             ${{ runner.temp }}/kong-image.txt
             ${{ runner.temp }}/kong-image-inspect.txt
             ${{ runner.temp }}/candidate/receipt.json
+            ${{ runner.temp }}/staging-certification/certification.json
+            ${{ runner.temp }}/staging-certification/receipt.json
           if-no-files-found: error
           retention-days: 90
 

@@ -6,9 +6,11 @@ import argparse
 import hashlib
 import io
 import json
+import os
 import re
 import shutil
 import sys
+import tempfile
 import zipfile
 from pathlib import Path
 
@@ -53,8 +55,22 @@ def package_release(compilation, output, source_sha, image_digest, rollback_sha)
     package = buffer.getvalue()
     if len(package) > MAX_PACKAGE_BYTES:
         raise ContractError("package_too_large")
-    with Path(output).open("xb") as handle:
-        handle.write(package)
+    target = Path(output)
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{target.name}.", dir=target.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            descriptor = -1
+            handle.write(package)
+            handle.flush()
+            os.fsync(handle.fileno())
+        # A same-filesystem hard link atomically publishes without overwriting an
+        # existing release. The private temporary inode is always removed below.
+        os.link(temporary, target)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        temporary.unlink(missing_ok=True)
     return manifest
 
 

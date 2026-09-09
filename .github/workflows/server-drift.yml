@@ -27,7 +27,12 @@ jobs:
       - name: Require reviewed capture implementation
         run: |
           test -x tools/capture_kong_server_baseline.sh
-          tools/capture_kong_server_baseline.sh "${RUNNER_TEMP}/kong-production-readback.json"
+          # Production still runs the reviewed 29-route contract. The 27-route
+          # successor remains source-only until protected activation succeeds.
+          tools/capture_kong_server_baseline.sh \
+            "${RUNNER_TEMP}/kong-production-readback.json" \
+            --expected-route-count 29 \
+            --expected-inventory docs/evidence/PRODUCTION_ROUTE_READBACK_20260906.json
       - name: Upload sanitized read-only evidence
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
