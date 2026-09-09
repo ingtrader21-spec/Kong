@@ -108,6 +108,28 @@ def test_complete_sanitized_capture_supports_versioned_route_contracts(monkeypat
     assert result['routes'][0]['hosts'] == []
 
 
+def test_active_capture_requires_exact_reviewed_route_definitions(monkeypatch, tmp_path):
+    capture = module(); _, getter = capture_fixture(29)
+    monkeypatch.setattr(capture, 'verify_container', lambda name: 'a'*64)
+    monkeypatch.setattr(capture, 'admin_get', getter)
+    result = capture.capture('kong', 29)
+    authority = tmp_path / 'active-routes.json'
+    document = {
+        'schema': 'codestra.kong.production-route-readback.v1',
+        'expectedRouteCount': 29,
+        'actualRouteCount': 29,
+        'secretsCaptured': False,
+        'runtimeMutated': False,
+        'routes': copy.deepcopy(result['routes']),
+    }
+    authority.write_text(json.dumps(document))
+    capture.require_reviewed_routes(result, authority)
+    document['routes'][0]['service']['host'] = 'mixed-candidate.internal'
+    authority.write_text(json.dumps(document))
+    with pytest.raises(capture.CaptureError, match='active_route_contract_mismatch'):
+        capture.require_reviewed_routes(result, authority)
+
+
 @pytest.mark.parametrize('damage', ['count', 'duplicate-name', 'duplicate-id', 'missing-service'])
 def test_partial_or_ambiguous_capture_rejected(monkeypatch, damage):
     capture = module(); routes, getter = capture_fixture()

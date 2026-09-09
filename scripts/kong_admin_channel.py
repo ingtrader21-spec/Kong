@@ -345,6 +345,9 @@ def admin_request(
         ) from None
     if result.returncode or len(result.stdout) > MAX_BYTES:
         raise AdminError(f"{label}: private channel transport failure")
+    # Do not accept even a successful response if the named gateway changed
+    # between identity resolution and completion of docker exec.
+    confirm_unchanged(container)
     raw, separator, status = result.stdout.rpartition(b"\n")
     if not separator or not re.fullmatch(rb"[0-9]{3}", status):
         raise AdminError(f"{label}: unreadable response")
