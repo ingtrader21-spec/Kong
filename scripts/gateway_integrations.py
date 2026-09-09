@@ -265,7 +265,7 @@ def compile_integrations(documents, *, environment):
                 plugins[0]["config"]["not_after"] = int(datetime.combine(
                     date.fromisoformat(auth["legacySunset"]), datetime.min.time(), tzinfo=timezone.utc).timestamp())
             if template in OIDC:
-                plugins.extend([_plugin("openid-connect", {"issuer": auth["issuer"], "auth_methods": ["bearer"],
+                plugins.extend([_plugin("openid-connect", {"issuer": auth["issuer"] + "/.well-known/openid-configuration", "auth_methods": ["bearer"],
                     "bearer_token_param_type": ["header"], "audience_required": [auth["audience"]], "consumer_claim": ["azp"],
                     "scopes_required": sorted(route["scopes"]), "ssl_verify": True}),
                     _plugin("codestra-authz", {"issuer": auth["issuer"], "audience": auth["audience"],
@@ -300,6 +300,8 @@ def compile_integrations(documents, *, environment):
     for service in services.values():
         service["routes"].sort(key=lambda r: r["name"])
     declarative = {"_format_version": "3.0", "_transform": True,
+                   "plugins": [_plugin("prometheus", {"status_code_metrics": True, "latency_metrics": True,
+                       "bandwidth_metrics": True, "upstream_health_metrics": True})],
                    "services": [services[k] for k in sorted(services)],
                    "upstreams": [upstreams[k] for k in sorted(upstreams)],
                    "consumers": [{"username": party} for party in sorted({party for d in selected

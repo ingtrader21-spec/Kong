@@ -138,17 +138,17 @@ files:
   sha256: 564ed802dfdce20c131aa96d0e97ca97603be4f57b05f2f544aaac92dd5c27b2
   size: 61436
 - path: deploy/gateway-platform/README.md
-  sha256: d7b2a9f3a05f6ea16b065c74fc03f34cdfdfa2d5d18f861ccafcaf74e14f8fd4
-  size: 2899
+  sha256: 96fef4858afd5a57ebd578df280a96545d37366025e96ba09a1df66cc1a606b7
+  size: 3841
 - path: deploy/gateway-platform/codestra-kong-entrypoint.sh
   sha256: 9e50a3a2f181d011a2ecf6728b0d9a220ce6fc87370d14c7f49f72623c0c586c
   size: 487
 - path: deploy/gateway-platform/compose.hybrid.yaml
-  sha256: 8a17266b89ea4a86b9e94e485b243cc71f7e0b04019bfd4d590e3d657956d12d
-  size: 8218
+  sha256: 3be0162d918a147156c8d49f955f71b9e4617461430ed16e26bbb2a439c5d0de
+  size: 9098
 - path: deploy/gateway-platform/compose.traditional.yaml
-  sha256: a72015501be35f708019d14affd3283e9a0811649ba9b1015d8fa2ac9003923d
-  size: 7153
+  sha256: 9970c7b29be85508976f05fd37ef5151b1a8c05689860df2bc04c5fd5c416565
+  size: 8033
 - path: deploy/gateway-platform/network-boundaries.yaml
   sha256: b4730c593b6838b6b5498e0cc5f6007f37b8b9e82f47c6ab935be884c9c59a16
   size: 1455
@@ -432,8 +432,8 @@ files:
   sha256: 7b6410aa7a55414f24b48f270800fbdf83ede229a1aa86d04cea918e4d9a2634
   size: 8761
 - path: scripts/gateway_integrations.py
-  sha256: b7d7757faec3eecdabd11355aa794de2319f378f726825f5f0022691c7d0fd05
-  size: 19609
+  sha256: fb05b739e47f8fd5b1c5770175a01d2bf936f1d9bc7277174c7a479509fbe456
+  size: 19841
 - path: scripts/kong_admin_channel.py
   sha256: 75c1be491e95435c83f65bf9c5129c4603b6488f93777b3c1ecf2b9cb15ec67f
   size: 16009
@@ -498,11 +498,11 @@ files:
   sha256: a189aa86cab419b91e420472d72624aab6bf540a9ab653a4a8c9a4cf1b9069ad
   size: 10355
 - path: tests/test_gateway_foundation_authority.py
-  sha256: ee227e1e40fa7d95b19b113174e7b93fbc7e3a6330b3235f09b6f42c77b7dddb
-  size: 4497
+  sha256: fa71595671ec091a3bf7f18986d5091d06394bc7957d026b4fdd81ad9cfff91c
+  size: 5103
 - path: tests/test_gateway_integrations.py
-  sha256: a0cd03b2646ec02634db13fe8cf4e75e569391f3d2ad2445c6192c0c957b2f8d
-  size: 10059
+  sha256: 239f406b724ee9f77d2876683918cad7427fdd7536031c73250c85179048eb95
+  size: 10342
 - path: tests/test_gateway_plugins.py
   sha256: 2731aa18a67470ecb41dc00c382c4cb74d1f20f6421deb81f84c80ddb94ac839
   size: 9724
@@ -600,7 +600,7 @@ files:
   sha256: 8ba5e5a4f045ec9b78ed11af1fce8fc6a808857feebcd724c85266673b7cf890
   size: 6613
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: a1ad3fb343ac720a8af43c861c305405f8123f7ec25e741e0e53ad9c3fa47f79
+manifest_generation_id: 0e0eb3000fefdda2bdac923527ba4e2bf64168d456dfa0293cfdcfff5e80c21c
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:

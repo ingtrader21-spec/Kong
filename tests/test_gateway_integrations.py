@@ -33,6 +33,9 @@ def test_example_compiles_to_guarded_upstream(contract):
     assert service["tls_verify"] is True
     assert service["retries"] == 0
     assert plugins["openid-connect"]["auth_methods"] == ["bearer"]
+    assert plugins["openid-connect"]["issuer"] == "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration"
+    assert plugins["codestra-authz"]["issuer"] == "https://auth.codestra.co/realms/codestra"
+    assert output["kong"]["plugins"][0]["name"] == "prometheus"
     assert plugins["openid-connect"]["bearer_token_param_type"] == ["header"]
     assert plugins["codestra-authz"]["scopes"] == ["moneybee.account.bootstrap"]
     assert plugins["rate-limiting"]["fault_tolerant"] is False
