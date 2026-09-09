@@ -9,12 +9,27 @@ import json
 import sys
 import yaml
 from pathlib import Path
-from urllib.parse import urlencode, urljoin, urlsplit
+from urllib.parse import urljoin, urlsplit
 from urllib.request import Request, urlopen
+
+SCRIPTS = str(Path(__file__).resolve().parent)
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
+
+from kong_admin_channel import (
+    PRIVATE_ADMIN_URL,
+    admin_request,
+    form_payload,
+    normalize_admin_reference,
+)
 
 
 def request(base: str, method: str, path: str, payload=None) -> dict:
-    data = None if payload is None else urlencode(payload, doseq=True).encode()
+    if base == PRIVATE_ADMIN_URL:
+        return admin_request(
+            method, normalize_admin_reference(path), payload, payload_encoding="form"
+        ) or {}
+    data = None if payload is None else form_payload(payload, path)
     url = path if path.startswith(("http://", "https://")) else base.rstrip("/") + path
     with urlopen(Request(url, method=method, data=data), timeout=10) as response:
         raw = response.read()
@@ -24,6 +39,8 @@ def request(base: str, method: str, path: str, payload=None) -> dict:
 def safe_next(base: str, value: str | None) -> str | None:
     if not value:
         return None
+    if base == PRIVATE_ADMIN_URL:
+        return normalize_admin_reference(value)
     base_url = urlsplit(base)
     resolved = urlsplit(urljoin(base.rstrip("/") + "/", value))
     if (resolved.scheme, resolved.netloc) != (base_url.scheme, base_url.netloc):
@@ -484,7 +501,7 @@ def verify_managed_route(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--admin-url", required=True)
+    parser.add_argument("--admin-url", default=PRIVATE_ADMIN_URL)
     parser.add_argument(
         "--manifest",
         type=Path,

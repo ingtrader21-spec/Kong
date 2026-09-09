@@ -24,24 +24,40 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Require exact main to staging promotion
+      - name: Require exact main tree for staging promotion
         env:
           GH_TOKEN: ${{ github.token }}
           EVENT_NAME: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MERGE_SHA: ${{ github.sha }}
         run: |
           set -Eeuo pipefail
           if [[ "$EVENT_NAME" == pull_request ]]; then
             test "$BASE_REF" = staging
-            test "$HEAD_REF" = main
             test "$HEAD_SHA" = "$(git rev-parse HEAD)"
             main_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)"
-            staging_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/staging" --jq .object.sha)"
-            test "$HEAD_SHA" = "$main_sha"
-            comparison="$(gh api "repos/${GITHUB_REPOSITORY}/compare/${staging_sha}...${HEAD_SHA}" --jq .status)"
-            [[ "$comparison" == ahead || "$comparison" == identical ]]
+            main_tree="$(gh api "repos/${GITHUB_REPOSITORY}/git/commits/${main_sha}" --jq .tree.sha)"
+            head_tree="$(git rev-parse 'HEAD^{tree}')"
+            head_verified="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}" --jq .commit.verification.verified)"
+            test "$head_verified" = true
+            case "$HEAD_REF" in
+              main)
+                test "$HEAD_SHA" = "$main_sha"
+                ;;
+              "release/staging-main-${main_sha:0:12}")
+                test "$head_tree" = "$main_tree"
+                ;;
+              *)
+                echo "unapproved staging source branch: $HEAD_REF" >&2
+                exit 1
+                ;;
+            esac
+            # Normal/squash/rebase promotions can diverge in commit identity.
+            # The synthetic merge must preserve exactly the current main tree.
+            merge_tree="$(gh api "repos/${GITHUB_REPOSITORY}/git/commits/${MERGE_SHA}" --jq .tree.sha)"
+            test "$merge_tree" = "$main_tree"
           else
             test "${GITHUB_REF_NAME}" = staging
             test "$(git rev-parse HEAD)" = "$GITHUB_SHA"

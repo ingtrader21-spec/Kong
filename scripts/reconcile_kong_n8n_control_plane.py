@@ -5,11 +5,22 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+SCRIPTS = str(Path(__file__).resolve().parent)
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
+
+from kong_admin_channel import (
+    PRIVATE_ADMIN_URL,
+    admin_request,
+    form_payload,
+    normalize_admin_reference,
+)
 from reconcile_kong_campaign_automation import (
     active_rsa_key,
     plugin_form,
@@ -20,13 +31,11 @@ from reconcile_kong_campaign_automation import (
 
 
 def request(base: str, method: str, path: str, payload=None) -> dict:
-    normalized = None
-    if payload is not None:
-        normalized = {
-            key: "true" if value is True else "false" if value is False else value
-            for key, value in payload.items()
-        }
-    data = None if normalized is None else urlencode(normalized, doseq=True).encode()
+    if base == PRIVATE_ADMIN_URL:
+        return admin_request(
+            method, normalize_admin_reference(path), payload, payload_encoding="form"
+        ) or {}
+    data = None if payload is None else form_payload(payload, path)
     with urlopen(Request(base.rstrip("/") + path, method=method, data=data), timeout=15) as response:
         raw = response.read()
         return json.loads(raw) if raw else {}
@@ -310,7 +319,7 @@ def ensure_route(admin: str, spec: dict, service: dict, expected: dict, apply: b
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--admin-url", required=True)
+    parser.add_argument("--admin-url", default=PRIVATE_ADMIN_URL)
     parser.add_argument("--jwks-url", required=True)
     parser.add_argument("--manifest", type=Path, default=Path("config/kong-n8n-control-plane-routes.json"))
     parser.add_argument("--evidence", type=Path, required=True)
