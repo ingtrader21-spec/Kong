@@ -15,6 +15,13 @@ REHEARSAL = "operations/kong-database/kong-database-restore-rehearsal.sh"
 # Naming the container-loopback origin is only safe inside the channel itself and
 # in clients that reach it exclusively through the channel.
 CHANNEL_MEDIATED = {"scripts/kong_admin_channel.py", REHEARSAL}
+PRIVATE_CLIENTS = (
+    "scripts/reconcile_kong_canonical_routes.py",
+    "scripts/reconcile_kong_callback_routes.py",
+    "scripts/reconcile_kong_campaign_automation.py",
+    "scripts/reconcile_kong_n8n_control_plane.py",
+    "scripts/export_kong_public_route_contracts.py",
+)
 
 
 def load(path: Path, name: str):
@@ -72,6 +79,41 @@ def test_no_other_operational_client_assumes_a_published_host_admin_port():
                        if HOST_ADMIN in path.read_text()
                        and path.relative_to(ROOT).as_posix() not in CHANNEL_MEDIATED)
     assert offenders == []
+
+
+def test_remaining_admin_clients_default_to_the_private_channel():
+    for name in PRIVATE_CLIENTS:
+        source = (ROOT / name).read_text()
+        assert "default=PRIVATE_ADMIN_URL" in source
+        assert "admin_request(" in source
+
+
+@pytest.mark.parametrize("name", PRIVATE_CLIENTS[:-1])
+def test_reconcilers_dispatch_private_requests_without_urlopen(monkeypatch, name):
+    client = load(ROOT / name, "private_" + Path(name).stem)
+    calls = []
+    monkeypatch.setattr(
+        client,
+        "admin_request",
+        lambda method, path, payload=None: calls.append((method, path, payload)) or {"data": []},
+    )
+    assert client.request(client.PRIVATE_ADMIN_URL, "GET", "/routes?size=1000") == {"data": []}
+    assert calls == [("GET", "/routes?size=1000", None)]
+
+
+def test_exporter_dispatches_private_get_without_urlopen(monkeypatch):
+    client = load(ROOT / PRIVATE_CLIENTS[-1], "private_exporter")
+    calls = []
+    monkeypatch.setattr(
+        client,
+        "admin_request",
+        lambda method, path: calls.append((method, path)) or {"data": []},
+    )
+    assert client.request(
+        client.PRIVATE_ADMIN_URL,
+        HOST_ADMIN + "/routes?offset=next",
+    ) == {"data": []}
+    assert calls == [("GET", "/routes?offset=next")]
 
 
 def test_channel_and_read_only_capture_require_the_same_admin_contract():
@@ -207,6 +249,15 @@ def test_entity_ids_must_be_kong_uuids(value):
     channel = module()
     with pytest.raises(channel.AdminError):
         channel.entity_id(value)
+
+
+def test_same_origin_pagination_is_normalized_for_private_channel():
+    channel = module()
+    assert channel.normalize_admin_reference(
+        channel.ADMIN_ORIGIN + "/routes?offset=next"
+    ) == "/routes?offset=next"
+    with pytest.raises(channel.AdminError, match="unsafe Kong Admin URL"):
+        channel.normalize_admin_reference("https://attacker.invalid/routes")
 
 
 def test_oversized_replies_fail_closed(monkeypatch):

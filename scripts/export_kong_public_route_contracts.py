@@ -13,10 +13,16 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 from urllib.request import Request, urlopen
 
+SCRIPTS = str(Path(__file__).resolve().parent)
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
+
+from kong_admin_channel import PRIVATE_ADMIN_URL, admin_request, normalize_admin_reference
 
 SENSITIVE_KEYS = {
     "api_key",
@@ -64,6 +70,8 @@ PRIVATE_KEY_MARKER = re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY--
 
 
 def request(base: str, path: str) -> dict:
+    if base == PRIVATE_ADMIN_URL:
+        return admin_request("GET", normalize_admin_reference(path)) or {}
     url = path if path.startswith(("http://", "https://")) else base.rstrip("/") + path
     with urlopen(Request(url, method="GET"), timeout=10) as response:
         raw = response.read()
@@ -73,6 +81,8 @@ def request(base: str, path: str) -> dict:
 def safe_next(base: str, value: str | None) -> str | None:
     if not value:
         return None
+    if base == PRIVATE_ADMIN_URL:
+        return normalize_admin_reference(value)
     base_url = urlsplit(base)
     resolved = urlsplit(urljoin(base.rstrip("/") + "/", value))
     if (resolved.scheme, resolved.netloc) != (base_url.scheme, base_url.netloc):
@@ -207,7 +217,7 @@ def route_record(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--admin-url", required=True)
+    parser.add_argument("--admin-url", default=PRIVATE_ADMIN_URL)
     parser.add_argument(
         "--manifest",
         type=Path,

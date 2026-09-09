@@ -16,6 +16,7 @@ from urllib.parse import unquote, urlsplit
 
 DOCKER = ["docker", "--host", "unix:///var/run/docker.sock"]
 ADMIN_ORIGIN = "http://127.0.0.1:8001"
+PRIVATE_ADMIN_URL = "container://kong-gateway"
 DEFAULT_CONTAINER = "codestra-kong-kong-gateway-1"
 COMPOSE_SERVICE = "kong-gateway"
 REQUIRED_LISTENERS = {"KONG_ADMIN_LISTEN=127.0.0.1:8001", "KONG_ADMIN_GUI_LISTEN=off"}
@@ -132,6 +133,15 @@ def validate_admin_path(path) -> str:
             or any(ord(character) < 32 or ord(character) == 127 for character in decoded_path)):
         raise AdminError("unsafe Kong Admin path")
     return path
+
+
+def normalize_admin_reference(value: str) -> str:
+    """Convert Kong's same-origin pagination URL to a private-channel path."""
+    if value.startswith(ADMIN_ORIGIN + "/"):
+        value = value[len(ADMIN_ORIGIN):]
+    elif value.startswith(("http://", "https://")):
+        raise AdminError("unsafe Kong Admin URL")
+    return validate_admin_path(value)
 
 
 def admin_request(method: str, path: str, payload=None, container: str = DEFAULT_CONTAINER):

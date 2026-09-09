@@ -557,13 +557,13 @@
     },
     {
       "path": "scripts/export_kong_public_route_contracts.py",
-      "sha256": "90e987bc0ad0d4e4567106617a20a2d63f44b7c186d164dad9fda4b1b6fad557",
-      "size": 8790
+      "sha256": "9613633fd2a4ef0f8c22801a2ed18daf020b940bec1e2139e92cee9a69b6b595",
+      "size": 9203
     },
     {
       "path": "scripts/kong_admin_channel.py",
-      "sha256": "b2e82872b55d011c63b7762b924db40ea83bd800543d2327a9a49b3daac601dd",
-      "size": 8527
+      "sha256": "81ad1573e932d5f29cbb63939de3d4bbe085337f3b87e00c24aa47ce427838cb",
+      "size": 8932
     },
     {
       "path": "scripts/probe_n8n_production_routes.py",
@@ -572,23 +572,23 @@
     },
     {
       "path": "scripts/reconcile_kong_callback_routes.py",
-      "sha256": "1c96bd766f83a1c6930a208d427bc810ba67c5f8ea7df46749b3a2e293a831cd",
-      "size": 20715
+      "sha256": "61da7b593b297c759105424d64bdd521c07132737bc433beea0be7dbe110c070",
+      "size": 21175
     },
     {
       "path": "scripts/reconcile_kong_campaign_automation.py",
-      "sha256": "15031a4df971a83dc3106d9d6b169de2ab848c5e80f652ad69ce7023b3b99157",
-      "size": 13429
+      "sha256": "e98980cef74adce715d6d646b86d5adb2a6b41df02b641c318296bbc94dbdbe0",
+      "size": 13765
     },
     {
       "path": "scripts/reconcile_kong_canonical_routes.py",
-      "sha256": "486261ecf6d1aee0e1abb65d275e06b0927364f183d77a7af50756f58ad253f1",
-      "size": 24063
+      "sha256": "f4a576887aff03e86aa1e6070c3f7ce6d4344fc515eb62d537adbc929a9372e8",
+      "size": 24493
     },
     {
       "path": "scripts/reconcile_kong_n8n_control_plane.py",
-      "sha256": "3f914cfd3ee09171e8531e4cf31c9b4b8e6ef7ba7ea6b1e830705d5770982f9b",
-      "size": 16138
+      "sha256": "f6b68e275d0a52eab0d1d19107f4b09d48375327d1e09ef42db643f518af826c",
+      "size": 16479
     },
     {
       "path": "scripts/render_kong_calling_routes.py",
@@ -672,8 +672,8 @@
     },
     {
       "path": "tests/test_kong_admin_channel.py",
-      "sha256": "7da326342752e5ee4ade628984d16113aece917cea8f7efff7f438607ca92f59",
-      "size": 9575
+      "sha256": "5aa9eef59463b4c82271f7ad9ed7e29577575db93efdeeb9ab2b90426fc84c14",
+      "size": 11489
     },
     {
       "path": "tests/test_kong_calling_policy.py",
@@ -807,7 +807,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "05bdabc3157e6c29b3f26db6a6e2b2ee74a15ebc850f34db1a64027f873cd8d4",
+  "manifest_generation_id": "24f1ff0c45c17e2286411dca893bd69951796be8c6e7be69417bbbabc618aded",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
