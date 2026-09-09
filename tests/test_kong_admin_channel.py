@@ -105,6 +105,40 @@ def test_reconcilers_dispatch_private_requests_without_urlopen(monkeypatch, name
     ]
 
 
+@pytest.mark.parametrize("name", PRIVATE_CLIENTS[:-1])
+def test_reconcilers_normalize_form_booleans_on_direct_transport(monkeypatch, name):
+    client = load(ROOT / name, "direct_" + Path(name).stem)
+    calls = []
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return b'{"id":"updated"}'
+
+    def open_request(request, timeout):
+        calls.append((request, timeout))
+        return Response()
+
+    monkeypatch.setattr(client, "urlopen", open_request)
+    result = client.request(
+        "http://127.0.0.1:8001",
+        "PATCH",
+        "/plugins/00000000-0000-0000-0000-000000000000",
+        {"config.fault_tolerant": False, "config.flags[]": [True, False]},
+    )
+    assert result == {"id": "updated"}
+    request, _timeout = calls[0]
+    assert request.data == (
+        b"config.fault_tolerant=false&"
+        b"config.flags%5B%5D=true&config.flags%5B%5D=false"
+    )
+
+
 def test_exporter_dispatches_private_get_without_urlopen(monkeypatch):
     client = load(ROOT / PRIVATE_CLIENTS[-1], "private_exporter")
     calls = []

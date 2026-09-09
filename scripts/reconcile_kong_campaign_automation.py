@@ -16,7 +16,12 @@ SCRIPTS = str(Path(__file__).resolve().parent)
 if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
 
-from kong_admin_channel import PRIVATE_ADMIN_URL, admin_request, normalize_admin_reference
+from kong_admin_channel import (
+    PRIVATE_ADMIN_URL,
+    admin_request,
+    form_payload,
+    normalize_admin_reference,
+)
 
 
 def request(base: str, method: str, path: str, payload=None):
@@ -24,7 +29,7 @@ def request(base: str, method: str, path: str, payload=None):
         return admin_request(
             method, normalize_admin_reference(path), payload, payload_encoding="form"
         )
-    data = None if payload is None else urlencode(payload, doseq=True).encode()
+    data = None if payload is None else form_payload(payload, path)
     with urlopen(Request(base.rstrip("/") + path, method=method, data=data), timeout=15) as response:
         raw = response.read()
         return json.loads(raw) if raw else None

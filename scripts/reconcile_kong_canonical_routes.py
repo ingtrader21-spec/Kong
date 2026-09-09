@@ -9,7 +9,7 @@ import json
 import sys
 import yaml
 from pathlib import Path
-from urllib.parse import urlencode, urljoin, urlsplit
+from urllib.parse import urljoin, urlsplit
 from urllib.request import Request, urlopen
 
 SCRIPTS = str(Path(__file__).resolve().parent)
@@ -19,6 +19,7 @@ if SCRIPTS not in sys.path:
 from kong_admin_channel import (
     PRIVATE_ADMIN_URL,
     admin_request,
+    form_payload,
     normalize_admin_reference,
 )
 
@@ -28,7 +29,7 @@ def request(base: str, method: str, path: str, payload=None) -> dict:
         return admin_request(
             method, normalize_admin_reference(path), payload, payload_encoding="form"
         ) or {}
-    data = None if payload is None else urlencode(payload, doseq=True).encode()
+    data = None if payload is None else form_payload(payload, path)
     url = path if path.startswith(("http://", "https://")) else base.rstrip("/") + path
     with urlopen(Request(url, method=method, data=data), timeout=10) as response:
         raw = response.read()

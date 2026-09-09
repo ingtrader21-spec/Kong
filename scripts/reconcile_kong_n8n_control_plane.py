@@ -15,7 +15,12 @@ SCRIPTS = str(Path(__file__).resolve().parent)
 if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
 
-from kong_admin_channel import PRIVATE_ADMIN_URL, admin_request, normalize_admin_reference
+from kong_admin_channel import (
+    PRIVATE_ADMIN_URL,
+    admin_request,
+    form_payload,
+    normalize_admin_reference,
+)
 from reconcile_kong_campaign_automation import (
     active_rsa_key,
     plugin_form,
@@ -30,13 +35,7 @@ def request(base: str, method: str, path: str, payload=None) -> dict:
         return admin_request(
             method, normalize_admin_reference(path), payload, payload_encoding="form"
         ) or {}
-    normalized = None
-    if payload is not None:
-        normalized = {
-            key: "true" if value is True else "false" if value is False else value
-            for key, value in payload.items()
-        }
-    data = None if normalized is None else urlencode(normalized, doseq=True).encode()
+    data = None if payload is None else form_payload(payload, path)
     with urlopen(Request(base.rstrip("/") + path, method=method, data=data), timeout=15) as response:
         raw = response.read()
         return json.loads(raw) if raw else {}
