@@ -9,40 +9,46 @@ import json
 import sys
 import yaml
 from pathlib import Path
-from urllib.parse import urlencode, urljoin, urlsplit
-from urllib.request import Request, urlopen
+from urllib.parse import urlsplit
+
+SCRIPTS = str(Path(__file__).resolve().parent)
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
+
+from kong_admin_channel import (
+    PRIVATE_ADMIN_URL,
+    AdminError,
+    admin_request,
+    collect_admin_rows,
+    http_admin_request,
+    http_admin_url,
+    normalize_admin_reference,
+    open_admin_request as urlopen,
+)
 
 
 def request(base: str, method: str, path: str, payload=None) -> dict:
-    data = None if payload is None else urlencode(payload, doseq=True).encode()
-    url = path if path.startswith(("http://", "https://")) else base.rstrip("/") + path
-    with urlopen(Request(url, method=method, data=data), timeout=10) as response:
-        raw = response.read()
-        return json.loads(raw) if raw else {}
+    if base == PRIVATE_ADMIN_URL:
+        return admin_request(
+            method, normalize_admin_reference(path), payload, payload_encoding="form"
+        ) or {}
+    return http_admin_request(base, method, path, payload, opener=urlopen) or {}
 
 
 def safe_next(base: str, value: str | None) -> str | None:
     if not value:
         return None
-    base_url = urlsplit(base)
-    resolved = urlsplit(urljoin(base.rstrip("/") + "/", value))
-    if (resolved.scheme, resolved.netloc) != (base_url.scheme, base_url.netloc):
-        raise RuntimeError("unsafe Kong pagination URL")
-    return resolved.geturl()
+    if base == PRIVATE_ADMIN_URL:
+        return normalize_admin_reference(value)
+    try:
+        return http_admin_url(base, value)
+    except AdminError:
+        raise RuntimeError("unsafe Kong pagination URL") from None
 
 
 def all_rows(base: str, path: str) -> list[dict]:
-    rows: list[dict] = []
-    seen: set[str] = set()
-    next_url: str | None = path
-    while next_url:
-        if next_url in seen:
-            raise RuntimeError("Kong pagination loop detected")
-        seen.add(next_url)
-        page = request(base, "GET", next_url)
-        rows.extend(page.get("data", []))
-        next_url = safe_next(base, page.get("next"))
-    return rows
+    return collect_admin_rows(lambda value: request(base, "GET", value), path,
+                              lambda value: safe_next(base, value))
 
 
 def one(rows: list[dict], label: str) -> dict:
@@ -53,10 +59,8 @@ def one(rows: list[dict], label: str) -> dict:
 
 def require_equal(actual, expected, label: str) -> None:
     if actual != expected:
-        raise RuntimeError(
-            f"{label} drift: expected={json.dumps(expected, sort_keys=True)} "
-            f"actual={json.dumps(actual, sort_keys=True)}"
-        )
+        # Config values may contain resolved credentials; report the field only.
+        raise RuntimeError(f"{label} drift")
 
 
 def form_value(value):
@@ -484,7 +488,7 @@ def verify_managed_route(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--admin-url", required=True)
+    parser.add_argument("--admin-url", default=PRIVATE_ADMIN_URL)
     parser.add_argument(
         "--manifest",
         type=Path,

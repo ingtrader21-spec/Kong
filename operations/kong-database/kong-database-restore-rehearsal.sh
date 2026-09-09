@@ -13,6 +13,10 @@ gateway_name="kong-restore-gateway-$suffix"
 network_name="kong-restore-net-$suffix"
 network_subnet=10.254.45.0/28
 volume_name="kong-restore-data-$suffix"
+live_gateway_container=codestra-kong-kong-gateway-1
+# Pin the local daemon so a caller context or DOCKER_HOST cannot redirect
+# the live Admin reads below to another runtime.
+docker_cli=(docker --host unix:///var/run/docker.sock)
 mkdir -p /var/lib/codestra-kong-database "$evidence_root"
 chmod 0700 /var/lib/codestra-kong-database "$evidence_root"
 work_dir="$(mktemp -d /var/lib/codestra-kong-database/.restore.XXXXXX)"
@@ -59,8 +63,55 @@ docker exec "$db_name" pg_isready -U kong -d kong >/dev/null
 docker exec -i "$db_name" pg_restore -U kong -d kong \
   --exit-on-error --no-owner --no-acl <"$work_dir/kong.dump"
 
+verify_live_gateway() {
+  local running service mode listen
+  running="$("${docker_cli[@]}" inspect \
+    --format '{{.State.Running}}' "$live_gateway_container")"
+  service="$("${docker_cli[@]}" inspect \
+    --format '{{index .Config.Labels "com.docker.compose.service"}}' \
+    "$live_gateway_container")"
+  mode="$("${docker_cli[@]}" inspect \
+    --format '{{.HostConfig.NetworkMode}}' "$live_gateway_container")"
+  listen="$("${docker_cli[@]}" inspect \
+    --format '{{range .Config.Env}}{{if eq (index (split . "=") 0) "KONG_ADMIN_LISTEN"}}{{.}}{{end}}{{end}}' \
+    "$live_gateway_container")"
+  test "$running" = true
+  test "$service" = kong-gateway
+  test "$listen" = 'KONG_ADMIN_LISTEN=127.0.0.1:8001'
+  case "$mode" in
+    host|none|container:*)
+      echo "unsafe Kong network namespace: $mode" >&2
+      return 1
+      ;;
+  esac
+}
+
+kong_admin_get() {
+  # Admin is bound to container loopback and is not published on the host, so
+  # live reads run inside the verified gateway namespace instead of over TCP.
+  # The isolated restore gateway keeps its own private-network endpoint.
+  local channel="$1" url="$2"
+  case "$channel" in
+    container:*)
+      "${docker_cli[@]}" exec "${channel#container:}" \
+        curl --disable --noproxy '*' --proto '=http' --request GET \
+        --fail --silent --show-error --connect-timeout 2 --max-time 15 \
+        --max-filesize 2097152 "$url"
+      ;;
+    direct)
+      curl --disable --noproxy '*' --proto '=http' --request GET \
+        --fail --silent --show-error --connect-timeout 2 --max-time 15 \
+        --max-filesize 2097152 "$url"
+      ;;
+    *)
+      echo "unsupported Kong Admin channel: $channel" >&2
+      return 1
+      ;;
+  esac
+}
+
 kong_inventory() {
-  local origin="$1" collection="$2" next page records
+  local channel="$1" origin="$2" collection="$3" next page records
   local -A seen=()
   next="$origin/$collection?size=1000"
   records="$(mktemp "$work_dir/.${collection}.XXXXXX")"
@@ -75,7 +126,7 @@ kong_inventory() {
       return 1
     fi
     seen["$next"]=1
-    page="$(curl -fsS "$next")"
+    page="$(kong_admin_get "$channel" "$next")"
     jq -c '.data[] | {id, name}' <<<"$page" >>"$records"
     next="$(jq -r '.next // empty' <<<"$page")"
   done
@@ -84,9 +135,11 @@ kong_inventory() {
     "$(LC_ALL=C sort "$records" | sha256sum | awk '{print $1}')"
 }
 
-live_services_inventory="$(kong_inventory http://127.0.0.1:8001 services)"
-live_routes_inventory="$(kong_inventory http://127.0.0.1:8001 routes)"
-live_plugins_inventory="$(kong_inventory http://127.0.0.1:8001 plugins)"
+verify_live_gateway
+live_channel="container:$live_gateway_container"
+live_services_inventory="$(kong_inventory "$live_channel" http://127.0.0.1:8001 services)"
+live_routes_inventory="$(kong_inventory "$live_channel" http://127.0.0.1:8001 routes)"
+live_plugins_inventory="$(kong_inventory "$live_channel" http://127.0.0.1:8001 plugins)"
 
 docker run -d --name "$gateway_name" --network "$network_name" \
   --read-only --tmpfs /tmp:rw,nosuid,nodev,noexec \
@@ -106,9 +159,9 @@ for _ in $(seq 1 60); do
   sleep 1
 done
 docker exec "$gateway_name" kong health >/dev/null
-restored_services_inventory="$(kong_inventory "http://$restore_ip:8001" services)"
-restored_routes_inventory="$(kong_inventory "http://$restore_ip:8001" routes)"
-restored_plugins_inventory="$(kong_inventory "http://$restore_ip:8001" plugins)"
+restored_services_inventory="$(kong_inventory direct "http://$restore_ip:8001" services)"
+restored_routes_inventory="$(kong_inventory direct "http://$restore_ip:8001" routes)"
+restored_plugins_inventory="$(kong_inventory direct "http://$restore_ip:8001" plugins)"
 test "$restored_services_inventory" = "$live_services_inventory"
 test "$restored_routes_inventory" = "$live_routes_inventory"
 test "$restored_plugins_inventory" = "$live_plugins_inventory"

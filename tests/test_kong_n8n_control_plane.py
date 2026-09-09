@@ -38,13 +38,15 @@ def test_admin_form_encoding_uses_lowercase_kong_booleans(monkeypatch):
     captured = {}
 
     class Response:
+        status = 200
+
         def __enter__(self):
             return self
 
         def __exit__(self, *_args):
             return None
 
-        def read(self):
+        def read(self, _limit):
             return b"{}"
 
     def fake_urlopen(request, timeout):

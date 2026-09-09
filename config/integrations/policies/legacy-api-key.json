@@ -1,0 +1,12 @@
+{
+  "apiVersion": "codestra.gateway/v1",
+  "authenticationMode": "legacy",
+  "kind": "GatewayPolicy",
+  "maximumBodyBytes": 1048576,
+  "maximumTimeoutMs": 60000,
+  "name": "legacy-api-key",
+  "newProductionAllowed": false,
+  "plugins": [
+    "key-auth"
+  ]
+}

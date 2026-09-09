@@ -1,0 +1,84 @@
+{
+  "apiVersion": "codestra.gateway/v1",
+  "kind": "GatewayIntegration",
+  "metadata": {
+    "criticality": "high",
+    "dataClassification": "confidential",
+    "environment": "staging",
+    "id": "moneybee-account-bootstrap",
+    "owner": "moneybee-platform",
+    "securityOwner": "codestra-security",
+    "system": "moneybee"
+  },
+  "spec": {
+    "authentication": {
+      "audience": "moneybee-api",
+      "authorizedParties": [
+        "moneybee-borrower"
+      ],
+      "issuer": "https://auth.codestra.co/realms/codestra",
+      "roles": [
+        "borrower"
+      ],
+      "scopes": [
+        "moneybee.account.bootstrap"
+      ],
+      "template": "public-oidc-api",
+      "tenantClaim": "tenant_id"
+    },
+    "exposure": "public",
+    "host": "api.moneybeeloan.com",
+    "operations": {
+      "rollbackMaximumMinutes": 15,
+      "runbook": "operations/runbooks/gateway-integration-onboarding.md"
+    },
+    "policies": {
+      "corsOrigins": [
+        "https://moneybeeloan.com"
+      ],
+      "redisHost": "codestra-redis",
+      "redisPasswordRef": "{vault://env/kong-rate-limit-redis-password}",
+      "requireCorrelationId": true,
+      "sourceAllowlist": []
+    },
+    "release": {
+      "immutableImagesRequired": true,
+      "runtimeApplyAuthorized": false,
+      "signedSourceRequired": true
+    },
+    "routes": [
+      {
+        "id": "bootstrap",
+        "match": "exact",
+        "maxBodyBytes": 65536,
+        "methods": [
+          "POST"
+        ],
+        "operationIds": [
+          "bootstrap-account"
+        ],
+        "path": "/api/v2/account/bootstrap",
+        "ratePerMinute": 10,
+        "scopes": [
+          "moneybee.account.bootstrap"
+        ]
+      }
+    ],
+    "upstream": {
+      "dnsName": "middleware.internal.codestra",
+      "healthPath": "/healthz",
+      "idempotencyAuthority": "Middleware",
+      "port": 443,
+      "protocol": "https",
+      "readinessPath": "/readyz",
+      "retries": 0,
+      "service": "moneybee-bootstrap",
+      "timeouts": {
+        "connectMs": 3000,
+        "readMs": 10000,
+        "writeMs": 10000
+      },
+      "tlsServerName": "middleware.internal.codestra"
+    }
+  }
+}

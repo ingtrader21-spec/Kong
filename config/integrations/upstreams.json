@@ -1,0 +1,5 @@
+{
+  "apiVersion": "codestra.gateway/v1",
+  "allowedDnsNames": ["middleware.internal.codestra"],
+  "allowedRedisHosts": ["codestra-redis"]
+}

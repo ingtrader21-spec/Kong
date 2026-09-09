@@ -1,0 +1,69 @@
+{
+  "$id": "urn:codestra:gateway-policy:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "const": "codestra.gateway/v1"
+    },
+    "authenticationMode": {
+      "enum": [
+        "oidc",
+        "mtls-oidc",
+        "hmac",
+        "public",
+        "legacy"
+      ]
+    },
+    "kind": {
+      "const": "GatewayPolicy"
+    },
+    "maximumBodyBytes": {
+      "maximum": 1048576,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "maximumTimeoutMs": {
+      "maximum": 60000,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "name": {
+      "enum": [
+        "public-oidc-api",
+        "internal-service-jwt",
+        "private-mtls-api",
+        "signed-webhook",
+        "websocket-api",
+        "public-health",
+        "legacy-api-key"
+      ]
+    },
+    "newProductionAllowed": {
+      "type": "boolean"
+    },
+    "plugins": {
+      "items": {
+        "maxLength": 63,
+        "minLength": 1,
+        "pattern": "^[a-z][a-z0-9-]{1,62}$",
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "apiVersion",
+    "kind",
+    "name",
+    "authenticationMode",
+    "plugins",
+    "newProductionAllowed",
+    "maximumBodyBytes",
+    "maximumTimeoutMs"
+  ],
+  "type": "object"
+}
