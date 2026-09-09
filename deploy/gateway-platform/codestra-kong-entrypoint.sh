@@ -9,4 +9,11 @@ if [ ! -r "$sx_redis_file" ] || [ ! -s "$sx_redis_file" ]; then
 fi
 KONG_RATE_LIMIT_REDIS_PASSWORD=$(cat "$sx_redis_file")
 export KONG_RATE_LIMIT_REDIS_PASSWORD
+sx_oidc_salt_file=/run/secrets/oidc_cache_tokens_salt
+if [ ! -r "$sx_oidc_salt_file" ] || [ ! -s "$sx_oidc_salt_file" ]; then
+  echo 'Required stable OIDC cache salt is unavailable' >&2
+  exit 1
+fi
+KONG_OIDC_CACHE_TOKENS_SALT=$(cat "$sx_oidc_salt_file")
+export KONG_OIDC_CACHE_TOKENS_SALT
 exec /docker-entrypoint.sh "$@"

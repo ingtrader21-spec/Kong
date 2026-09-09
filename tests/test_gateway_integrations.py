@@ -37,6 +37,7 @@ def test_example_compiles_to_guarded_upstream(contract):
     assert plugins["codestra-authz"]["issuer"] == "https://auth.codestra.co/realms/codestra"
     assert output["kong"]["plugins"][0]["name"] == "prometheus"
     assert plugins["openid-connect"]["bearer_token_param_type"] == ["header"]
+    assert plugins["openid-connect"]["cache_tokens_salt"] == "{vault://env/kong-oidc-cache-tokens-salt}"
     assert plugins["codestra-authz"]["scopes"] == ["moneybee.account.bootstrap"]
     assert plugins["rate-limiting"]["fault_tolerant"] is False
     assert output["config_sha256"] == digest(output["kong"])
@@ -67,6 +68,7 @@ def test_every_policy_template_compiles(contract, template):
     if template == "public-health":
         route.update(path="/healthz", methods=["GET"])
         contract["metadata"]["dataClassification"] = "public"
+        spec["policies"]["requireCorrelationId"] = False
     assert compiled(contract)["kong"]["services"]
 
 
@@ -92,10 +94,18 @@ def test_invalid_policy_rejected_without_value_disclosure(contract, section, key
     assert "do-not-echo-me" not in str(exc.value)
 
 
-@pytest.mark.parametrize("path", ["/a/../b", "/a//b", "/a/{x}/{x}", "/a/{x-tail}", "/a/{x}tail", "/a?b"])
+@pytest.mark.parametrize("path", ["/orders/", "/a/../b", "/a//b", "/a/{x}/{x}", "/a/{x-tail}", "/a/{x}tail", "/a?b"])
 def test_bad_paths_rejected(contract, path):
     contract["spec"]["routes"][0]["path"] = path
     with pytest.raises(ContractError):
+        compiled(contract)
+
+
+def test_public_health_cannot_require_a_caller_correlation_id(contract):
+    contract["metadata"]["dataClassification"] = "public"
+    contract["spec"]["authentication"] = {"template": "public-health"}
+    contract["spec"]["routes"][0].update(path="/healthz", methods=["GET"], scopes=[])
+    with pytest.raises(ContractError, match="public_health_correlation_must_be_optional"):
         compiled(contract)
 
 

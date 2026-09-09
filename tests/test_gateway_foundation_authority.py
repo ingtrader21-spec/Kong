@@ -55,6 +55,7 @@ def test_topology_is_private_bounded_and_nonactivated(topology):
         assert "docker.sock" not in str(service)
         assert service["environment"]["KONG_LICENSE_PATH"] == "/run/secrets/kong_license"
         assert "kong_license" in service["secrets"]
+        assert "oidc_cache_tokens_salt" in service["secrets"]
         assert service["environment"]["KONG_STATUS_LISTEN"] == "0.0.0.0:8100"
         assert service["environment"]["KONG_VAULTS"] == "env"
         if service["environment"]["KONG_PROXY_LISTEN"] != "off":
@@ -62,6 +63,9 @@ def test_topology_is_private_bounded_and_nonactivated(topology):
             assert service["environment"]["KONG_REAL_IP_HEADER"] == "X-Forwarded-For"
             assert service["environment"]["KONG_REAL_IP_RECURSIVE"] == "on"
     assert len({s["image"] for s in document["services"].values()}) == 1
+    wrapper = (ROOT / "deploy/gateway-platform/codestra-kong-entrypoint.sh").read_text()
+    assert "export KONG_OIDC_CACHE_TOKENS_SALT" in wrapper
+    assert "/run/secrets/oidc_cache_tokens_salt" in wrapper
     boundary = read("deploy/gateway-platform/network-boundaries.yaml")
     for name, network in document["networks"].items():
         assert network["name"] == boundary["networks"][name]["docker_name"]
