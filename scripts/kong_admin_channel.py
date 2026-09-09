@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import re
 import subprocess
-from urllib.parse import unquote, urlsplit
+from urllib.parse import unquote, urlencode, urlsplit
 
 DOCKER = ["docker", "--host", "unix:///var/run/docker.sock"]
 ADMIN_ORIGIN = "http://127.0.0.1:8001"
@@ -144,18 +144,35 @@ def normalize_admin_reference(value: str) -> str:
     return validate_admin_path(value)
 
 
-def admin_request(method: str, path: str, payload=None, container: str = DEFAULT_CONTAINER):
+def admin_request(
+    method: str,
+    path: str,
+    payload=None,
+    container: str = DEFAULT_CONTAINER,
+    *,
+    payload_encoding: str = "json",
+):
     """Run one bounded Admin request inside the verified gateway container."""
     if method not in METHODS:
         raise AdminError(f"unsupported Kong Admin method: {method}")
+    if payload_encoding not in {"json", "form"}:
+        raise AdminError(f"unsupported Kong Admin payload encoding: {payload_encoding}")
     path = validate_admin_path(path)
     if payload is not None and method == "GET":
         raise AdminError(f"Kong Admin GET must not carry a body: {path}")
     identifier = container_identity(container)
     argv = DOCKER + ["exec"]
     body = None
+    content_type = None
     if payload is not None:
-        body = json.dumps(payload).encode()
+        if payload_encoding == "form":
+            if not isinstance(payload, dict):
+                raise AdminError(f"invalid Kong Admin form payload: {path}")
+            body = urlencode(payload, doseq=True).encode()
+            content_type = "application/x-www-form-urlencoded"
+        else:
+            body = json.dumps(payload).encode()
+            content_type = "application/json"
         if len(body) > MAX_BYTES:
             raise AdminError(f"oversized Kong Admin payload: {path}")
         # Bodies travel on stdin so they never reach argv or the process table.
@@ -165,7 +182,7 @@ def admin_request(method: str, path: str, payload=None, container: str = DEFAULT
              "--connect-timeout", CONNECT_TIMEOUT, "--max-time", REQUEST_TIMEOUT,
              "--max-filesize", str(MAX_BYTES), "--write-out", "\n%{http_code}"]
     if body is not None:
-        argv += ["--header", "Content-Type: application/json", "--data-binary", "@-"]
+        argv += ["--header", f"Content-Type: {content_type}", "--data-binary", "@-"]
     argv.append(ADMIN_ORIGIN + path)
     try:
         result = subprocess.run(argv, input=body or b"", capture_output=True,

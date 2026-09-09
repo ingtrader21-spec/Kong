@@ -21,7 +21,9 @@ from kong_admin_channel import PRIVATE_ADMIN_URL, admin_request, normalize_admin
 
 def request(base: str, method: str, path: str, payload=None):
     if base == PRIVATE_ADMIN_URL:
-        return admin_request(method, normalize_admin_reference(path), payload)
+        return admin_request(
+            method, normalize_admin_reference(path), payload, payload_encoding="form"
+        )
     data = None if payload is None else urlencode(payload, doseq=True).encode()
     with urlopen(Request(base.rstrip("/") + path, method=method, data=data), timeout=15) as response:
         raw = response.read()

@@ -25,7 +25,9 @@ from kong_admin_channel import (
 
 def request(base: str, method: str, path: str, payload=None) -> dict:
     if base == PRIVATE_ADMIN_URL:
-        return admin_request(method, normalize_admin_reference(path), payload) or {}
+        return admin_request(
+            method, normalize_admin_reference(path), payload, payload_encoding="form"
+        ) or {}
     data = None if payload is None else urlencode(payload, doseq=True).encode()
     url = path if path.startswith(("http://", "https://")) else base.rstrip("/") + path
     with urlopen(Request(url, method=method, data=data), timeout=10) as response:

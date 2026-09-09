@@ -23,7 +23,9 @@ from reconcile_kong_campaign_automation import active_rsa_key, rsa_public_key_pe
 
 def request(base, method, path, payload=None):
     if base == PRIVATE_ADMIN_URL:
-        return admin_request(method, normalize_admin_reference(path), payload) or {}
+        return admin_request(
+            method, normalize_admin_reference(path), payload, payload_encoding="form"
+        ) or {}
     data = None if payload is None else urlencode(payload, doseq=True).encode()
     url = path if path.startswith(("http://", "https://")) else base.rstrip("/") + path
     try:

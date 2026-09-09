@@ -26,14 +26,16 @@ from reconcile_kong_campaign_automation import (
 
 
 def request(base: str, method: str, path: str, payload=None) -> dict:
-    if base == PRIVATE_ADMIN_URL:
-        return admin_request(method, normalize_admin_reference(path), payload) or {}
     normalized = None
     if payload is not None:
         normalized = {
             key: "true" if value is True else "false" if value is False else value
             for key, value in payload.items()
         }
+    if base == PRIVATE_ADMIN_URL:
+        return admin_request(
+            method, normalize_admin_reference(path), normalized, payload_encoding="form"
+        ) or {}
     data = None if normalized is None else urlencode(normalized, doseq=True).encode()
     with urlopen(Request(base.rstrip("/") + path, method=method, data=data), timeout=15) as response:
         raw = response.read()
