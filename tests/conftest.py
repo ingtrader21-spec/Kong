@@ -29,18 +29,24 @@ def synthetic_certification():
                              for name, required in c.contract_matrix(inventory).items()},
             "global_checks": {key: dict(observation) for key in c.GLOBAL_CHECKS},
             "effects_before": dict.fromkeys(c.EFFECTS, 0), "effects_after": dict.fromkeys(c.EFFECTS, 0),
-            "rollback": {"source_sha": candidate["rollback_source_sha"], "image_digest": "sha256:" + "2" * 64,
+            "rollback": {"source_sha": candidate["rollback_source_sha"], "candidate_run_id": 321, "image_digest": "sha256:" + "2" * 64,
                          "config_sha256": "3" * 64, "backup_sha256": "4" * 64,
                          "restore_observation_sha256": "5" * 64},
             "canary": {"methods": ["GET", "HEAD"], "traffic_basis_points": 100, "observed_requests": 10},
             "secrets_captured": False, "public_traffic_percent": 0,
         }
         raw = (json.dumps(document, sort_keys=True) + "\n").encode()
+        rollback_raw = json.dumps({"source_sha": candidate["rollback_source_sha"],
+            "kong_image_digest": "sha256:" + "2" * 64, "kong_declarative_config_sha256": "3" * 64}, sort_keys=True)
         receipt = {"schema": RECEIPT_SCHEMA, "repository": REPOSITORY, "workflow": WORKFLOW,
                    "source_sha": candidate["source_sha"], "staging_sha": "b" * 40, "run_id": 123,
                    "run_attempt": 1, "artifact_id": 42, "artifact_digest": "sha256:" + "6" * 64,
                    "certification_sha256": hashlib.sha256(raw).hexdigest(),
-                   "certification_id": certification_id(candidate["source_sha"], 123, 42)}
+                   "certification_id": certification_id(candidate["source_sha"], 123, 42),
+                   "rollback_manifest_json": rollback_raw,
+                   "rollback_artifact": {"source_sha": candidate["rollback_source_sha"], "run_id": 321,
+                       "artifact_id": 43, "artifact_digest": "sha256:" + "7" * 64,
+                       "manifest_sha256": hashlib.sha256(rollback_raw.encode()).hexdigest()}}
         return raw, receipt
     return build
 

@@ -42,6 +42,8 @@ jobs:
             --output-dir "${RUNNER_TEMP}/staging-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
             --github-output "${GITHUB_OUTPUT}"
       - name: Validate approved complete runtime observations
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
           mkdir -m 700 "${RUNNER_TEMP}/staging-proof-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"

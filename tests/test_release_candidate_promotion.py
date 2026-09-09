@@ -152,6 +152,9 @@ def test_normal_promotion_preserves_certified_source_and_exact_artifacts(release
     assert invoke(m.STAGING_RELEASE_STAGE,output,'PASS:'+source+':github-actions/123/42',args)==0
     doc=json.loads(output.read_text()); original=json.loads(candidate.read_text())
     assert doc['source_sha']==source and doc['promotion_sha']==destination
+    assert doc['rollback_image_digest']=='sha256:'+'2'*64
+    assert doc['rollback_configuration_sha256']=='3'*64
+    assert doc['rollback_candidate_run_id']==321 and doc['rollback_candidate_artifact_id']==43
     for key in ('kong_image_digest','standby_auth_image_digest','rollback_source_sha','source_tree'):
         assert doc[key]==original[key]
     assert doc['runtime_apply_authorized'] is doc['external_effects_enabled'] is False

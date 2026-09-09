@@ -79,7 +79,8 @@ def test_partial_or_unsafe_runtime_claims_fail_closed(bundle, damage):
     elif damage == "canary-too-large": doc["canary"]["traffic_basis_points"] = 101
     elif damage == "canary-empty": doc["canary"]["observed_requests"] = 0
     elif damage == "unknown-check-field": doc["global_checks"]["pitr"]["response_body"] = "untrusted"
-    with pytest.raises(ValueError): c.validate_bytes(json.dumps(doc).encode(),candidate,inventory,now=now)
+    with pytest.raises(ValueError): c.validate_bytes(json.dumps(doc).encode(),candidate,inventory,
+        rollback_candidate=json.loads(receipt["rollback_manifest_json"]),now=now)
 
 
 @pytest.mark.parametrize("raw", [b'{"a":1,"a":2}',b'{"number":NaN}',b'[]',b'x'*(c.MAX_DOCUMENT+1)])
@@ -134,12 +135,14 @@ def test_artifact_selection_and_bytes_are_bound_to_latest_run(bundle,damage):
     elif damage == "too-large": artifact["size_in_bytes"] = 10*c.MAX_DOCUMENT
     with pytest.raises(ValueError):
         verifier.select_artifact({"total_count":2 if damage=="partial-list" else 1,"artifacts":[artifact]},run_fixture(),"a"*40)
-        verifier.verified_document(value,artifact,candidate,inventory,now=now)
+        verifier.verified_document(value,artifact,candidate,inventory,
+            rollback_candidate=json.loads(receipt["rollback_manifest_json"]),now=now)
 
 
 def test_valid_artifact_preserves_original_bytes(bundle):
     raw,receipt,candidate,inventory,now=bundle; value,artifact=archive(raw)
-    assert verifier.verified_document(value,artifact,candidate,inventory,now=now)[0] == raw
+    assert verifier.verified_document(value,artifact,candidate,inventory,
+        rollback_candidate=json.loads(receipt["rollback_manifest_json"]),now=now)[0] == raw
 
 
 def test_observation_packager_rejects_symlinks_and_unapproved_hash(tmp_path):
@@ -193,6 +196,8 @@ def test_end_to_end_authenticated_receipt_and_release_inputs(bundle,tmp_path,mon
              "actions/runs/123/artifacts?per_page=100":json.dumps({"total_count":1,"artifacts":[artifact]}).encode(),
              "actions/artifacts/42/zip":value}
     monkeypatch.setattr(verifier,"api",lambda path:replies[path])
+    monkeypatch.setattr(verifier,"load_rollback_candidate", lambda source, run_id:
+        (receipt["rollback_manifest_json"].encode(), receipt["rollback_artifact"]))
     candidate=tmp_path/"candidate.json"; candidate.write_bytes(candidate_raw)
     inventory=tmp_path/"inventory.json"; inventory.write_bytes(inventory_raw)
     output=tmp_path/"verified"; github_output=tmp_path/"job-output"
@@ -215,3 +220,59 @@ def test_matrix_generation_is_deterministic_and_not_runtime_pass(tmp_path,monkey
     assert c.main()==0 and path.read_bytes()==original
     plan=json.loads(original)
     assert plan["runtime_certified"] is False and len(plan["route_checks"])==27
+
+
+@pytest.mark.parametrize('field,value', [('image_digest','sha256:'+'9'*64),('config_sha256','9'*64)])
+def test_syntactically_valid_wrong_rollback_identity_is_rejected(bundle,field,value):
+    raw,receipt,candidate,inventory,now=bundle
+    document=json.loads(raw); document['rollback'][field]=value
+    with pytest.raises(ValueError,match='rollback_release_identity_mismatch'):
+        c.validate_bytes(json.dumps(document).encode(),candidate,inventory,
+            rollback_candidate=json.loads(receipt['rollback_manifest_json']),now=now)
+
+
+def test_rollback_authority_is_mandatory_and_receipt_bound(bundle):
+    raw,receipt,candidate,inventory,now=bundle
+    with pytest.raises(ValueError,match='authenticated_rollback_candidate_required'):
+        c.validate_bytes(raw,candidate,inventory,now=now)
+    receipt['rollback_artifact']['run_id']=322
+    with pytest.raises(ValueError,match='rollback_receipt_mismatch'):
+        verifier.validate_receipt(receipt,raw,candidate,inventory,now=now)
+
+
+@pytest.mark.parametrize('damage',[None,'unsigned','tree','source','failed-run','foreign-repository','tampered-archive'])
+def test_rollback_candidate_is_authenticated_from_canonical_signed_release(monkeypatch,damage):
+    source='f'*40
+    candidate={'source_sha':source,'source_tree':'9'*40,'release_stage':'protected-main-source-candidate',
+        'commit_verification_status':'VERIFIED','staging_certification':'NOT_RUN_SOURCE_CANDIDATE',
+        'kong_image_digest':'sha256:'+'2'*64,'standby_auth_image_digest':'sha256:'+'8'*64,
+        'rollback_source_sha':'0'*40,'kong_declarative_config_sha256':'3'*64,
+        'kong_image':'kong/kong-gateway:3.14.0.1-ubuntu','standby_auth_image':'ghcr.io/appolon1908-hue/kong-standby-auth'}
+    manifest=json.dumps(candidate).encode()
+    buffer=io.BytesIO()
+    with zipfile.ZipFile(buffer,'w') as archive:
+        archive.writestr('release-manifest.json',manifest)
+    raw=buffer.getvalue()
+    artifact={'name':'kong-release-'+source,'id':84,'expired':False,'digest':'sha256:'+hashlib.sha256(raw).hexdigest()}
+    run={'id':321,'head_sha':source,'head_branch':'main','path':'.github/workflows/release.yml','event':'push',
+        'status':'completed','conclusion':'success','repository':{'full_name':verifier.REPOSITORY},
+        'head_repository':{'full_name':verifier.REPOSITORY}}
+    commit={'sha':source,'commit':{'verification':{'verified':True},'tree':{'sha':'9'*40}}}
+    if damage=='unsigned': commit['commit']['verification']['verified']=False
+    elif damage=='tree': commit['commit']['tree']['sha']='8'*40
+    elif damage=='source': commit['sha']='8'*40
+    elif damage=='failed-run': run['conclusion']='failure'
+    elif damage=='foreign-repository': run['repository']['full_name']='other/repository'
+    elif damage=='tampered-archive': raw+=b'changed'
+    replies={'actions/runs/321':json.dumps(run).encode(),'commits/'+source:json.dumps(commit).encode(),
+        'actions/runs/321/artifacts?per_page=100':json.dumps({'total_count':1,'artifacts':[artifact]}).encode(),
+        'actions/artifacts/84/zip':raw}
+    monkeypatch.setattr(verifier,'api',lambda path:replies[path])
+    if damage:
+        with pytest.raises((ValueError,RuntimeError)):
+            verifier.load_rollback_candidate(source,321)
+    else:
+        actual,proof=verifier.load_rollback_candidate(source,321)
+        assert actual==manifest
+        assert proof['run_id']==321 and proof['artifact_id']==84
+        assert proof['manifest_sha256']==hashlib.sha256(manifest).hexdigest()
