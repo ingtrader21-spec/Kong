@@ -75,6 +75,8 @@ def test_topology_is_private_bounded_and_nonactivated(topology):
     assert "export KONG_OIDC_CACHE_TOKENS_SALT" in wrapper
     assert "/run/secrets/oidc_cache_tokens_salt" in wrapper
     assert "/run/secrets/webhooks" in wrapper
+    assert '[ ! -r "$sx_webhook_secret_directory" ]' in wrapper
+    assert '[ ! -x "$sx_webhook_secret_directory" ]' in wrapper
     assert "^kong-webhook-[a-z][a-z0-9-]{1,96}$" in wrapper
     assert '"${#sx_webhook_secret_value}" -lt 32' in wrapper
     boundary = read("deploy/gateway-platform/network-boundaries.yaml")

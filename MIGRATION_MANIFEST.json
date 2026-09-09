@@ -237,8 +237,8 @@
     },
     {
       "path": "deploy/gateway-platform/codestra-kong-entrypoint.sh",
-      "sha256": "5a64317b06519552d9e4ac44b95f45887a467394447ccbe0be38b5988f14cbf2",
-      "size": 1991
+      "sha256": "0bc1562de044bdffa20f74f41a943d77d0017c5e910b742b328d66897f9beb64",
+      "size": 2083
     },
     {
       "path": "deploy/gateway-platform/compose.hybrid.yaml",
@@ -832,8 +832,8 @@
     },
     {
       "path": "tests/test_gateway_foundation_authority.py",
-      "sha256": "69b39f4f743db74dcf5e9ec2d16f109c97bae8fdc06104baf66642c998809edc",
-      "size": 5991
+      "sha256": "bcad47742bab3823e4453cddfe08baf61cf9cceb7ea02834ab31f84cebcab916",
+      "size": 6119
     },
     {
       "path": "tests/test_gateway_integrations.py",
@@ -1002,7 +1002,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "eadec8713408c47e3124438a24214a9ae38374e9cc4b97f2cbf8ee800fa38673",
+  "manifest_generation_id": "9af9686d8f5cc87259f79f461b0ce6b5985cfb2977a1cf9aa1699fdb33319027",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
