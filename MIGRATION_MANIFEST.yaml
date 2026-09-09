@@ -36,8 +36,8 @@ files:
   sha256: 8ab62bbb28e040dbc2ded9f215179402dea0ac094f7b648ba51077f7cc7b9112
   size: 3679
 - path: REPOSITORY_PROFILE.md
-  sha256: b1097dabd77763da5e505d3a5ef0f36941daec8491e340d5806c8e13244982b2
-  size: 2091
+  sha256: 7b950df50efb3b3f7b1d47834029863a7e2904a491b2720b7bab90bc0c18c245
+  size: 2113
 - path: SECURITY.md
   sha256: 373c0992cd18a04a0cde04bfad36dce018ea2738cf4299aa35aa0a0430021dca
   size: 430
@@ -171,8 +171,8 @@ files:
   sha256: 3a44ab1f7bf6891b88a6106d9acda408a04b13d06331a69517bdf0c156d5c5ba
   size: 837
 - path: docs/KONG_RELEASE_AND_ADMIN_BOUNDARIES.md
-  sha256: 5707df7766c2a9fd931cbc546fea8c9bd8a2ab85884093dfceef42f4553198a5
-  size: 7637
+  sha256: 85d08bc6c61d9db864b0151c02b7d03ca0eef8b5d8297cd3a39228489ffb93a5
+  size: 9118
 - path: docs/MARKETING-PLATFORM-EDGE-RESPONSIBILITIES.md
   sha256: 30aae02a42e87c7869f8c024fec15ecaa43c9e0c388883a5ab0faee2f0debd12
   size: 1436
@@ -333,26 +333,26 @@ files:
   sha256: 08ad7818371faedbcf5d997ddaec69560aae38f977b5f6aafcff945df6222349
   size: 7341
 - path: scripts/export_kong_public_route_contracts.py
-  sha256: 9613633fd2a4ef0f8c22801a2ed18daf020b940bec1e2139e92cee9a69b6b595
-  size: 9203
+  sha256: 7b6410aa7a55414f24b48f270800fbdf83ede229a1aa86d04cea918e4d9a2634
+  size: 8761
 - path: scripts/kong_admin_channel.py
-  sha256: f8f9a0abcc41d92212421e32dd2e59dc82c76a0c4937a7858c22b2f06712cef4
-  size: 10207
+  sha256: 75c1be491e95435c83f65bf9c5129c4603b6488f93777b3c1ecf2b9cb15ec67f
+  size: 16009
 - path: scripts/probe_n8n_production_routes.py
   sha256: 10aa8dc945108439d5ec45fc0b1834ab0d01c7455cd974cc63d947f452e606a0
   size: 1991
 - path: scripts/reconcile_kong_callback_routes.py
-  sha256: ba32677bfe8ccd4f72c2fc2c42cddac2451dd3ba685967de64907370d4ad5c79
-  size: 21245
+  sha256: 2c029b8eb87e6a5d3c63e65028a176960a3e57b0282ba3b31681cc873a2478ad
+  size: 20358
 - path: scripts/reconcile_kong_campaign_automation.py
-  sha256: 2140fa5899140fbcd51ade81b495ae463fc077c5d1d8ee4d705564cb6742fb54
-  size: 13835
+  sha256: ed1fdd7794be02137604beefbbe0e467fa1a2a46e401a5975951ac271a726922
+  size: 13721
 - path: scripts/reconcile_kong_canonical_routes.py
-  sha256: 1596a99b198269b13510e0a7c552cdb81f22fc32521bd5209fe0f53f0736d254
-  size: 24535
+  sha256: a6e60abe9c8b6fae28c1084501b359a4592db9f95328161df4d3d76c1c2f84e2
+  size: 23946
 - path: scripts/reconcile_kong_n8n_control_plane.py
-  sha256: 1cf00652aa7ca97a87ede8329cd6ea24d1adbdda835c03bc7e20fccd83f415a7
-  size: 16331
+  sha256: ba49b7b697548945607a6ab4967b9a7b455a9e6ae738b7000ae7abbb25dd00d8
+  size: 15962
 - path: scripts/render_kong_calling_routes.py
   sha256: ef9d5ee70ce3d8594f395957914be614b62f6f29557d401141a1c2d38e823e69
   size: 5427
@@ -402,8 +402,8 @@ files:
   sha256: 509ed26f61246cba15b6eec1f6f0e647a829ec9480f9c51e8f5d2cb1a0031f90
   size: 859
 - path: tests/test_kong_admin_channel.py
-  sha256: 0a8e4f5cb3abf325da3a00934381d1e69ede6599a08cfcbd33669b83ca6969f3
-  size: 13671
+  sha256: 1608cd523e11413fd5fb9640183d06077742d148fc5199409c4f480388fc886a
+  size: 22666
 - path: tests/test_kong_calling_policy.py
   sha256: e0e16fc21f6d8cea9349eae6e1d59e3f4b1895435930fa466b27cf2eb9023d5c
   size: 6365
@@ -417,8 +417,8 @@ files:
   sha256: b6f3c3cb3ee82c3965e84f3903a3c19c9eaef49aa2a272b8902cb3a77d4833d7
   size: 6784
 - path: tests/test_kong_n8n_control_plane.py
-  sha256: 65104ac6bcb5d5d06d6e8ff491909d802bb44e135acf802df0bc70633992b18a
-  size: 8452
+  sha256: d0fe424b0147e68063d1e3686d3661d1f79f8e217a2e8ecea99b415b3b9b7b69
+  size: 8482
 - path: tests/test_kong_n8n_editor_route.py
   sha256: 46c0924866d66145dd19ed7176503a4edbaab0c2b9efc4ab0903ae4bc499ab98
   size: 5909
@@ -483,7 +483,7 @@ files:
   sha256: 8ba5e5a4f045ec9b78ed11af1fce8fc6a808857feebcd724c85266673b7cf890
   size: 6613
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 992be976515786e03aecf11b8eba78c345f3d15d874b9a2765d3281e2865ac6e
+manifest_generation_id: 0a787eec0599dbbe82bf19a9dd396f48bd33e49af1dedcd33345efd8763b1597
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
