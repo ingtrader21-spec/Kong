@@ -24,7 +24,7 @@ services:
       KONG_PREFIX: /usr/local/kong
       KONG_ADMIN_LISTEN: 'off'
       KONG_ADMIN_GUI_LISTEN: 'off'
-      KONG_STATUS_LISTEN: 127.0.0.1:8100
+      KONG_STATUS_LISTEN: 0.0.0.0:8100
       KONG_PROXY_ACCESS_LOG: 'off'
       KONG_ADMIN_ACCESS_LOG: 'off'
       KONG_PROXY_ERROR_LOG: /dev/stderr
@@ -46,6 +46,13 @@ services:
       KONG_PROXY_LISTEN: 0.0.0.0:8443 ssl
       KONG_SSL_CERT: /run/secrets/proxy_cert
       KONG_SSL_CERT_KEY: /run/secrets/proxy_key
+      KONG_LICENSE_PATH: /run/secrets/kong_license
+      KONG_STATUS_ACCESS_LOG: 'off'
+      KONG_VAULTS: env
+      KONG_TRUSTED_IPS: ${KONG_TRUSTED_IPS:?exact approved Caddy and upstream-gateway
+        source CIDRs required}
+      KONG_REAL_IP_HEADER: X-Forwarded-For
+      KONG_REAL_IP_RECURSIVE: 'on'
     networks:
     - kong_proxy
     - kong_database
@@ -58,6 +65,7 @@ services:
     - proxy_cert
     - proxy_key
     - redis_password
+    - kong_license
     command:
     - kong
     - docker-start
@@ -81,7 +89,7 @@ services:
       KONG_PREFIX: /usr/local/kong
       KONG_ADMIN_LISTEN: 'off'
       KONG_ADMIN_GUI_LISTEN: 'off'
-      KONG_STATUS_LISTEN: 127.0.0.1:8100
+      KONG_STATUS_LISTEN: 0.0.0.0:8100
       KONG_PROXY_ACCESS_LOG: 'off'
       KONG_ADMIN_ACCESS_LOG: 'off'
       KONG_PROXY_ERROR_LOG: /dev/stderr
@@ -103,6 +111,13 @@ services:
       KONG_PROXY_LISTEN: 0.0.0.0:8443 ssl
       KONG_SSL_CERT: /run/secrets/proxy_cert
       KONG_SSL_CERT_KEY: /run/secrets/proxy_key
+      KONG_LICENSE_PATH: /run/secrets/kong_license
+      KONG_STATUS_ACCESS_LOG: 'off'
+      KONG_VAULTS: env
+      KONG_TRUSTED_IPS: ${KONG_TRUSTED_IPS:?exact approved Caddy and upstream-gateway
+        source CIDRs required}
+      KONG_REAL_IP_HEADER: X-Forwarded-For
+      KONG_REAL_IP_RECURSIVE: 'on'
     networks:
     - kong_proxy
     - kong_database
@@ -115,6 +130,7 @@ services:
     - proxy_cert
     - proxy_key
     - redis_password
+    - kong_license
     command:
     - kong
     - docker-start
@@ -136,7 +152,7 @@ services:
       KONG_PREFIX: /usr/local/kong
       KONG_ADMIN_LISTEN: 127.0.0.1:8001
       KONG_ADMIN_GUI_LISTEN: 'off'
-      KONG_STATUS_LISTEN: 127.0.0.1:8100
+      KONG_STATUS_LISTEN: 0.0.0.0:8100
       KONG_PROXY_ACCESS_LOG: 'off'
       KONG_ADMIN_ACCESS_LOG: 'off'
       KONG_PROXY_ERROR_LOG: /dev/stderr
@@ -156,6 +172,9 @@ services:
       KONG_PG_MAX_CONCURRENT_QUERIES: '20'
       KONG_ROLE: traditional
       KONG_PROXY_LISTEN: 'off'
+      KONG_LICENSE_PATH: /run/secrets/kong_license
+      KONG_STATUS_ACCESS_LOG: 'off'
+      KONG_VAULTS: env
     networks:
     - kong_admin
     - kong_database
@@ -164,6 +183,7 @@ services:
     - trust_ca
     - kong_runtime_password
     - redis_password
+    - kong_license
     entrypoint:
     - /usr/local/bin/codestra-kong-entrypoint
     command:
@@ -222,3 +242,5 @@ secrets:
     file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/proxy_key
   redis_password:
     file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/redis_password
+  kong_license:
+    file: ${GATEWAY_SECRET_DIRECTORY:?approved local secret directory required}/kong_license

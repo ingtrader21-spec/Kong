@@ -41,3 +41,17 @@ starting an approved runtime. The source tests do not attest live network isolat
 
 No secret, certificate, cache volume or runtime output belongs in Git. See
 `network-boundaries.yaml` and the architecture documents for the ownership model.
+
+Every node mounts the separately provisioned `kong_license` file and uses
+`KONG_LICENSE_PATH`; generated OIDC/mTLS candidates require a valid Enterprise
+license. A traditional OSS fallback must use a separately reviewed compatible
+candidate and image. Declaring a license path does not add Enterprise plugins to
+an OSS image. The env Vault provider is explicitly enabled on all nodes.
+
+Proxy nodes require `KONG_TRUSTED_IPS` with the exact reviewed Caddy/upstream-gateway
+source CIDRs and use recursive `X-Forwarded-For` handling. Do not trust a default
+route or arbitrary client networks. The upstream gateway must preserve the
+authenticated forwarding chain so per-IP Redis quotas identify callers correctly.
+Status listens on private container interfaces at 8100 with no host publication;
+Prometheus reaches it through the designated observability network. Generated
+configuration explicitly enables its global Prometheus metrics plugin.

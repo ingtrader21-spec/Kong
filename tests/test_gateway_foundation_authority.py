@@ -53,6 +53,14 @@ def test_topology_is_private_bounded_and_nonactivated(topology):
         assert service["profiles"] == [topology + "-source"]
         assert "@${KONG_PLATFORM_IMAGE_DIGEST:?" in service["image"]
         assert "docker.sock" not in str(service)
+        assert service["environment"]["KONG_LICENSE_PATH"] == "/run/secrets/kong_license"
+        assert "kong_license" in service["secrets"]
+        assert service["environment"]["KONG_STATUS_LISTEN"] == "0.0.0.0:8100"
+        assert service["environment"]["KONG_VAULTS"] == "env"
+        if service["environment"]["KONG_PROXY_LISTEN"] != "off":
+            assert service["environment"]["KONG_TRUSTED_IPS"].startswith("${KONG_TRUSTED_IPS:?")
+            assert service["environment"]["KONG_REAL_IP_HEADER"] == "X-Forwarded-For"
+            assert service["environment"]["KONG_REAL_IP_RECURSIVE"] == "on"
     assert len({s["image"] for s in document["services"].values()}) == 1
     boundary = read("deploy/gateway-platform/network-boundaries.yaml")
     for name, network in document["networks"].items():
