@@ -17,6 +17,16 @@ Before any staging or production mutation, run the secret-free topology gate:
 python3 scripts/verify_runtime_integration.py
 ```
 
+The default Middleware target is the Appolon production integration API. A
+missing Appolon container fails the check; the verifier never falls back to the
+legacy Middleware runtime. An isolated deployment with a different container
+name must select it explicitly with `--middleware`. Paused or restarting
+containers fail even when Docker retains a previously healthy health status.
+The required edge and backend networks remain mandatory for every designated
+hop. This check observes health and network membership only; Admin isolation,
+peer denial, candidate promotion, and staging certification remain separate
+requirements.
+
 It requires healthy Caddy, Kong, Middleware, and Redis containers and shared
 networks for every required hop, including Kong to Redis. Any failure prohibits
 config application and traffic promotion.
