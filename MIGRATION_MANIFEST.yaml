@@ -290,6 +290,9 @@ files:
 - path: docs/evidence/PRODUCTION_ROUTE_READBACK_20260906.json
   sha256: 9d6f536bcf7eb0bef90594656b569f004380ce1bb047d363757e687bdf284232
   size: 21882
+- path: docs/issue-trackers/issue-52.md
+  sha256: 59709dd5df209169c2688f4e53d26376d8d0a27208d3df5b034b9814ab62ee29
+  size: 446
 - path: docs/migration/from-codestra-production-platform.md
   sha256: d60890efc390f77f8ec93c92df157efb50e623af5b13b451470aba50145ae577
   size: 589
@@ -618,7 +621,7 @@ files:
   sha256: d8eca1dd7a2b4e06db51a58a50f986e3fd47611344636c63363264c0c57d4692
   size: 11461
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: d892e907cf101e79560bea98e6667a29d181bfa8533f0b68561f5f9ead786a53
+manifest_generation_id: 8ad594a808b4745a774dad87f19735df224fe22d20f2d56043db83ae333b3d8e
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
