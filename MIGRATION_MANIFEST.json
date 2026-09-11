@@ -486,6 +486,11 @@
       "size": 21882
     },
     {
+      "path": "docs/issue-trackers/issue-49.md",
+      "sha256": "28243bd439708b96a382b8b5fc889d560508cdc9ff27e2222a68f7187a367177",
+      "size": 451
+    },
+    {
       "path": "docs/issue-trackers/issue-58.md",
       "sha256": "32dc117d9781e368c21ce930c11c01fc39760099d58cda25eaf0fc43d092a14c",
       "size": 450
@@ -1037,7 +1042,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "16eadf9cfcc7ee84fae32a9ff287bad6a17f64b3b4e6b9b219d2d78dce34edb8",
+  "manifest_generation_id": "288c33d939e9e3ae2adf0f9ffd6230f456133b52b32aa091e48c14d558842c97",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
