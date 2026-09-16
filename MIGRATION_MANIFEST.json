@@ -12,8 +12,8 @@
     },
     {
       "path": ".github/workflows/kong-config.yml",
-      "sha256": "3b74baceaf7debffb36f58ad98c35d6f3b407c216d6c8cccc9b3b050f38eb497",
-      "size": 1437
+      "sha256": "280d3de38acb30272a36daa946a7571f984c152984bca40f0fdb7e9b4f3991b8",
+      "size": 1976
     },
     {
       "path": ".github/workflows/manifest-sync.yml",
@@ -52,8 +52,8 @@
     },
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "672afba7212160bca70e505dcb4177660d19f04bf2b81f34123932497d9d1b6d",
-      "size": 5923
+      "sha256": "32d8dbe6e96b7e4fa916883258096a6cf8911405501d9bb26f51d1250fb18483",
+      "size": 5986
     },
     {
       "path": ".gitignore",
@@ -167,13 +167,13 @@
     },
     {
       "path": "config/kong-campaign-automation-routes.json",
-      "sha256": "d01b006ad8de7b3e93561eb976ef21789f3e3db8fbf70069225b728c3e81d22a",
-      "size": 869
+      "sha256": "1ad3d6ff3bec051af0721fce1a71542381349fc755ad9f5ba4190b22db57ace5",
+      "size": 2402
     },
     {
       "path": "config/kong-canonical-middleware-routes.json",
-      "sha256": "06b8e6ed8352922cf72f2448f1987cae33b61164964e7e94ac6a8c9bebcacdfb",
-      "size": 5446
+      "sha256": "f0f439f15f04ca524baee4e2890db6b39712e10337ccbf20287ec3b77cc3fc03",
+      "size": 7925
     },
     {
       "path": "config/kong-community-n8n-egress.v1.json",
@@ -219,6 +219,16 @@
       "path": "config/marketing-stage4-routes.yaml",
       "sha256": "d03766281ac015edb9d22949e8d91ea3286d4e895a8dc520dd97c354c8007d40",
       "size": 1063
+    },
+    {
+      "path": "config/middleware-public-api-route-contract.v1.json",
+      "sha256": "f73272b7e4def3fb3386ecaee24ae10ce4a03367a20c54a4e66cfcd3854139a0",
+      "size": 1486
+    },
+    {
+      "path": "config/staging/kong-campaign-automation-routes.json",
+      "sha256": "a589da72680239409aeee73d50b2d984f6ee4b36c7087f04083c25b195a93c54",
+      "size": 3755
     },
     {
       "path": "config/staging/kong-n8n-control-plane-routes.json",
@@ -434,6 +444,11 @@
       "path": "docs/MARKETING_EDGE_CONTRACT.md",
       "sha256": "72d1bc657556e32f8bfecdb9a20a90dbb62a131805170db1109103f98c2d0c3b",
       "size": 909
+    },
+    {
+      "path": "docs/MIDDLEWARE_EDGE_CONTRACT.md",
+      "sha256": "cea397243b6aa396dc30dcca8a59d58e957289cd735b8fab6912a65bae9a96b9",
+      "size": 6082
     },
     {
       "path": "docs/PROVIDER_CONTROL_SERVICE_IDENTITY.md",
@@ -757,13 +772,13 @@
     },
     {
       "path": "scripts/reconcile_kong_campaign_automation.py",
-      "sha256": "ed1fdd7794be02137604beefbbe0e467fa1a2a46e401a5975951ac271a726922",
-      "size": 13721
+      "sha256": "91a1e584feee54e3db80cb6ddc64fa5500794a7957979f598b55f85fab08e6c6",
+      "size": 18434
     },
     {
       "path": "scripts/reconcile_kong_canonical_routes.py",
-      "sha256": "a6e60abe9c8b6fae28c1084501b359a4592db9f95328161df4d3d76c1c2f84e2",
-      "size": 23946
+      "sha256": "588b9844b08e4a41aa3935f6f49b181bb0f0f4b1e17eedde7a9199c5722d3a9c",
+      "size": 24171
     },
     {
       "path": "scripts/reconcile_kong_n8n_control_plane.py",
@@ -774,6 +789,11 @@
       "path": "scripts/render_kong_calling_routes.py",
       "sha256": "ef9d5ee70ce3d8594f395957914be614b62f6f29557d401141a1c2d38e823e69",
       "size": 5427
+    },
+    {
+      "path": "scripts/render_kong_campaign_automation_routes.py",
+      "sha256": "8f808962e28fb43a042becda0fdf80acd3b0c479a143c2881a2f33bdd4e07d9c",
+      "size": 4557
     },
     {
       "path": "scripts/render_kong_moneybee_identity.py",
@@ -819,6 +839,11 @@
       "path": "scripts/validate_marketing_routes.py",
       "sha256": "30744bbea3b8d9aa03f1f60c685375ac76a25c0e7210c460849606d7ff54f67d",
       "size": 1313
+    },
+    {
+      "path": "scripts/validate_middleware_edge_contract.py",
+      "sha256": "176f7468ed0657d038c2842771b6c84c81b8b7edc833fce2445bcc4a5d10ec7f",
+      "size": 6920
     },
     {
       "path": "scripts/validate_provider_control_routes.py",
@@ -876,9 +901,14 @@
       "size": 6365
     },
     {
+      "path": "tests/test_kong_campaign_edge_certification.py",
+      "sha256": "aa39313f3840045bc0d423dacec40b369f792c7fd6c1c6c873eff7ed8f50c4f5",
+      "size": 15334
+    },
+    {
       "path": "tests/test_kong_canonical_route_contract.py",
-      "sha256": "ca0d59a4f1a48b806afa7ee2d1d52a1db24de878f2d92aa2f1516bdb52c8baf1",
-      "size": 6154
+      "sha256": "fcc1decb88d0d89fba6f6878b07cc455b03478c74c12c71ca952f7a209e73942",
+      "size": 6414
     },
     {
       "path": "tests/test_kong_change_authority.py",
@@ -922,8 +952,8 @@
     },
     {
       "path": "tests/test_kong_route_authority_hardening.py",
-      "sha256": "4bf15ef32d53752c30b207f6c8db3c9bbb3b76b8bb7c39a52aa98e546861f45d",
-      "size": 27433
+      "sha256": "b610f49280cb736533c954b889d80d44e7f9b27601208919bdc8ca45a5c70a3c",
+      "size": 27777
     },
     {
       "path": "tests/test_kong_runtime_certification.py",
@@ -1037,7 +1067,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "16eadf9cfcc7ee84fae32a9ff287bad6a17f64b3b4e6b9b219d2d78dce34edb8",
+  "manifest_generation_id": "7c3900efd78c56d4eb5a59cf408d5e94411f4e66fb2f6e1f4cd0d21e571c3afe",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
