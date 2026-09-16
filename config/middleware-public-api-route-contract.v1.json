@@ -1,0 +1,19 @@
+{
+  "schema": "codestra.middleware.public-api-route-contract.v1",
+  "service": "middleware-integration-api",
+  "listener_port": 8095,
+  "hash_rule": "sha256 over json.dumps(contract, sort_keys=True, separators=(',', ':')).encode('utf-8'); pinned in public-api-route-contract.sha256 and verified by scripts/audit_release_endpoints.py",
+  "edge": {
+    "path": "caddy -> kong -> middleware-integration-api:8095",
+    "rule": "Kong and Caddy expose exactly these method+path pairs for this service. Every route still verifies the service JWT (signature, issuer, audience, scope, tenant) inside Middleware; the edge never terminates authorization."
+  },
+  "routes": [
+    {"method": "GET", "path": "/api/v1/callbacks", "auth": "callback-jwt"},
+    {"method": "POST", "path": "/api/v1/control/callbacks", "auth": "callback-jwt"},
+    {"method": "POST", "path": "/api/v1/automation/policy-check", "auth": "n8n-service-jwt"},
+    {"method": "POST", "path": "/api/v1/integrations/n8n/results", "auth": "n8n-service-jwt", "scope": "n8n.results.submit"},
+    {"method": "GET", "path": "/api/v1/integrations/n8n/results/{event_id}", "auth": "n8n-service-jwt", "scope": "n8n.results.read"},
+    {"method": "GET", "path": "/api/v1/integrations/odoo/campaigns/{campaign_id}", "auth": "odoo-service-jwt", "scope": "odoo.campaigns.read"},
+    {"method": "GET", "path": "/api/v1/integrations/odoo/campaigns/{campaign_id}/desired-state", "auth": "odoo-service-jwt", "scope": "odoo.campaigns.read"}
+  ]
+}

@@ -126,7 +126,12 @@ def test_standby_apply_rejects_untrusted_owned_resource_identity(monkeypatch):
 def test_campaign_reconciler_validates_manifest_consumer_identity():
     source = CAMPAIGN_RECONCILER_PATH.read_text()
     assert 'f"/consumers/{consumer[\'id\']}"' in source
-    assert 'require_exact_fields(consumer, manifest["consumer"], "campaign service consumer")' in source
+    # Every manifest consumer is read back and compared field by field, and the
+    # scope grant never travels to Kong as consumer state.
+    assert "for spec in manifest_consumers(manifest):" in source
+    assert "identity = consumer_entity(spec)" in source
+    assert 'require_exact_fields(consumer, identity, "campaign service consumer")' in source
+    assert 'require_exact_fields(credential, jwt_payload, "campaign JWT credential")' in source
 
 
 def _inline_scope_policy() -> str:

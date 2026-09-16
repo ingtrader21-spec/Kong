@@ -1,21 +1,33 @@
 {
+  "schema_version": "1.1",
   "service": {
     "name": "codestra-campaign-automation-api",
     "host": "codestra-middleware-integration-api-1",
     "port": 8095,
     "protocol": "http"
   },
-  "consumer": {
-    "username": "codestra-n8n-campaign-crm-production",
-    "custom_id": "codestra-n8n-campaign-crm-production"
-  },
+  "consumers": [
+    {
+      "username": "codestra-n8n-campaign-crm-production",
+      "custom_id": "codestra-n8n-campaign-crm-production",
+      "scopes": ["n8n.policy.check", "n8n.results.submit", "n8n.results.read"]
+    },
+    {
+      "username": "codestra-odoo-campaign-reader-production",
+      "custom_id": "codestra-odoo-campaign-reader-production",
+      "scopes": ["odoo.campaigns.read"]
+    }
+  ],
+  "forbidden_scopes": ["odoo.campaign.control.write"],
   "issuer": "https://auth.codestra.co/realms/codestra",
   "audience": "codestra-middleware",
   "environment": "production",
   "host": "api.codestra.co",
+  "middleware_edge_contract": "config/middleware-public-api-route-contract.v1.json",
   "routes": [
     {
       "name": "codestra-campaign-policy-check",
+      "method": "POST",
       "path": "/api/v1/automation/policy-check",
       "scope": "n8n.policy.check",
       "rate_per_minute": 120,
@@ -23,8 +35,36 @@
     },
     {
       "name": "codestra-campaign-result-submit",
+      "method": "POST",
       "path": "/api/v1/integrations/n8n/results",
       "scope": "n8n.results.submit",
+      "rate_per_minute": 120,
+      "max_body_mb": 1
+    },
+    {
+      "name": "codestra-campaign-result-read",
+      "method": "GET",
+      "path": "~/api/v1/integrations/n8n/results/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "path_template": "/api/v1/integrations/n8n/results/{event_id}",
+      "scope": "n8n.results.read",
+      "rate_per_minute": 120,
+      "max_body_mb": 1
+    },
+    {
+      "name": "codestra-odoo-campaign-read",
+      "method": "GET",
+      "path": "~/api/v1/integrations/odoo/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "path_template": "/api/v1/integrations/odoo/campaigns/{campaign_id}",
+      "scope": "odoo.campaigns.read",
+      "rate_per_minute": 120,
+      "max_body_mb": 1
+    },
+    {
+      "name": "codestra-odoo-campaign-desired-state-read",
+      "method": "GET",
+      "path": "~/api/v1/integrations/odoo/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/desired-state$",
+      "path_template": "/api/v1/integrations/odoo/campaigns/{campaign_id}/desired-state",
+      "scope": "odoo.campaigns.read",
       "rate_per_minute": 120,
       "max_body_mb": 1
     }
