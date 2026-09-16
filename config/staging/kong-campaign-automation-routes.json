@@ -6,7 +6,7 @@
   "purpose": "Keycloak -> Caddy -> Kong -> Middleware edge certification for campaign TEST_SYN only. Same service, plugins and scope guard as production for the four certified routes; staging realm identities, one service client per scope. The policy-check route is production-only because no certification identity may hold n8n.policy.check.",
   "service": {
     "name": "codestra-campaign-automation-api",
-    "host": "codestra-middleware-integration-api-1",
+    "host": "middleware-integration-api",
     "port": 8095,
     "protocol": "http"
   },
@@ -43,7 +43,7 @@
   "issuer": "https://auth-staging.codestra.co/realms/codestra",
   "oidc_discovery": "https://auth-staging.codestra.co/realms/codestra/.well-known/openid-configuration",
   "jwks_uri": "https://auth-staging.codestra.co/realms/codestra/protocol/openid-connect/certs",
-  "audience": "codestra-middleware",
+  "audience": "middleware-api",
   "host": "api.codestra.co",
   "campaign_scope": ["TEST_SYN"],
   "middleware_edge_contract": "config/middleware-public-api-route-contract.v1.json",

@@ -29,7 +29,10 @@ def candidate(identity: str, *addresses: str):
 def test_community_n8n_route_is_https_and_fail_closed():
     data = json.loads((ROOT / "config/kong-community-n8n-egress.v1.json").read_text())
     assert data["schema_version"] == "1.1"
-    assert data["status"] == "PROPOSED_NOT_APPLIED"
+    assert data["status"] == "SUPERSEDED_NOT_APPLIED"
+    assert data["superseded_by"]["decision"] == (
+        "R6-2026-09-16-canonical-middleware-upstream"
+    )
     assert data["service"]["protocol"] == "https"
     assert data["service"]["port"] == 443
     assert data["service"]["tls_verify"] is True
@@ -48,11 +51,23 @@ def test_verified_current_runtime_cannot_be_replaced_by_generic_alias():
         (ROOT / "config/kong-n8n-control-plane-routes.json").read_text()
     )
     current = proposed["current_runtime_authority"]
-    assert current["service_host"] == "appolon-middleware-integration-api"
-    assert current["ambiguous_aliases_denied"] == ["middleware-integration-api"]
+    assert current["status"] == "RETIRED_DENY_ONLY"
+    assert current["service_host"] == "middleware-integration-api"
+    assert current["service_port"] == 8095
+    assert current["service_enabled"] is False
+    assert current["ambiguous_aliases_denied"] == ["appolon-middleware-integration-api"]
+    assert current["retired_legacy_runtime"]["host"] == "appolon-middleware-integration-api"
+    assert current["retired_legacy_runtime"]["port"] == 8080
     assert current["mutation_authorized"] is False
+    assert production["status"] == "RETIRED_DENY_ONLY"
+    assert production["service"]["enabled"] is False
     assert production["service"]["host"] == current["service_host"]
+    assert production["service"]["port"] == current["service_port"]
     assert production["service"]["host"] not in current["ambiguous_aliases_denied"]
+    assert production["service"]["port"] != current["retired_legacy_runtime"]["port"]
+    collector = load_collector()
+    assert collector.CURRENT_RUNTIME_HOST == current["service_host"]
+    assert collector.AMBIGUOUS_ALIAS == current["retired_legacy_runtime"]["host"]
 
 
 def test_topology_collector_is_read_only_and_sanitized():
