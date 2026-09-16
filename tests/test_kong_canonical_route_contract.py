@@ -13,6 +13,12 @@ PLATFORM_CONTRACT = json.loads(
     Path("contracts/platform-control-plane.v1.json").read_text()
 )
 INTAKE_AUTHORITY = json.loads(Path("config/kong-intake-routes.json").read_text())
+PUBLIC_CONTRACT = json.loads(
+    Path("config/middleware-public-api-route-contract.v1.json").read_text()
+)
+MIDDLEWARE_AUTHORITY = json.loads(
+    Path("config/kong-middleware-authority.v2.json").read_text()
+)
 
 
 def test_only_proven_middleware_routes_are_managed_public_routes():
@@ -29,31 +35,23 @@ def test_only_proven_middleware_routes_are_managed_public_routes():
 
 
 def test_authenticated_middleware_contract_routes_are_canonical():
-    routes = {route["name"]: route for route in MANIFEST["contractRoutes"]}
-    assert {path for route in routes.values() for path in route["paths"]} == {
-        "/api/v1/callbacks",
-        "/api/v1/control/callbacks",
-        "/api/v1/automation/policy-check",
-        "/api/v1/integrations/n8n/results",
-        "~/api/v1/integrations/n8n/results/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
-        "~/api/v1/integrations/odoo/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
-        "~/api/v1/integrations/odoo/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/desired-state$",
-        "/v1/integrations/n8n/commands",
-        "/v1/integrations/n8n/operations",
-        "/v1/intake/leads",
-        "/v1/intake/surveys/responses",
+    expected = {
+        (row["method"], row["path"])
+        for row in PUBLIC_CONTRACT["routes"]
+        if row["classification"] == "shared_edge"
     }
-    for name, route in routes.items():
+    routes = {
+        (route["methods"][0], route["pathTemplate"]): route
+        for route in MANIFEST["contractRoutes"]
+    }
+    assert set(routes) == expected
+    for route in routes.values():
         assert route["hosts"] == ["api.codestra.co"]
-        if name.startswith("codestra-n8n-command-"):
-            assert route["serviceHost"] == "appolon-middleware-integration-api"
-            assert route["servicePort"] == 8080
-        elif name.startswith("codestra-intake-"):
-            assert route["serviceHost"] == "codestra-middleware-integration-api-1"
-            assert route["servicePort"] == 8095
-        assert route["securityAuthority"].startswith("config/kong-")
+        assert route["serviceHost"] == "middleware-integration-api"
+        assert route["servicePort"] == 8095
+        assert route["securityAuthority"] == "config/kong-middleware-authority.v2.json"
         assert {
-            "jwt",
+            "openid-connect",
             "correlation-id",
             "rate-limiting",
             "request-size-limiting",
@@ -61,12 +59,8 @@ def test_authenticated_middleware_contract_routes_are_canonical():
         assert "post-function" in route["requiredPlugins"]
         assert "pre-function" not in route["requiredPlugins"]
 
-    for name in ("codestra-intake-leads", "codestra-intake-survey-responses"):
-        route = routes[name]
-        assert route["methods"] == ["POST"]
-        assert route["securityAuthority"] == "config/kong-intake-routes.json"
-        assert "openid-connect" in route["requiredPlugins"]
-        assert "request-termination" in route["requiredPlugins"]
+    assert MANIFEST["runtimeApplyAuthorized"] is False
+    assert MANIFEST["providerEffectsEnabled"] is False
 
 
 def test_intake_authority_is_service_only_and_fail_closed():
@@ -93,25 +87,43 @@ def test_intake_authority_is_service_only_and_fail_closed():
 
 
 def test_n8n_control_plane_preserves_identity_for_middleware_revalidation():
-    assert N8N_AUTHORITY["status"] == "APPROVED_PRODUCTION"
+    assert N8N_AUTHORITY["status"] == "RETIRED_DENY_ONLY"
+    assert N8N_AUTHORITY["runtime_apply_authorized"] is False
     assert N8N_AUTHORITY["issuer"] == "https://auth.codestra.co/realms/codestra"
     assert N8N_AUTHORITY["audience"] == "middleware-api"
     assert N8N_AUTHORITY["client_id"] == "n8n-automation"
     assert N8N_AUTHORITY["preserve_authorization_header"] is True
     assert N8N_AUTHORITY["token_exchange"] is False
-    assert N8N_AUTHORITY["service"]["host"] == "appolon-middleware-integration-api"
-    assert N8N_AUTHORITY["service"]["port"] == 8080
+    assert N8N_AUTHORITY["service"]["host"] == "middleware-integration-api"
+    assert N8N_AUTHORITY["service"]["port"] == 8095
+    assert N8N_AUTHORITY["service"]["enabled"] is False
     routes = {route["name"]: route for route in N8N_AUTHORITY["routes"]}
     assert routes["codestra-n8n-command-submit"]["scope"] == "middleware.request.forward"
     assert routes["codestra-n8n-command-read"]["scope"] == "middleware.status.read"
     assert N8N_AUTHORITY["safety"]["direct_provider_routes"] is False
-    assert N8N_AUTHORITY["safety"]["reconciliation_apply"] is True
+    assert {route["classification"] for route in routes.values()} == {"denied"}
+    assert N8N_AUTHORITY["safety"]["reconciliation_apply"] is False
     assert PLATFORM_CONTRACT["status"] == "APPROVED_PRODUCTION"
     assert PLATFORM_CONTRACT["safety"]["deployment_permitted_by_contract"] is True
-    canonical = {route["name"]: route for route in MANIFEST["contractRoutes"]}
-    for name in ("codestra-n8n-command-submit", "codestra-n8n-command-read"):
-        assert "openid-connect" not in canonical[name]["requiredPlugins"]
-        assert {"jwt", "post-function"} <= set(canonical[name]["requiredPlugins"])
+    canonical_paths = {
+        route["pathTemplate"] for route in MANIFEST["contractRoutes"]
+    }
+    assert not {
+        "/v1/integrations/n8n/commands",
+        "/v1/integrations/n8n/operations",
+    } & canonical_paths
+    denied_paths = {route["pathTemplate"] for route in MANIFEST["deniedRoutes"]}
+    assert {
+        "/v1/integrations/n8n/commands",
+        "/v1/integrations/n8n/operations",
+    } <= denied_paths
+    assert len(
+        [
+            row
+            for row in MIDDLEWARE_AUTHORITY["routes"]
+            if row["path"].startswith("/v2/automation/")
+        ]
+    ) == 13
 
 
 def test_every_managed_route_has_explicit_security_controls():

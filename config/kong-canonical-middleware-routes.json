@@ -7,10 +7,10 @@
   "middlewareEdgeContract": {
     "source": "appolon1908-hue/Middleware-:deploy/public-api-route-contract.json",
     "vendoredCopy": "config/middleware-public-api-route-contract.v1.json",
-    "schema": "codestra.middleware.public-api-route-contract.v1",
-    "sha256": "af984cbaa41d1e3602ceb40be6fe383c0030a3c10cbea772efab7ff95d602d36",
+    "schema": "codestra.middleware.public-api-route-contract.v2",
+    "sha256": "7580123dead97ea342c704a57a3c8eed9f5dce69aab247d4b693db96bc7334d5",
     "hashRule": "sha256 over json.dumps(contract, sort_keys=True, separators=(',', ':')).encode('utf-8')",
-    "validator": "scripts/validate_middleware_edge_contract.py"
+    "generator": "scripts/generate_middleware_routes.py"
   },
   "unverifiedExistingRouteNames": [
     "codestra-token-validation-certification",
@@ -22,157 +22,2374 @@
   ],
   "contractRoutes": [
     {
-      "name": "codestra-intake-leads",
-      "hosts": ["api.codestra.co"],
-      "paths": ["/v1/intake/leads"],
-      "methods": ["POST"],
-      "protocols": ["http"],
+      "name": "middleware-check-automation-policy",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/api/v1/automation/policy\\-check$"
+      ],
+      "pathTemplate": "/api/v1/automation/policy-check",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
       "stripPath": false,
       "preserveHost": true,
-      "serviceHost": "codestra-middleware-integration-api-1",
+      "serviceHost": "middleware-integration-api",
       "servicePort": 8095,
-      "securityAuthority": "config/kong-intake-routes.json",
-      "requiredPlugins": ["jwt", "openid-connect", "post-function", "correlation-id", "rate-limiting", "request-size-limiting", "request-termination"]
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
     },
     {
-      "name": "codestra-intake-survey-responses",
-      "hosts": ["api.codestra.co"],
-      "paths": ["/v1/intake/surveys/responses"],
-      "methods": ["POST"],
-      "protocols": ["http"],
+      "name": "middleware-list-callbacks",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/api/v1/callbacks$"
+      ],
+      "pathTemplate": "/api/v1/callbacks",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
       "stripPath": false,
       "preserveHost": true,
-      "serviceHost": "codestra-middleware-integration-api-1",
+      "serviceHost": "middleware-integration-api",
       "servicePort": 8095,
-      "securityAuthority": "config/kong-intake-routes.json",
-      "requiredPlugins": ["jwt", "openid-connect", "post-function", "correlation-id", "rate-limiting", "request-size-limiting", "request-termination"]
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
     },
     {
-      "name": "codestra-callback-read",
-      "hosts": ["api.codestra.co"],
-      "paths": ["/api/v1/callbacks"],
-      "methods": ["GET"],
-      "protocols": ["http"],
+      "name": "middleware-create-callback",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/api/v1/control/callbacks$"
+      ],
+      "pathTemplate": "/api/v1/control/callbacks",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
       "stripPath": false,
       "preserveHost": true,
-      "serviceHost": "codestra-middleware-integration-api-1",
+      "serviceHost": "middleware-integration-api",
       "servicePort": 8095,
-      "securityAuthority": "config/kong-callback-routes.json",
-      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
     },
     {
-      "name": "codestra-callback-control",
-      "hosts": ["api.codestra.co"],
-      "paths": ["/api/v1/control/callbacks"],
-      "methods": ["POST"],
-      "protocols": ["http"],
+      "name": "middleware-submit-n8n-result",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/api/v1/integrations/n8n/results$"
+      ],
+      "pathTemplate": "/api/v1/integrations/n8n/results",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
       "stripPath": false,
       "preserveHost": true,
-      "serviceHost": "codestra-middleware-integration-api-1",
+      "serviceHost": "middleware-integration-api",
       "servicePort": 8095,
-      "securityAuthority": "config/kong-callback-routes.json",
-      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
     },
     {
-      "name": "codestra-campaign-policy-check",
-      "hosts": ["api.codestra.co"],
-      "paths": ["/api/v1/automation/policy-check"],
-      "methods": ["POST"],
-      "protocols": ["http"],
-      "stripPath": false,
-      "preserveHost": false,
-      "serviceHost": "codestra-middleware-integration-api-1",
-      "servicePort": 8095,
-      "securityAuthority": "config/kong-campaign-automation-routes.json",
-      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
-    },
-    {
-      "name": "codestra-campaign-result-submit",
-      "hosts": ["api.codestra.co"],
-      "paths": ["/api/v1/integrations/n8n/results"],
-      "methods": ["POST"],
-      "protocols": ["http"],
-      "stripPath": false,
-      "preserveHost": false,
-      "serviceHost": "codestra-middleware-integration-api-1",
-      "servicePort": 8095,
-      "securityAuthority": "config/kong-campaign-automation-routes.json",
-      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
-    },
-    {
-      "name": "codestra-campaign-result-read",
-      "hosts": ["api.codestra.co"],
-      "paths": ["~/api/v1/integrations/n8n/results/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"],
+      "name": "middleware-read-n8n-result",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/api/v1/integrations/n8n/results/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
       "pathTemplate": "/api/v1/integrations/n8n/results/{event_id}",
-      "methods": ["GET"],
-      "protocols": ["http"],
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
       "stripPath": false,
-      "preserveHost": false,
-      "serviceHost": "codestra-middleware-integration-api-1",
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
       "servicePort": 8095,
-      "securityAuthority": "config/kong-campaign-automation-routes.json",
-      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
     },
     {
-      "name": "codestra-odoo-campaign-read",
-      "hosts": ["api.codestra.co"],
-      "paths": ["~/api/v1/integrations/odoo/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"],
+      "name": "middleware-read-odoo-campaign",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/api/v1/integrations/odoo/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
       "pathTemplate": "/api/v1/integrations/odoo/campaigns/{campaign_id}",
-      "methods": ["GET"],
-      "protocols": ["http"],
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
       "stripPath": false,
-      "preserveHost": false,
-      "serviceHost": "codestra-middleware-integration-api-1",
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
       "servicePort": 8095,
-      "securityAuthority": "config/kong-campaign-automation-routes.json",
-      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
     },
     {
-      "name": "codestra-odoo-campaign-desired-state-read",
-      "hosts": ["api.codestra.co"],
-      "paths": ["~/api/v1/integrations/odoo/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/desired-state$"],
+      "name": "middleware-read-odoo-campaign-desired-state",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/api/v1/integrations/odoo/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/desired\\-state$"
+      ],
       "pathTemplate": "/api/v1/integrations/odoo/campaigns/{campaign_id}/desired-state",
-      "methods": ["GET"],
-      "protocols": ["http"],
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
       "stripPath": false,
-      "preserveHost": false,
-      "serviceHost": "codestra-middleware-integration-api-1",
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
       "servicePort": 8095,
-      "securityAuthority": "config/kong-campaign-automation-routes.json",
-      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
     },
     {
-      "name": "codestra-n8n-command-submit",
-      "hosts": ["api.codestra.co"],
-      "paths": ["/v1/integrations/n8n/commands"],
-      "methods": ["POST"],
-      "protocols": ["http"],
+      "name": "middleware-ingress-odoo-integration-events-api-v1-odoo-events-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/api/v1/odoo/events$"
+      ],
+      "pathTemplate": "/api/v1/odoo/events",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
       "stripPath": false,
-      "preserveHost": false,
-      "serviceHost": "appolon-middleware-integration-api",
-      "servicePort": 8080,
-      "securityAuthority": "config/kong-n8n-control-plane-routes.json",
-      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
     },
     {
-      "name": "codestra-n8n-command-read",
-      "hosts": ["api.codestra.co"],
-      "paths": ["/v1/integrations/n8n/operations"],
-      "methods": ["GET"],
-      "protocols": ["http"],
+      "name": "middleware-list-activity-platform-v1-activity-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/activity$"
+      ],
+      "pathTemplate": "/platform/v1/activity",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
       "stripPath": false,
-      "preserveHost": false,
-      "serviceHost": "appolon-middleware-integration-api",
-      "servicePort": 8080,
-      "securityAuthority": "config/kong-n8n-control-plane-routes.json",
-      "requiredPlugins": ["jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"]
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-activity-platform-v1-activity--activity-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/activity/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/activity/{activity_id}",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-create-provisioning-request-platform-v1-agent-provisioning-requests-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/agent\\-provisioning/requests$"
+      ],
+      "pathTemplate": "/platform/v1/agent-provisioning/requests",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-provisioning-request-platform-v1-agent-provisioning-requests--request-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/agent\\-provisioning/requests/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/agent-provisioning/requests/{request_id}",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-reactivate-provisioning-request-platform-v1-agent-provisioning-requests--request-id--reactivate-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/agent\\-provisioning/requests/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/reactivate$"
+      ],
+      "pathTemplate": "/platform/v1/agent-provisioning/requests/{request_id}/reactivate",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-reconcile-provisioning-request-platform-v1-agent-provisioning-requests--request-id--reconcile-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/agent\\-provisioning/requests/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/reconcile$"
+      ],
+      "pathTemplate": "/platform/v1/agent-provisioning/requests/{request_id}/reconcile",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-revoke-provisioning-request-platform-v1-agent-provisioning-requests--request-id--revoke-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/agent\\-provisioning/requests/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/revoke$"
+      ],
+      "pathTemplate": "/platform/v1/agent-provisioning/requests/{request_id}/revoke",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-suspend-provisioning-request-platform-v1-agent-provisioning-requests--request-id--suspend-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/agent\\-provisioning/requests/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/suspend$"
+      ],
+      "pathTemplate": "/platform/v1/agent-provisioning/requests/{request_id}/suspend",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-agents-presence-platform-v1-agents-presence-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/agents/presence$"
+      ],
+      "pathTemplate": "/platform/v1/agents/presence",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-agent-presence-platform-v1-agents--user-id--presence-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/agents/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/presence$"
+      ],
+      "pathTemplate": "/platform/v1/agents/{user_id}/presence",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-calls-platform-v1-calls-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/calls$"
+      ],
+      "pathTemplate": "/platform/v1/calls",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-call-platform-v1-calls--call-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/calls/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/calls/{call_id}",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-campaigns-platform-v1-campaigns-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/campaigns$"
+      ],
+      "pathTemplate": "/platform/v1/campaigns",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-campaign-platform-v1-campaigns--campaign-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/campaigns/{campaign_id}",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-campaign-channels-platform-v1-campaigns--campaign-id--channels-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/channels$"
+      ],
+      "pathTemplate": "/platform/v1/campaigns/{campaign_id}/channels",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-campaign-health-platform-v1-campaigns--campaign-id--health-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/health$"
+      ],
+      "pathTemplate": "/platform/v1/campaigns/{campaign_id}/health",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-campaign-members-platform-v1-campaigns--campaign-id--members-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/members$"
+      ],
+      "pathTemplate": "/platform/v1/campaigns/{campaign_id}/members",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-email-identities-platform-v1-email-identities-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/email/identities$"
+      ],
+      "pathTemplate": "/platform/v1/email/identities",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-activate-platform-v1-email-production-activate-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/email/production/activate$"
+      ],
+      "pathTemplate": "/platform/v1/email/production/activate",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-audit-platform-v1-email-production-audit-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/email/production/audit$"
+      ],
+      "pathTemplate": "/platform/v1/email/production/audit",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-authorize-platform-v1-email-production-authorize-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/email/production/authorize$"
+      ],
+      "pathTemplate": "/platform/v1/email/production/authorize",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-kill-switch-platform-v1-email-production-kill-switch-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/email/production/kill\\-switch$"
+      ],
+      "pathTemplate": "/platform/v1/email/production/kill-switch",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-quotas-platform-v1-email-production-quotas-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/email/production/quotas$"
+      ],
+      "pathTemplate": "/platform/v1/email/production/quotas",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-readiness-platform-v1-email-production-readiness-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/email/production/readiness$"
+      ],
+      "pathTemplate": "/platform/v1/email/production/readiness",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-revoke-platform-v1-email-production-revoke-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/email/production/revoke$"
+      ],
+      "pathTemplate": "/platform/v1/email/production/revoke",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-status-platform-v1-email-production-status-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/email/production/status$"
+      ],
+      "pathTemplate": "/platform/v1/email/production/status",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-hosts-platform-v1-hosts-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/hosts$"
+      ],
+      "pathTemplate": "/platform/v1/hosts",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-host-platform-v1-hosts--host-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/hosts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/hosts/{host_id}",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-github-event-platform-v1-integrations-github-events-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/integrations/github/events$"
+      ],
+      "pathTemplate": "/platform/v1/integrations/github/events",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-my-presence-platform-v1-me-presence-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/me/presence$"
+      ],
+      "pathTemplate": "/platform/v1/me/presence",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-queues-platform-v1-queues-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/queues$"
+      ],
+      "pathTemplate": "/platform/v1/queues",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-queue-platform-v1-queues--queue-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/queues/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/queues/{queue_id}",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-queue-calls-platform-v1-queues--queue-id--calls-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/queues/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/calls$"
+      ],
+      "pathTemplate": "/platform/v1/queues/{queue_id}/calls",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-queue-members-platform-v1-queues--queue-id--members-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/queues/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/members$"
+      ],
+      "pathTemplate": "/platform/v1/queues/{queue_id}/members",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-queue-metrics-platform-v1-queues--queue-id--metrics-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/queues/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/metrics$"
+      ],
+      "pathTemplate": "/platform/v1/queues/{queue_id}/metrics",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-repositories-platform-v1-repositories-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/repositories$"
+      ],
+      "pathTemplate": "/platform/v1/repositories",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-observe-platform-v1-runtime-observations-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/runtime/observations$"
+      ],
+      "pathTemplate": "/platform/v1/runtime/observations",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-contract-refresh-platform-v1-services--service-id--contract-refresh-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/services/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/contract\\-refresh$"
+      ],
+      "pathTemplate": "/platform/v1/services/{service_id}/contract-refresh",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-coverage-platform-v1-services--service-id--coverage-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/services/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/coverage$"
+      ],
+      "pathTemplate": "/platform/v1/services/{service_id}/coverage",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-dependencies-platform-v1-services--service-id--dependencies-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/services/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/dependencies$"
+      ],
+      "pathTemplate": "/platform/v1/services/{service_id}/dependencies",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-deployments-platform-v1-services--service-id--deployments-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/services/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/deployments$"
+      ],
+      "pathTemplate": "/platform/v1/services/{service_id}/deployments",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-endpoints-platform-v1-services--service-id--endpoints-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/services/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/endpoints$"
+      ],
+      "pathTemplate": "/platform/v1/services/{service_id}/endpoints",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-profile-platform-v1-services--service-id--telemetry-profile-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/services/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/telemetry\\-profile$"
+      ],
+      "pathTemplate": "/platform/v1/services/{service_id}/telemetry-profile",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-session-context-platform-v1-session-context-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/session/context$"
+      ],
+      "pathTemplate": "/platform/v1/session/context",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-select-session-context-platform-v1-session-context-select-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/session/context/select$"
+      ],
+      "pathTemplate": "/platform/v1/session/context/select",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-sms-identities-platform-v1-sms-identities-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/sms/identities$"
+      ],
+      "pathTemplate": "/platform/v1/sms/identities",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-reconcile-platform-v1-sync-reconciliations-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/sync/reconciliations$"
+      ],
+      "pathTemplate": "/platform/v1/sync/reconciliations",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-reconciliation-result-platform-v1-sync-reconciliations--reconciliation-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/sync/reconciliations/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/sync/reconciliations/{reconciliation_id}",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-sync-status-platform-v1-sync-status-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/sync/status$"
+      ],
+      "pathTemplate": "/platform/v1/sync/status",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-heartbeat-platform-v1-telemetry-heartbeats-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/telemetry/heartbeats$"
+      ],
+      "pathTemplate": "/platform/v1/telemetry/heartbeats",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-telephony-assignments-platform-v1-telephony-assignments-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/telephony/assignments$"
+      ],
+      "pathTemplate": "/platform/v1/telephony/assignments",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-tenants-platform-v1-tenants-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/tenants$"
+      ],
+      "pathTemplate": "/platform/v1/tenants",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-authorized-tenants-platform-v1-tenants-authorized-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/tenants/authorized$"
+      ],
+      "pathTemplate": "/platform/v1/tenants/authorized",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-tenant-platform-v1-tenants--tenant-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/tenants/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/tenants/{tenant_id}",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-tenant-campaigns-platform-v1-tenants--tenant-id--campaigns-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/tenants/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/campaigns$"
+      ],
+      "pathTemplate": "/platform/v1/tenants/{tenant_id}/campaigns",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-tenant-health-platform-v1-tenants--tenant-id--health-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/tenants/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/health$"
+      ],
+      "pathTemplate": "/platform/v1/tenants/{tenant_id}/health",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-user-platform-v1-users--employee-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/users/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/users/{employee_id}",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-user-campaigns-platform-v1-users--employee-id--campaigns-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/users/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/campaigns$"
+      ],
+      "pathTemplate": "/platform/v1/users/{employee_id}/campaigns",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-user-entitlements-platform-v1-users--employee-id--entitlements-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/users/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/entitlements$"
+      ],
+      "pathTemplate": "/platform/v1/users/{employee_id}/entitlements",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-request-automation-approval-v2-automation-approvals-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/v2/automation/approvals$"
+      ],
+      "pathTemplate": "/v2/automation/approvals",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-read-automation-approval-v2-automation-approvals--approval-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/v2/automation/approvals/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/v2/automation/approvals/{approval_id}",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-read-automation-capability-v2-automation-capabilities--capability--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/v2/automation/capabilities/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/v2/automation/capabilities/{capability}",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-submit-automation-command-v2-automation-commands-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/v2/automation/commands$"
+      ],
+      "pathTemplate": "/v2/automation/commands",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-read-automation-command-v2-automation-commands--command-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/v2/automation/commands/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/v2/automation/commands/{command_id}",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-replay-automation-dead-letter-v2-automation-dead-letters--dead-letter-id--replay-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/v2/automation/dead\\-letters/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/replay$"
+      ],
+      "pathTemplate": "/v2/automation/dead-letters/{dead_letter_id}/replay",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-claim-automation-job-v2-automation-jobs-claim-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/v2/automation/jobs/claim$"
+      ],
+      "pathTemplate": "/v2/automation/jobs/claim",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-reconcile-automation-jobs-v2-automation-jobs-reconcile-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/v2/automation/jobs/reconcile$"
+      ],
+      "pathTemplate": "/v2/automation/jobs/reconcile",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-read-automation-job-v2-automation-jobs--job-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/v2/automation/jobs/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/v2/automation/jobs/{job_id}",
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-complete-automation-job-v2-automation-jobs--job-id--complete-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/v2/automation/jobs/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/complete$"
+      ],
+      "pathTemplate": "/v2/automation/jobs/{job_id}/complete",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-fail-automation-job-v2-automation-jobs--job-id--fail-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/v2/automation/jobs/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/fail$"
+      ],
+      "pathTemplate": "/v2/automation/jobs/{job_id}/fail",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-heartbeat-automation-job-v2-automation-jobs--job-id--heartbeat-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/v2/automation/jobs/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/heartbeat$"
+      ],
+      "pathTemplate": "/v2/automation/jobs/{job_id}/heartbeat",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-record-automation-step-v2-automation-jobs--job-id--steps-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/v2/automation/jobs/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/steps$"
+      ],
+      "pathTemplate": "/v2/automation/jobs/{job_id}/steps",
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
     }
   ],
   "routes": [
-    {"name": "crm-route", "path": "/v1/crm", "methods": ["GET", "POST", "PATCH", "OPTIONS"], "auth": "key-auth", "maxBodyMb": 2, "ratePerMinute": 120},
-    {"name": "email-route", "path": "/v1/email", "methods": ["GET", "POST"], "auth": "key-auth", "maxBodyMb": 10, "ratePerMinute": 60},
-    {"name": "sms-route", "path": "/v1/sms", "methods": ["GET", "POST"], "auth": "key-auth", "maxBodyMb": 1, "ratePerMinute": 60},
-    {"name": "webhooks-route", "path": "/v1/webhooks", "methods": ["POST"], "auth": "key-auth", "maxBodyMb": 2, "ratePerMinute": 120},
-    {"name": "sms-dlr-telnexa-route", "path": "/v1/sms/dlr/telnexa", "methods": ["POST"], "auth": "key-auth", "maxBodyMb": 1, "ratePerMinute": 240}
+    {
+      "name": "crm-route",
+      "path": "/v1/crm",
+      "methods": [
+        "GET",
+        "POST",
+        "PATCH",
+        "OPTIONS"
+      ],
+      "auth": "key-auth",
+      "maxBodyMb": 2,
+      "ratePerMinute": 120
+    },
+    {
+      "name": "email-route",
+      "path": "/v1/email",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "key-auth",
+      "maxBodyMb": 10,
+      "ratePerMinute": 60
+    },
+    {
+      "name": "sms-route",
+      "path": "/v1/sms",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "key-auth",
+      "maxBodyMb": 1,
+      "ratePerMinute": 60
+    },
+    {
+      "name": "webhooks-route",
+      "path": "/v1/webhooks",
+      "methods": [
+        "POST"
+      ],
+      "auth": "key-auth",
+      "maxBodyMb": 2,
+      "ratePerMinute": 120
+    },
+    {
+      "name": "sms-dlr-telnexa-route",
+      "path": "/v1/sms/dlr/telnexa",
+      "methods": [
+        "POST"
+      ],
+      "auth": "key-auth",
+      "maxBodyMb": 1,
+      "ratePerMinute": 240
+    }
+  ],
+  "providerEffectsEnabled": false,
+  "deniedRoutes": [
+    {
+      "name": "middleware-deny-retired-campaign-actions",
+      "method": "POST",
+      "pathTemplate": "/api/v1/integration/campaign-actions",
+      "path": "~^/api/v1/integration/campaign\\-actions$",
+      "statusCode": 404
+    },
+    {
+      "name": "middleware-deny-retired-integration-campaign-actions",
+      "method": "POST",
+      "pathTemplate": "/api/v1/integrations/odoo/campaign-actions",
+      "path": "~^/api/v1/integrations/odoo/campaign\\-actions$",
+      "statusCode": 404
+    },
+    {
+      "name": "middleware-deny-retired-odoo-campaign-commands",
+      "method": "POST",
+      "pathTemplate": "/api/v1/integrations/odoo/campaign-commands",
+      "path": "~^/api/v1/integrations/odoo/campaign\\-commands$",
+      "statusCode": 404
+    },
+    {
+      "name": "middleware-deny-retired-odoo-campaign-command-read",
+      "method": "GET",
+      "pathTemplate": "/api/v1/integrations/odoo/campaign-commands/{command_id}",
+      "path": "~^/api/v1/integrations/odoo/campaign\\-commands/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "statusCode": 404
+    },
+    {
+      "name": "middleware-deny-retired-odoo-campaign-actions",
+      "method": "POST",
+      "pathTemplate": "/api/v1/odoo/campaign-actions",
+      "path": "~^/api/v1/odoo/campaign\\-actions$",
+      "statusCode": 404
+    },
+    {
+      "name": "middleware-deny-deprecated-n8n-commands",
+      "method": "POST",
+      "pathTemplate": "/v1/integrations/n8n/commands",
+      "path": "~^/v1/integrations/n8n/commands$",
+      "statusCode": 404
+    },
+    {
+      "name": "middleware-deny-deprecated-n8n-operations",
+      "method": "GET",
+      "pathTemplate": "/v1/integrations/n8n/operations",
+      "path": "~^/v1/integrations/n8n/operations$",
+      "statusCode": 404
+    },
+    {
+      "name": "middleware-deny-deprecated-n8n-operation",
+      "method": "GET",
+      "pathTemplate": "/v1/integrations/n8n/operations/{command_id}",
+      "path": "~^/v1/integrations/n8n/operations/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "statusCode": 404
+    },
+    {
+      "name": "middleware-deny-deprecated-n8n-cancel",
+      "method": "POST",
+      "pathTemplate": "/v1/integrations/n8n/operations/{command_id}/cancel",
+      "path": "~^/v1/integrations/n8n/operations/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/cancel$",
+      "statusCode": 404
+    },
+    {
+      "name": "middleware-deny-deprecated-n8n-reconcile",
+      "method": "POST",
+      "pathTemplate": "/v1/integrations/n8n/operations/{command_id}/reconcile",
+      "path": "~^/v1/integrations/n8n/operations/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/reconcile$",
+      "statusCode": 404
+    }
   ]
 }
