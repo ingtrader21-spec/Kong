@@ -42,6 +42,7 @@ services:
         - n8n.policy.check
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -109,6 +110,7 @@ services:
         - callbacks.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -176,6 +178,7 @@ services:
         - callbacks.write
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -243,6 +246,7 @@ services:
         - n8n.results.submit
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -310,6 +314,7 @@ services:
         - n8n.results.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -377,6 +382,7 @@ services:
         - odoo.campaigns.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -444,6 +450,7 @@ services:
         - odoo.campaigns.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -511,6 +518,7 @@ services:
         - odoo.events.publish
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -578,6 +586,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -645,6 +654,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -712,6 +722,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -779,6 +790,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -846,6 +858,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -913,6 +926,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -980,6 +994,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1047,6 +1062,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1114,6 +1130,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1181,6 +1198,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1248,6 +1266,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1315,6 +1334,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1382,6 +1402,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1449,6 +1470,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1516,6 +1538,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1583,6 +1606,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1650,6 +1674,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1717,6 +1742,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1784,6 +1810,7 @@ services:
         - email.production.write
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1851,6 +1878,7 @@ services:
         - email.production.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1918,6 +1946,7 @@ services:
         - email.production.write
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -1985,6 +2014,7 @@ services:
         - email.production.write
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2052,6 +2082,7 @@ services:
         - email.production.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2119,6 +2150,7 @@ services:
         - email.production.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2186,6 +2218,7 @@ services:
         - email.production.write
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2253,6 +2286,7 @@ services:
         - email.production.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2320,6 +2354,7 @@ services:
         - platform.services.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2387,6 +2422,7 @@ services:
         - platform.services.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2454,6 +2490,7 @@ services:
         - github.webhooks.publish
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2521,6 +2558,7 @@ services:
         - identity.session
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2588,6 +2626,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2655,6 +2694,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2722,6 +2762,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2789,6 +2830,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2856,6 +2898,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2923,6 +2966,7 @@ services:
         - platform.services.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -2990,6 +3034,7 @@ services:
         - platform.runtime.observe
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3057,6 +3102,7 @@ services:
         - platform.services.write
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3124,6 +3170,7 @@ services:
         - observability.health.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3191,6 +3238,7 @@ services:
         - platform.services.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3258,6 +3306,7 @@ services:
         - platform.services.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3325,6 +3374,7 @@ services:
         - platform.services.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3392,6 +3442,7 @@ services:
         - platform.services.write
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3459,6 +3510,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3526,6 +3578,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3593,6 +3646,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3660,6 +3714,7 @@ services:
         - platform.sync.reconcile
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3727,6 +3782,7 @@ services:
         - platform.sync.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3794,6 +3850,7 @@ services:
         - platform.sync.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3861,6 +3918,7 @@ services:
         - telemetry.heartbeat.write
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3928,6 +3986,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -3995,6 +4054,7 @@ services:
         - platform.tenants.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4062,6 +4122,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4129,6 +4190,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4196,6 +4258,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4263,6 +4326,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4330,6 +4394,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4397,6 +4462,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4464,6 +4530,7 @@ services:
         - identity.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4531,6 +4598,7 @@ services:
         - automation.approval.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4598,6 +4666,7 @@ services:
         - automation.approval.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4665,6 +4734,7 @@ services:
         - automation.capability.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4732,6 +4802,7 @@ services:
         - resolved_from_command_prefix
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4799,6 +4870,7 @@ services:
         - automation.command.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4866,6 +4938,7 @@ services:
         - automation.operations.replay.request
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -4933,6 +5006,7 @@ services:
         - automation.job.claim
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -5000,6 +5074,7 @@ services:
         - automation.operations.reconcile
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -5067,6 +5142,7 @@ services:
         - automation.job.read
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -5134,6 +5210,7 @@ services:
         - automation.job.complete
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -5201,6 +5278,7 @@ services:
         - automation.job.fail
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -5268,6 +5346,7 @@ services:
         - automation.job.heartbeat
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:
@@ -5335,6 +5414,7 @@ services:
         - automation.job.step.write
         consumer_claim:
         - azp
+        cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
     - name: post-function
       config:
         access:

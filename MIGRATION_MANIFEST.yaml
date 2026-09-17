@@ -6,8 +6,8 @@ files:
   sha256: eb004bbc12919944c1a8312275a99475dfa4d2abefab2f309181173d16492ff0
   size: 3263
 - path: .github/workflows/kong-config.yml
-  sha256: 280d3de38acb30272a36daa946a7571f984c152984bca40f0fdb7e9b4f3991b8
-  size: 1976
+  sha256: 68201716307f7baaf6a36b58e55206c6b15b05d961fd47c57d0aa0aa0130d01e
+  size: 2139
 - path: .github/workflows/manifest-sync.yml
   sha256: 4f0dc10e4d8674cff07ebb34c36f25076ea1ccd7881461aad84cf018fa5ae1bf
   size: 2530
@@ -114,8 +114,8 @@ files:
   sha256: 93714ef73fe1e267308cd5ce031bf7b54cd2062917bb0587d2315f5aacc3a12a
   size: 51277
 - path: config/kong-middleware-routes.production.yml
-  sha256: 821743c44c24e1ae0ecaddde82bbef6aa44d05f334559d47dc9be72415f5a59c
-  size: 168954
+  sha256: 07a6beb2b4be120d7e92025c7c57b2d9e6e6d96bad73a9cae5b07683075becc6
+  size: 174634
 - path: config/kong-moneybee-identity-routes.json
   sha256: 769b44d5a9c4683dc62b57ae4166e4f8b1b99140fad9f3ee0d31690472e85e1d
   size: 2194
@@ -147,8 +147,8 @@ files:
   sha256: 017efc3af09f1d3c51cb6d4777056ff57361302ad81c57c7a99e16e1f0b5e11e
   size: 3739
 - path: config/staging/kong-middleware-routes.staging.yml
-  sha256: f6b6ff6d254ed331e698f66f068c1c2a180ac6f2c088c44fc9740a5b92c3c6cb
-  size: 169591
+  sha256: a62dab274b845a29ff1d47244bda2e72db415140ba56c10c31b74197050d489b
+  size: 175271
 - path: config/staging/kong-n8n-control-plane-routes.json
   sha256: 8f4bd06199b8b9215846f8ffc99cca27bd6e7b683a1289e746fea6d4772f1e74
   size: 2407
@@ -465,8 +465,8 @@ files:
   sha256: 725194204f5a76f2009973c67002f4eba729cfd57c9f60095c7c95b2bc98fa8e
   size: 20296
 - path: scripts/generate_middleware_routes.py
-  sha256: 824e3c433b89ead404f8a204d87254baaa1cc3205bb431be2a4aad97c39d83de
-  size: 10479
+  sha256: cfb863100958f949fb2f35241488d2ba61689416f6abbe67410f05f50599c143
+  size: 10799
 - path: scripts/kong_admin_channel.py
   sha256: df8450de6874134a6df0eeb1c42533b868c4edca1704a5b2138dfead1998711d
   size: 16318
@@ -657,7 +657,7 @@ files:
   sha256: d8eca1dd7a2b4e06db51a58a50f986e3fd47611344636c63363264c0c57d4692
   size: 11461
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 3eddde753b87888f0b0298b6f0d1fe1afbe1d0299064e836b3474ae2d71d11b1
+manifest_generation_id: 67a783766b8d78792e961f3973f25efcc996c24d3490cb76e58ca9e583884f10
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:

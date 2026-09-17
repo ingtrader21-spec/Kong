@@ -12,8 +12,8 @@
     },
     {
       "path": ".github/workflows/kong-config.yml",
-      "sha256": "280d3de38acb30272a36daa946a7571f984c152984bca40f0fdb7e9b4f3991b8",
-      "size": 1976
+      "sha256": "68201716307f7baaf6a36b58e55206c6b15b05d961fd47c57d0aa0aa0130d01e",
+      "size": 2139
     },
     {
       "path": ".github/workflows/manifest-sync.yml",
@@ -192,8 +192,8 @@
     },
     {
       "path": "config/kong-middleware-routes.production.yml",
-      "sha256": "821743c44c24e1ae0ecaddde82bbef6aa44d05f334559d47dc9be72415f5a59c",
-      "size": 168954
+      "sha256": "07a6beb2b4be120d7e92025c7c57b2d9e6e6d96bad73a9cae5b07683075becc6",
+      "size": 174634
     },
     {
       "path": "config/kong-moneybee-identity-routes.json",
@@ -247,8 +247,8 @@
     },
     {
       "path": "config/staging/kong-middleware-routes.staging.yml",
-      "sha256": "f6b6ff6d254ed331e698f66f068c1c2a180ac6f2c088c44fc9740a5b92c3c6cb",
-      "size": 169591
+      "sha256": "a62dab274b845a29ff1d47244bda2e72db415140ba56c10c31b74197050d489b",
+      "size": 175271
     },
     {
       "path": "config/staging/kong-n8n-control-plane-routes.json",
@@ -777,8 +777,8 @@
     },
     {
       "path": "scripts/generate_middleware_routes.py",
-      "sha256": "824e3c433b89ead404f8a204d87254baaa1cc3205bb431be2a4aad97c39d83de",
-      "size": 10479
+      "sha256": "cfb863100958f949fb2f35241488d2ba61689416f6abbe67410f05f50599c143",
+      "size": 10799
     },
     {
       "path": "scripts/kong_admin_channel.py",
@@ -1097,7 +1097,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "3eddde753b87888f0b0298b6f0d1fe1afbe1d0299064e836b3474ae2d71d11b1",
+  "manifest_generation_id": "67a783766b8d78792e961f3973f25efcc996c24d3490cb76e58ca9e583884f10",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

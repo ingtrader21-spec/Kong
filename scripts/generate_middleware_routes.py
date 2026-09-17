@@ -143,6 +143,10 @@ def route_plugins(row: dict[str, Any], issuer: str) -> list[dict[str, Any]]:
                 "audience": [row["audience"]],
                 "scopes_required": [row["scope"]],
                 "consumer_claim": ["azp"],
+                # decK >= 1.66 (the CI-pinned version) refuses to build state
+                # without an explicit salt; the value is a vault reference, never
+                # a literal, exactly as the other reviewed OIDC renderers do.
+                "cache_tokens_salt": "{vault://env/kong-oidc-cache-tokens-salt}",
             },
         },
         {"name": "post-function", "config": {"access": [post_function(row)]}},
