@@ -1,0 +1,99 @@
+{
+  "schema": "codestra.kong.platform-api-read-routes.v1",
+  "authority": "appolon1908-hue/Middleware-#244,#245,#246,#249",
+  "status": "SOURCE_CANDIDATE_NO_RUNTIME_APPLY",
+  "runtimeApplyAuthorized": false,
+  "host": "api.codestra.co",
+  "service": {
+    "name": "codestra-platform-api",
+    "protocol": "http",
+    "host": "codestra-middleware-integration-api-1",
+    "port": 8095,
+    "connectTimeoutMs": 3000,
+    "readTimeoutMs": 30000,
+    "writeTimeoutMs": 30000
+  },
+  "identity": {
+    "issuer": "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration",
+    "audience": "middleware-api",
+    "authMethods": ["bearer"],
+    "consumerClaim": "azp",
+    "tenantClaim": "tenant_id",
+    "campaignMembershipClaim": "campaign_ids",
+    "subjectClaim": "sub",
+    "stripInboundHeaders": [
+      "X-Authenticated-Client",
+      "X-Authenticated-Subject",
+      "X-Authenticated-Tenant",
+      "X-Authenticated-Campaign",
+      "X-Authenticated-Role"
+    ],
+    "mintedHeaders": {
+      "X-Authenticated-Client": "azp",
+      "X-Authenticated-Subject": "sub",
+      "X-Authenticated-Tenant": "tenant_id",
+      "X-Authenticated-Campaign": "authorized request campaign_id"
+    }
+  },
+  "commonPolicy": {
+    "protocols": ["http"],
+    "httpsRedirectStatusCode": 426,
+    "stripPath": false,
+    "preserveHost": true,
+    "requestBuffering": true,
+    "responseBuffering": true,
+    "correlationHeader": "X-Correlation-ID",
+    "correlationRequired": true,
+    "requiredPlugins": [
+      "openid-connect",
+      "pre-function",
+      "post-function",
+      "correlation-id",
+      "rate-limiting",
+      "request-size-limiting"
+    ],
+    "rateLimitPolicy": "redis",
+    "rateLimitFaultTolerant": false,
+    "requestBodyLimitMb": 1
+  },
+  "notes": "Read-side platform API added by Middleware PR #244 (users/telephony/email/sms reads), #245 (session context, calls, activity), #246 (agent presence, queues). session/context/select is the one write in this set; it selects an existing tenant/campaign context rather than mutating state, so idempotencyRequired stays false but it is still POST-gated with the standard command scope.",
+  "routes": [
+    { "name": "codestra-platform-session-context-read", "path": "/platform/v1/session/context", "methods": ["GET"], "requiredScope": "session:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-session-context-select", "path": "/platform/v1/session/context/select", "methods": ["POST"], "requiredScope": "session:select", "idempotencyRequired": false, "ratePerMinute": 60 },
+
+    { "name": "codestra-platform-users-read", "path": "~^/platform/v1/users/[^/]+$", "methods": ["GET"], "requiredScope": "users:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-users-campaigns-read", "path": "~^/platform/v1/users/[^/]+/campaigns$", "methods": ["GET"], "requiredScope": "users:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-users-entitlements-read", "path": "~^/platform/v1/users/[^/]+/entitlements$", "methods": ["GET"], "requiredScope": "users:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+
+    { "name": "codestra-platform-telephony-assignments-read", "path": "/platform/v1/telephony/assignments", "methods": ["GET"], "requiredScope": "telephony:status", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-email-identities-read", "path": "/platform/v1/email/identities", "methods": ["GET"], "requiredScope": "email:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-sms-identities-read", "path": "/platform/v1/sms/identities", "methods": ["GET"], "requiredScope": "sms:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+
+    { "name": "codestra-platform-calls-list", "path": "/platform/v1/calls", "methods": ["GET"], "requiredScope": "telephony:status", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-calls-read", "path": "~^/platform/v1/calls/[0-9a-fA-F-]{36}$", "methods": ["GET"], "requiredScope": "telephony:status", "idempotencyRequired": false, "ratePerMinute": 240 },
+
+    { "name": "codestra-platform-activity-list", "path": "/platform/v1/activity", "methods": ["GET"], "requiredScope": "activity:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-activity-read", "path": "~^/platform/v1/activity/[^/]+$", "methods": ["GET"], "requiredScope": "activity:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+
+    { "name": "codestra-platform-presence-list", "path": "/platform/v1/agents/presence", "methods": ["GET"], "requiredScope": "presence:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-presence-agent-read", "path": "~^/platform/v1/agents/[^/]+/presence$", "methods": ["GET"], "requiredScope": "presence:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-presence-self-read", "path": "/platform/v1/me/presence", "methods": ["GET"], "requiredScope": "presence:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+
+    { "name": "codestra-platform-queues-list", "path": "/platform/v1/queues", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-queues-read", "path": "~^/platform/v1/queues/[^/]+$", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-queues-members-read", "path": "~^/platform/v1/queues/[^/]+/members$", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-queues-calls-read", "path": "~^/platform/v1/queues/[^/]+/calls$", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-queues-metrics-read", "path": "~^/platform/v1/queues/[^/]+/metrics$", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 }
+  ],
+  "security": {
+    "browserTokensForbidden": true,
+    "serviceTokenOnly": true,
+    "directOdooRoutingForbidden": false,
+    "directMiddlewarePublicBypassForbidden": true
+  },
+  "activation": {
+    "runtimeApplyAuthorized": false,
+    "requiresExactHeadCI": true,
+    "requiresKeycloakClient": "sdk-platform-api"
+  }
+}
