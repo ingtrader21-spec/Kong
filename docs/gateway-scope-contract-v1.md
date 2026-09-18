@@ -24,10 +24,12 @@ resource in *this* tenant and environment.
 | control plane reads/results/reconciliation | `communications.message.read`, `communications.message.events.read`, `sync.result.write`, `communications.result.write`, `communications.reconciliation.read`, `communications.reconciliation.execute` | scope-policy |
 | control plane `/api/v1/events`, `/api/v1/health` | none (`application_auth_only`: audience + tenant claim) | scope-policy |
 | `/v1/admin/system` | `platform.admin` (ADMIN_INTERNAL) | scope-policy |
-| callbacks | `callbacks.write`, `callbacks.read` | callback guard |
-| campaign automation | `n8n.policy.check`, `n8n.results.submit`, `n8n.results.read`, `odoo.campaigns.read`; forbidden for every consumer: `odoo.campaign.control.write` | campaign guard |
+| **canonical Middleware edge (v2, PR #105)** — 80 `middleware-*` routes | one scope per operation from `config/kong-middleware-authority.v2.json` (`scopeAuthority`), e.g. `callbacks.read`/`callbacks.write`, `n8n.policy.check`, `n8n.results.submit`/`.read`, `odoo.campaigns.read`, `odoo.events.publish`, `identity.request`, `identity.session`, `platform.services.read`/`.write`, `platform.runtime.observe`, `platform.sync.reconcile`/`.read`, `platform.tenants.read`, `telemetry.heartbeat.write`, `email.production.read`/`.write`, `github.webhooks.publish`, `observability.health.read`, `automation.*` | openid-connect `scopes_required` (one explicit scope per route; the validator refuses a deployable openid-connect block without one); the generated post-function forwards `X-Codestra-Required-Scope` for Middleware |
+| callbacks (transitional jwt routes, superseded by v2) | `callbacks.write`, `callbacks.read` | callback guard |
+| campaign automation (transitional jwt routes, superseded by v2) | `n8n.policy.check`, `n8n.results.submit`, `n8n.results.read`, `odoo.campaigns.read`; forbidden for every consumer: `odoo.campaign.control.write` | campaign guard |
 | intake | `leads.write`, `surveys.write` | openid-connect `scopes_required` + intake guard |
-| n8n control plane | `middleware.request.forward`, `middleware.status.read` | n8n guard |
+| n8n control plane (retired, deny-only) | `middleware.request.forward`, `middleware.status.read` | n8n guard on the live residue; the canonical manifest answers 404 |
+| platform API reads (PR #104, transitional, superseded by v2) | `session:read`, `session:select`, `users:read`, `telephony:status`, `email:read`, `sms:read`, `activity:read`, `presence:read`, `queues:read` | openid-connect `scopes_required` + guard (source not vendored) |
 | telephony (private host) | `telephony:command`, `telephony:status`, `realtime:session:create` | calling-policy |
 | provider control (prepared) | `ai.inference.request`, `communication.email.request`, `communication.sms.request`, `marketing.campaign.request`, `odoo.events.publish`, `social.publish.request` | guard (prepared) |
 | standby | `sms.send`, `email.send`, `webhooks.sms.ingest`, `webhooks.email.ingest` | standby auth middleware |

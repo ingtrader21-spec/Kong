@@ -53,7 +53,7 @@ token minted for one audience is rejected on every other service. `client_id
 | Check | `openid-connect` | `jwt` + guard |
 | --- | --- | --- |
 | `exp` | enforced | `claims_to_verify: [exp]` |
-| `nbf` / `iat` | enforced by the plugin; `codestra-authz` also rejects non-finite values | n8n guard: `exp` and `iat` numeric, `exp > iat`, `exp - iat ≤ 300 s`; callback/campaign guards: not bounded (follow-up after #105) |
+| `nbf` / `iat` | enforced by the plugin; `codestra-authz` also rejects non-finite values | n8n guard (retired, deny-only): `exp - iat ≤ 300 s`; callback/campaign jwt guards (transitional, superseded by the v2 openid-connect routes): not bounded — the v2 contract requires no lifetime bound beyond `exp`, so the Keycloak realm token lifespan is the bound |
 | leeway | 0 s (no `leeway` configured; validator bound 60 s) | 0 s |
 | malformed timestamps | 401 | 401 |
 

@@ -28,6 +28,30 @@ REQUIRED_PLUGINS = [
 ]
 PARAMETER_PATTERN = re.compile(r"\{[^{}]+\}")
 PATH_VALUE_PATTERN = r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}"
+# Client-asserted identity headers the gateway never trusts: cleared before the
+# generated post-function mints the contract metadata. Kong's own X-Consumer-*
+# headers are set by openid-connect after signature verification and are not
+# in this list because they are gateway-owned, not client-supplied.
+UNTRUSTED_IDENTITY_HEADERS = (
+    "X-User-ID",
+    "X-Username",
+    "X-Email",
+    "X-Roles",
+    "X-Scopes",
+    "X-Authenticated-UserID",
+    "X-Authenticated-User",
+    "X-Authenticated-Client",
+    "X-Authenticated-Subject",
+    "X-Authenticated-Tenant",
+    "X-Authenticated-Campaign",
+    "X-Authenticated-Role",
+    "X-Authenticated-Email",
+    "X-Codestra-Tenant",
+    "X-Codestra-Scopes",
+    "X-Codestra-Gateway-Secret",
+    "X-Internal-Service",
+    "X-Admin",
+)
 
 
 def canonical_digest(value: dict[str, Any]) -> str:
@@ -50,6 +74,16 @@ def safe_name(operation_id: str) -> str:
     return "middleware-" + re.sub(r"[^a-z0-9-]+", "-", operation_id.lower().replace("_", "-")).strip("-")
 
 
+def regex_priority(path_template: str) -> int:
+    """Kong prefers the higher ``regex_priority`` among regex routes of equal
+    match weight. Every generated route is anchored, so two routes can only
+    admit the same request at the same depth when one has a literal segment
+    where the other has a parameter (``/tenants/authorized`` vs
+    ``/tenants/{tenant_id}``); counting literal segments makes the literal
+    route win deterministically instead of leaving the tie to the router."""
+    return sum(1 for segment in path_template.strip("/").split("/") if not PARAMETER_PATTERN.fullmatch(segment))
+
+
 def route_tags(row: dict[str, Any], classification: str) -> list[str]:
     """Kong tags restricted to [A-Za-z0-9_.~-]; the template is carried by the safe operation id."""
     return [f"codestra.classification.{classification}", f"codestra.operation.{safe_name(row['operation_id'])}"]
@@ -70,6 +104,7 @@ def canonical_route(row: dict[str, Any]) -> dict[str, Any]:
         "hosts": ["api.codestra.co"],
         "paths": [route_regex(row["path"])],
         "pathTemplate": row["path"],
+        "regexPriority": regex_priority(row["path"]),
         "methods": [row["method"]],
         "protocols": ["http"],
         "stripPath": False,
@@ -87,6 +122,7 @@ def denied_route(row: dict[str, Any]) -> dict[str, Any]:
         "method": row["method"],
         "pathTemplate": row["path"],
         "path": route_regex(row["path"]),
+        "regexPriority": regex_priority(row["path"]),
         "statusCode": 404,
     }
 
@@ -118,12 +154,18 @@ def post_function(row: dict[str, Any]) -> str:
         )
     expected_azp = json.dumps(expected_azp_value)
     required_scope = json.dumps(row["scope"])
+    untrusted = ", ".join(json.dumps(name) for name in UNTRUSTED_IDENTITY_HEADERS)
     return "\n".join(
         [
             "-- Generated fail-closed authorization metadata.",
             f"local operation_id = {operation_id}",
             f"local expected_azp = {expected_azp}",
             f"local required_scope = {required_scope}",
+            "-- Strip client-asserted identity before minting trusted contract metadata;",
+            "-- X-Consumer-* are set by openid-connect after signature verification.",
+            f"for _, name in ipairs({{{untrusted}}}) do",
+            "  kong.service.request.clear_header(name)",
+            "end",
             "kong.service.request.set_header('X-Codestra-Contract-Operation', operation_id)",
             "kong.service.request.set_header('X-Codestra-Expected-Azp', expected_azp)",
             "kong.service.request.set_header('X-Codestra-Required-Scope', required_scope)",
@@ -183,6 +225,7 @@ def manifest_route(row: dict[str, Any], issuer: str) -> dict[str, Any]:
         "name": safe_name(row["operation_id"]),
         "hosts": ["api.codestra.co"],
         "paths": [route_regex(row["path"])],
+        "regex_priority": regex_priority(row["path"]),
         "methods": [row["method"]],
         "protocols": ["http"],
         "strip_path": False,
@@ -198,6 +241,7 @@ def manifest_denied_route(row: dict[str, Any]) -> dict[str, Any]:
         "name": safe_name(row["operation_id"]),
         "hosts": ["api.codestra.co"],
         "paths": [route_regex(row["path"])],
+        "regex_priority": regex_priority(row["path"]),
         "methods": [row["method"]],
         "protocols": ["http"],
         "strip_path": False,
@@ -237,7 +281,7 @@ def build_manifest(
 
 
 def write_json(path: Path, value: dict[str, Any]) -> None:
-    path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
 def main() -> None:
@@ -283,7 +327,7 @@ def main() -> None:
     for path, issuer, environment in manifests:
         path.parent.mkdir(parents=True, exist_ok=True)
         manifest = build_manifest(shared, denied, issuer, environment)
-        path.write_text(yaml.safe_dump(manifest, sort_keys=False, width=1000), encoding="utf-8")
+        path.write_text(yaml.safe_dump(manifest, sort_keys=False, width=1000), encoding="utf-8", newline="\n")
 
     print(f"generated {len(shared)} shared routes and {len(denied)} denied routes ({digest})")
 

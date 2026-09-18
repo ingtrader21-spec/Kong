@@ -1,6 +1,6 @@
 {
   "schema": "codestra.kong.authentication-profiles.v1",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "status": "SOURCE_CANDIDATE_NO_RUNTIME_APPLY",
   "runtimeApplyAuthorized": false,
   "foundation": "config/kong-gateway-foundation.v1.json",
@@ -51,17 +51,12 @@
     "CALLBACK_API": {
       "audience": "codestra-callback-api",
       "clientIdIsAudience": false,
-      "enforcedBy": "callback claim guard (aud string or array)"
-    },
-    "CAMPAIGN_MIDDLEWARE": {
-      "audience": "codestra-middleware",
-      "clientIdIsAudience": false,
-      "enforcedBy": "campaign claim guard (aud string or array)"
+      "enforcedBy": "openid-connect audience on the v2 callback routes; callback jwt claim guard (aud string or array) on the transitional routes"
     },
     "MIDDLEWARE_API": {
       "audience": "middleware-api",
       "clientIdIsAudience": false,
-      "enforcedBy": "n8n/calling/provider-control guards and openid-connect audience"
+      "enforcedBy": "openid-connect audience on the v2 canonical routes and the control-plane/calling/#104 contracts; n8n, campaign and provider-control jwt guards (aud string or array)"
     },
     "SDK_INTAKE_CLIENT": {
       "audience": "sdk-intake",
@@ -204,6 +199,62 @@
       "stripsClientIdentity": false,
       "source": "design",
       "mint": []
+    },
+    "OIDC_STRIP_AND_CONTRACT_METADATA": {
+      "stripsClientIdentity": true,
+      "source": "scripts/generate_middleware_routes.py post_function (UNTRUSTED_IDENTITY_HEADERS) + openid-connect consumer mapping",
+      "strip": [
+        "X-User-ID",
+        "X-Username",
+        "X-Email",
+        "X-Roles",
+        "X-Scopes",
+        "X-Authenticated-UserID",
+        "X-Authenticated-User",
+        "X-Authenticated-Client",
+        "X-Authenticated-Subject",
+        "X-Authenticated-Tenant",
+        "X-Authenticated-Campaign",
+        "X-Authenticated-Role",
+        "X-Authenticated-Email",
+        "X-Codestra-Tenant",
+        "X-Codestra-Scopes",
+        "X-Codestra-Gateway-Secret",
+        "X-Internal-Service",
+        "X-Admin"
+      ],
+      "mint": [
+        "X-Consumer-ID",
+        "X-Consumer-Username",
+        "X-Credential-Identifier",
+        "X-Codestra-Contract-Operation",
+        "X-Codestra-Expected-Azp",
+        "X-Codestra-Required-Scope"
+      ],
+      "note": "the generated post-function clears every client-asserted identity header before it sets the contract metadata; X-Consumer-* are set by openid-connect after signature verification (gateway-owned); X-Tenant-ID is left as a selector for Middleware, never an authority"
+    },
+    "PLATFORM_READ_STRIP_AND_MINT": {
+      "stripsClientIdentity": true,
+      "source": "config/kong-platform-api-read-routes.v1.json identity.stripInboundHeaders / mintedHeaders (guard source not vendored)",
+      "strip": [
+        "X-Authenticated-Client",
+        "X-Authenticated-Subject",
+        "X-Authenticated-Tenant",
+        "X-Authenticated-Campaign",
+        "X-Authenticated-Role"
+      ],
+      "mint": [
+        "X-Authenticated-Client",
+        "X-Authenticated-Subject",
+        "X-Authenticated-Tenant",
+        "X-Authenticated-Campaign"
+      ]
+    },
+    "NONE_TERMINATED": {
+      "stripsClientIdentity": true,
+      "source": "request-termination",
+      "mint": [],
+      "requirement": "nothing is forwarded; the gateway answers a constant status"
     }
   },
   "tenantPolicies": {
@@ -347,7 +398,8 @@
       "issuerProfile": "environment",
       "audienceProfiles": [
         "CONTROL_PLANE",
-        "MIDDLEWARE_API"
+        "MIDDLEWARE_API",
+        "CALLBACK_API"
       ],
       "scopes": "route",
       "authorizedParties": "consumer-mapped",
@@ -368,7 +420,6 @@
       "issuerProfile": "environment",
       "audienceProfiles": [
         "CALLBACK_API",
-        "CAMPAIGN_MIDDLEWARE",
         "MIDDLEWARE_API"
       ],
       "scopes": "route",
@@ -594,6 +645,51 @@
         "PROPOSED",
         "DESIGN_ONLY"
       ]
+    },
+    "HUMAN_OR_SERVICE_OIDC_V1": {
+      "accessClasses": [
+        "AUTHENTICATED"
+      ],
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "mechanisms": [
+        "OIDC_BEARER",
+        "OIDC_BEARER_CLAIM_GUARD"
+      ],
+      "issuerProfile": "environment",
+      "audienceProfiles": [
+        "MIDDLEWARE_API"
+      ],
+      "scopes": "route",
+      "authorizedParties": "consumer-mapped",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "strength": 3,
+      "note": "v2 'service-or-user-jwt' operations: Kong validates issuer, audience, expiry and the route scope and maps azp to a registered consumer; the contract's symbolic client family (platform-operator, production-operator, authorized-provisioning-client, observability-collector, browser-session, github-app) is forwarded as X-Codestra-Expected-Azp and enforced by Middleware together with tenant and resource ownership. Strength is that of the weakest admitted principal."
+    },
+    "DENIED_TERMINATION_V1": {
+      "accessClasses": [
+        "PUBLIC"
+      ],
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "mechanisms": [
+        "NONE"
+      ],
+      "issuerProfile": "NONE",
+      "audienceProfiles": [
+        "NONE"
+      ],
+      "scopes": "none",
+      "authorizedParties": "none",
+      "failurePolicy": "PUBLIC",
+      "tokenCache": "NONE",
+      "strength": 0,
+      "terminatesAtGateway": true,
+      "note": "request-termination 404 for a retired alias: no credential is evaluated because nothing is proxied; explicit on the public allowlist so an unauthenticated route can never be public by omission"
     }
   },
   "classMinimumStrength": {

@@ -326,8 +326,10 @@ def test_unknown_or_misplaced_plugins_fail(repo):
 
 def test_undeclared_runtime_drift_fails(repo):
     inventory = read_json(repo, INVENTORY)
-    route = next(r for r in inventory["routes"] if r["name"] == "codestra-n8n-command-read")
-    route["service"]["port"] = 8095
+    # the n8n readback drift (8080 -> 8095) is declared since PR #105; use a route
+    # whose upstream port carries no declared drift
+    route = next(r for r in inventory["routes"] if r["name"] == "codestra-callback-read")
+    route["service"]["port"] = 8096
     write_json(repo, INVENTORY, inventory)
     expect_failure(repo, "undeclared runtime drift on (upstream_)?port")
 
@@ -388,7 +390,7 @@ def test_route_cannot_lose_its_classification_or_become_public_by_omission(repo)
     entry["authentication"] = "PUBLIC"
     entry["publicReason"] = "not acceptable"
     write_json(repo, FOUNDATION, foundation)
-    expect_failure(repo, "public mutation route .* must be legacy or blocked|does not list it")
+    expect_failure(repo, "public mutation route .* must be legacy, blocked or gateway-terminated|does not list it")
     restore(repo, FOUNDATION)
     foundation = read_json(repo, FOUNDATION)
     entry = next(r for r in foundation["routes"] if r["routeId"] == "control-plane-health")

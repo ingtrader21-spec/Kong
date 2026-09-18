@@ -25,6 +25,9 @@ the match from that source and proves:
   configured Caddy source, keeps TLS verification on and runs least-privilege;
 * every ``{vault://env/...}`` reference used by the deployed candidate is declared
   in the runtime environment template;
+* a route without a service is a gateway-terminated (request-termination)
+  PUBLIC 404 responder for a retired alias and nothing else, and nothing
+  activatable targets a retired Middleware upstream alias;
 * (Mission 2) every route has an access-policy entry whose class, profile,
   issuer, audience, scopes, authorized parties, principal classes, identity
   propagation and tenant policy agree with the foundation and with the
@@ -114,6 +117,7 @@ class SourceRoute:
     issuer: str | None = None
     enabled: bool | None = None
     client_id: str | None = None
+    expected_azp: str | None = None  # contracted azp (literal or symbolic family), canonical JSON for lists
 
     def field_values(self) -> dict[str, Any]:
         return {
@@ -123,7 +127,7 @@ class SourceRoute:
             "upstream_port": self.upstream_port, "upstream_protocol": self.upstream_protocol,
             "plugins": self.plugins, "rate_per_minute": self.rate_per_minute,
             "max_body_bytes": self.max_body_bytes, "required_scope": self.required_scope,
-            "audience": self.audience,
+            "audience": self.audience, "expected_azp": self.expected_azp,
         }
 
 
@@ -206,26 +210,73 @@ def _issuer_realm(value: str | None) -> str | None:
 # --------------------------------------------------------------------------- loaders
 
 
+def _declarative_upstream(svc: dict) -> tuple[str, str, int]:
+    """decK accepts either ``url`` or the ``protocol``/``host``/``port`` triple."""
+    if svc.get("url"):
+        return _url_parts(svc["url"])
+    return svc.get("protocol", "http"), svc["host"], int(svc["port"])
+
+
+def canonical_azp(value: Any) -> str | None:
+    """A contracted azp as the generated post-function forwards it: a literal or
+    symbolic client string, or the canonical JSON of a client list."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+
+EXPECTED_AZP_LUA = re.compile(r'local expected_azp = ("(?:[^"\\]|\\.)*")')
+
+
+def _post_function_expected_azp(plugins: list[dict]) -> str | None:
+    """The azp the generated post-function forwards as X-Codestra-Expected-Azp."""
+    for plugin in plugins or []:
+        if plugin.get("name") == "post-function":
+            for chunk in (plugin.get("config", {}) or {}).get("access", []) or []:
+                match = EXPECTED_AZP_LUA.search(str(chunk))
+                if match:
+                    return json.loads(match.group(1))
+    return None
+
+
+def _oidc_identity(plugins: list[dict]) -> tuple[str | None, str | None, str | None]:
+    """(issuer realm, single audience, single required scope) of the first
+    openid-connect block in ``plugins``; every element None when there is none."""
+    for plugin in plugins or []:
+        if plugin.get("name") == "openid-connect":
+            config = plugin.get("config", {}) or {}
+            aud = config.get("audience") or []
+            scopes = config.get("scopes_required") or []
+            return (_issuer_realm(config.get("issuer")), aud[0] if len(aud) == 1 else None,
+                    scopes[0] if len(scopes) == 1 else None)
+    return None, None, None
+
+
 def load_kong_declarative(path: str, doc: dict) -> SourceDocument:
     out = SourceDocument(path=path, format="kong-declarative")
     out.global_plugins = tuple(p["name"] for p in doc.get("plugins", []) or [])
+    issuers: set[str] = set()
     for svc in doc.get("services", []) or []:
-        protocol, host, port = _url_parts(svc["url"])
+        protocol, host, port = _declarative_upstream(svc)
         svc_plugins = tuple(p["name"] for p in svc.get("plugins", []) or [])
         out.services[svc["name"]] = SourceService(
             source=path, name=svc["name"], protocol=protocol, host=host, port=port,
             connect_timeout=svc.get("connect_timeout"), read_timeout=svc.get("read_timeout"),
             write_timeout=svc.get("write_timeout"), retries=svc.get("retries"), plugins=svc_plugins,
         )
+        svc_issuer, svc_audience, _ = _oidc_identity(svc.get("plugins", []) or [])
         for route in svc.get("routes", []) or []:
             route_plugins = tuple(p["name"] for p in route.get("plugins", []) or [])
-            issuer = None
-            audience = None
-            for plugin in svc.get("plugins", []) or []:
-                if plugin.get("name") == "openid-connect":
-                    issuer = _issuer_realm(plugin.get("config", {}).get("issuer"))
-                    aud = plugin.get("config", {}).get("audience") or []
-                    audience = aud[0] if len(aud) == 1 else None
+            # A route-level openid-connect block (generated Middleware manifests)
+            # owns the route scope; a service-level block (control plane) only
+            # supplies issuer and audience because its scopes_required is the
+            # baseline OIDC scope and the route scopes live in the claim guard.
+            issuer, audience, scope = _oidc_identity(route.get("plugins", []) or [])
+            issuer, audience = issuer or svc_issuer, audience or svc_audience
+            if issuer:
+                issuers.add(issuer)
             out.routes[route["name"]] = SourceRoute(
                 source=path, name=route["name"], hosts=_tuple(route.get("hosts")),
                 paths=_tuple(route.get("paths")), methods=_methods(route.get("methods")),
@@ -235,8 +286,24 @@ def load_kong_declarative(path: str, doc: dict) -> SourceDocument:
                 plugins=tuple(sorted(set(route_plugins) | set(svc_plugins) | set(out.global_plugins))),
                 max_body_bytes=_declared_body_limit(route.get("plugins", []) or []),
                 rate_per_minute=_declared_rate(list(route.get("plugins", []) or []) + list(svc.get("plugins", []) or [])),
-                issuer=issuer, audience=audience, enabled=svc.get("enabled"),
+                issuer=issuer, audience=audience, required_scope=scope, enabled=svc.get("enabled"),
+                expected_azp=_post_function_expected_azp(route.get("plugins", []) or []),
             )
+    for route in doc.get("routes", []) or []:
+        # Service-less routes: the generated deny manifests terminate retired
+        # aliases at the gateway (request-termination) and never reach an upstream.
+        route_plugins = tuple(p["name"] for p in route.get("plugins", []) or [])
+        out.routes[route["name"]] = SourceRoute(
+            source=path, name=route["name"], hosts=_tuple(route.get("hosts")),
+            paths=_tuple(route.get("paths")), methods=_methods(route.get("methods")),
+            protocols=_tuple(route.get("protocols")), strip_path=route.get("strip_path"),
+            preserve_host=route.get("preserve_host"), regex_priority=route.get("regex_priority", 0) or 0,
+            plugins=tuple(sorted(set(route_plugins) | set(out.global_plugins))),
+            max_body_bytes=_declared_body_limit(route.get("plugins", []) or []),
+            rate_per_minute=_declared_rate(list(route.get("plugins", []) or [])),
+        )
+    if len(issuers) == 1:
+        out.issuer = issuers.pop()
     return out
 
 
@@ -287,6 +354,7 @@ def load_canonical_middleware_contract(path: str, doc: dict) -> SourceDocument:
             source=path, name=route["name"], hosts=_tuple(route["hosts"]), paths=_tuple(route["paths"]),
             methods=_methods(route["methods"]), protocols=_tuple(route["protocols"]),
             strip_path=route["stripPath"], preserve_host=route["preserveHost"],
+            regex_priority=route.get("regexPriority", 0) or 0,
             upstream_protocol="http", upstream_host=route["serviceHost"], upstream_port=route["servicePort"],
             plugins=tuple(sorted(route["requiredPlugins"])),
         )
@@ -296,6 +364,13 @@ def load_canonical_middleware_contract(path: str, doc: dict) -> SourceDocument:
         out.routes[route["name"]] = SourceRoute(
             source=path, name=route["name"], paths=(route["path"],), methods=_methods(route["methods"]),
             max_body_bytes=_mb(route.get("maxBodyMb")), rate_per_minute=route.get("ratePerMinute"),
+        )
+    for route in doc.get("deniedRoutes", []):
+        # Retired aliases the canonical contract terminates at the gateway (404,
+        # no upstream); host and transport come from the generated manifest.
+        out.routes[route["name"]] = SourceRoute(
+            source=path, name=route["name"], paths=(route["path"],), methods=_methods(route["method"]),
+            regex_priority=route.get("regexPriority", 0) or 0, plugins=("request-termination",),
         )
     return out
 
@@ -461,6 +536,58 @@ def load_calling_contract(path: str, doc: dict) -> SourceDocument:
     return out
 
 
+def authority_route_name(operation_id: str) -> str:
+    """The generated route name for a contract operation
+    (``scripts/generate_middleware_routes.py`` ``safe_name``)."""
+    return "middleware-" + re.sub(r"[^a-z0-9-]+", "-", operation_id.lower().replace("_", "-")).strip("-")
+
+
+def load_middleware_authority_v2(path: str, doc: dict) -> SourceDocument:
+    """Per-operation security authority of the canonical Middleware edge (PR #105):
+    issuer, audience, scope, expected azp, rate and body limit. Match data
+    (host, regex path) is owned by the canonical contract and the generated
+    manifests; only the fields the authority declares are compared."""
+    out = SourceDocument(path=path, format="middleware-authority-v2")
+    _require(doc.get("runtime_apply_authorized") is False and doc.get("provider_effects_enabled") is False,
+             f"{path}: runtime_apply_authorized and provider_effects_enabled must both stay false")
+    issuers = {route["issuer"] for route in doc["routes"]}
+    out.issuer = issuers.pop() if len(issuers) == 1 else None
+    upstream = doc["upstream"]
+    for operation in doc["routes"]:
+        azp = operation.get("azp")
+        out.routes[authority_route_name(operation["operation_id"])] = SourceRoute(
+            source=path, name=authority_route_name(operation["operation_id"]),
+            methods=_methods(operation["method"]), upstream_protocol="http",
+            upstream_host=upstream["host"], upstream_port=upstream["port"],
+            rate_per_minute=operation["rate_limit"]["minute"], max_body_bytes=_mb(operation["request_size_limit_mb"]),
+            required_scope=operation["scope"], audience=operation["audience"], issuer=operation["issuer"],
+            client_id=azp if isinstance(azp, str) else None, expected_azp=canonical_azp(azp),
+        )
+    return out
+
+
+def load_platform_api_read_contract(path: str, doc: dict) -> SourceDocument:
+    """PR #104 read-side platform API contract: calling-contract shape, but no
+    renderer pins retries, so the service keeps whatever the contract declares."""
+    out = SourceDocument(path=path, format="platform-api-read-contract", issuer=_issuer_realm(doc["identity"]["issuer"]))
+    out.declared_status = doc.get("status")
+    svc = doc["service"]
+    out.services[svc["name"]] = _service_from_contract(path, svc)
+    common = doc["commonPolicy"]
+    client = doc.get("activation", {}).get("requiresKeycloakClient")
+    for route in doc["routes"]:
+        out.routes[route["name"]] = SourceRoute(
+            source=path, name=route["name"], hosts=(doc["host"],), paths=(route["path"],),
+            methods=_methods(route["methods"]), protocols=_tuple(common["protocols"]),
+            strip_path=common["stripPath"], preserve_host=common["preserveHost"], service_name=svc["name"],
+            upstream_protocol=svc["protocol"], upstream_host=svc["host"], upstream_port=svc["port"],
+            plugins=tuple(sorted(common["requiredPlugins"])), rate_per_minute=route["ratePerMinute"],
+            max_body_bytes=_mb(common["requestBodyLimitMb"]), required_scope=route["requiredScope"],
+            audience=doc["identity"]["audience"], issuer=out.issuer, client_id=client, expected_azp=client,
+        )
+    return out
+
+
 def load_community_n8n_egress_contract(path: str, doc: dict) -> SourceDocument:
     out = SourceDocument(path=path, format="community-n8n-egress-contract", issuer=doc["identity"]["issuer"])
     out.declared_status = doc.get("status")
@@ -577,6 +704,8 @@ LOADERS = {
     "provider-control-contract": (load_json, load_provider_control_contract),
     "calling-contract": (load_json, load_calling_contract),
     "community-n8n-egress-contract": (load_json, load_community_n8n_egress_contract),
+    "middleware-authority-v2": (load_json, load_middleware_authority_v2),
+    "platform-api-read-contract": (load_json, load_platform_api_read_contract),
     "standby-design": (load_json, load_standby_design),
     "design-route-registry": (load_json, load_design_route_registry),
     "gateway-integration": (load_json, load_gateway_integration),
@@ -840,15 +969,21 @@ def detect_route_findings(entry: dict, route: SourceRoute, service_entry: dict |
         findings.add("PLUGIN_SET_UNSPECIFIED")
     else:
         plugins = set(route.plugins)
-        if not plugins & AUTHENTICATION_PLUGINS:
+        # A service-less route whose only job is request-termination answers a
+        # constant status at the gateway: nothing is authenticated, buffered or
+        # proxied, so the upstream-protection findings do not apply to it.
+        terminated = "request-termination" in plugins and route.upstream_host is None and not plugins & AUTHENTICATION_PLUGINS
+        if terminated:
+            findings.add("GATEWAY_TERMINATED")
+        if not plugins & AUTHENTICATION_PLUGINS and not terminated:
             findings.add("NO_GATEWAY_AUTHENTICATION")
         if "key-auth" in plugins:
             findings.add("LEGACY_SHARED_KEY")
         if "cors" in plugins and "key-auth" in plugins:
             findings.add("CORS_WITH_SHARED_KEY")
-        if methods & MUTATION_METHODS and "request-size-limiting" not in plugins and route.max_body_bytes is None:
+        if methods & MUTATION_METHODS and "request-size-limiting" not in plugins and route.max_body_bytes is None and not terminated:
             findings.add("UNBOUNDED_REQUEST_BODY")
-        if "rate-limiting" not in plugins and route.rate_per_minute is None:
+        if "rate-limiting" not in plugins and route.rate_per_minute is None and not terminated:
             findings.add("NO_RATE_LIMIT")
         if plugins & CLAIM_GUARD_PLUGINS and not plugins & {"jwt", "openid-connect"}:
             findings.add("CLAIM_GUARD_WITHOUT_TOKEN_AUTHENTICATION")
@@ -865,10 +1000,19 @@ def detect_route_findings(entry: dict, route: SourceRoute, service_entry: dict |
         findings.add("LEGACY_UPSTREAM")
     if host in rules["testUpstreams"]:
         findings.add("TEST_UPSTREAM")
+    if (route.upstream_host, route.upstream_port) in retired_middleware_aliases(foundation):
+        findings.add("RETIRED_UPSTREAM_ALIAS")
     if service_entry is not None:
         if service_entry["upstreamClass"] in rules["directApplicationUpstreamClasses"]:
             findings.add("DIRECT_APPLICATION_UPSTREAM")
     return findings
+
+
+def retired_middleware_aliases(foundation: dict) -> set[tuple[str, int]]:
+    """Middleware upstream aliases the reconciled contract denies (PR #105 retired
+    ``appolon-middleware-integration-api:8080``): nothing activatable may target them."""
+    return {(a["host"], a["port"]) for a in foundation["boundaryRules"]["middlewareUpstreamAliases"]
+            if str(a.get("role", "")).startswith("RETIRED")}
 
 
 def detect_service_findings(entry: dict, desired: list[SourceService], observed: list[SourceService]) -> set[str]:
@@ -1056,6 +1200,10 @@ def validate_services(foundation: dict, documents: dict[str, SourceDocument]) ->
                          f"service {entry['serviceId']}: knownDrift for {key} is stale")
                 seen_drift.add(subject)
         findings = detect_service_findings(entry, desired, observed)
+        if (entry["upstream"]["host"], entry["upstream"]["port"]) in retired_middleware_aliases(foundation):
+            findings.add("RETIRED_UPSTREAM_ALIAS")
+            _require(entry["lifecycle"] in foundation["debtRules"]["retiredAliasLifecycles"],
+                     f"service {entry['serviceId']} targets a retired Middleware alias and is not a non-activatable lifecycle")
         accepted = set(entry["acceptedFindings"])
         _require(findings == accepted,
                  f"service {entry['serviceId']}: detected findings {sorted(findings)} != accepted {sorted(accepted)}")
@@ -1091,10 +1239,13 @@ def validate_routes(foundation: dict, documents: dict[str, SourceDocument], serv
                     "rateLimitProfile", "requestSizeProfile", "lifecycle", "activation", "disposition",
                     "acceptedFindings"):
             _require(key in entry, f"route {route_id} lacks {key}")
-        _require(entry["serviceId"] in services, f"route {route_id} references unknown service {entry['serviceId']}")
-        service_entry = services[entry["serviceId"]]
         _require(entry["environment"] in foundation["environments"], f"route {route_id} has unknown environment")
-        _require(entry["environment"] == service_entry["environment"], f"route {route_id} environment differs from its service")
+        if entry["serviceId"] is None:
+            service_entry = None  # gateway-terminated route: proven below
+        else:
+            _require(entry["serviceId"] in services, f"route {route_id} references unknown service {entry['serviceId']}")
+            service_entry = services[entry["serviceId"]]
+            _require(entry["environment"] == service_entry["environment"], f"route {route_id} environment differs from its service")
         _require(entry["trafficClass"] in enums["trafficClasses"], f"route {route_id} has unknown traffic class")
         _require(entry["authentication"] in foundation["authenticationClasses"], f"route {route_id} has unknown authentication class")
         _require(entry["mechanism"] in enums["mechanisms"], f"route {route_id} has unknown mechanism {entry['mechanism']}")
@@ -1108,9 +1259,10 @@ def validate_routes(foundation: dict, documents: dict[str, SourceDocument], serv
             source = next(s for s in foundation["sources"] if s["path"] == binding["source"])
             _require(source["environment"] == entry["environment"],
                      f"route {route_id}: binding {binding['source']} is a {source['environment']} source but the route is {entry['environment']}")
-        for other in desired[1:]:
-            diffs = _compare_specified(desired[0].field_values(), other.field_values())
-            _require(not diffs, f"route {route_id}: desired sources disagree {desired[0].source} vs {other.source}: {diffs}")
+        for index, left in enumerate(desired):
+            for other in desired[index + 1:]:
+                diffs = _compare_specified(left.field_values(), other.field_values())
+                _require(not diffs, f"route {route_id}: desired sources disagree {left.source} vs {other.source}: {diffs}")
         for obs in observed:
             reference = desired[0] if desired else None
             if reference is None:
@@ -1126,6 +1278,7 @@ def validate_routes(foundation: dict, documents: dict[str, SourceDocument], serv
         materialized[route_id] = primary
         for binding_route in desired + observed:
             if binding_route.service_name is not None:
+                _require(service_entry is not None, f"route {route_id}: {binding_route.source} binds a service but the registry declares none")
                 _require(any(b["service"] == binding_route.service_name and b["source"] == binding_route.source for b in service_entry["bindings"]),
                          f"route {route_id}: {binding_route.source} binds service {binding_route.service_name} which is not a binding of {entry['serviceId']}")
         # profile cross-checks
@@ -1153,11 +1306,18 @@ def validate_routes(foundation: dict, documents: dict[str, SourceDocument], serv
         _require(findings == accepted, f"route {route_id}: detected findings {sorted(findings)} != accepted {sorted(accepted)}")
         # classification rules
         methods = set(primary.methods or ())
+        terminated = "GATEWAY_TERMINATED" in findings
+        _require(terminated == (entry["serviceId"] is None),
+                 f"route {route_id}: a route without a service must be gateway-terminated and vice versa")
+        if terminated:
+            _require(primary.upstream_host is None and entry["mechanism"] == "NONE" and entry["authentication"] == "PUBLIC",
+                     f"terminated route {route_id} must have no upstream, mechanism NONE and be an explicit PUBLIC 404 responder")
+            _require(entry["trafficClass"] == "DENIED_ALIAS", f"terminated route {route_id} must carry the DENIED_ALIAS traffic class")
         if entry["authentication"] == "PUBLIC":
             _require(bool(entry.get("publicReason")), f"public route {route_id} requires publicReason")
             if methods & MUTATION_METHODS:
-                _require(entry["lifecycle"] in rules["publicMutationLifecycles"] or entry["activation"] == "BLOCKED",
-                         f"public mutation route {route_id} must be legacy or blocked")
+                _require(entry["lifecycle"] in rules["publicMutationLifecycles"] or entry["activation"] == "BLOCKED" or terminated,
+                         f"public mutation route {route_id} must be legacy, blocked or gateway-terminated")
         not_activatable = entry["activation"] in rules["nonActivatableActivations"]
         if "NO_GATEWAY_AUTHENTICATION" in findings:
             _require(entry["mechanism"] == "NONE", f"route {route_id} has no authentication plugin but claims mechanism {entry['mechanism']}")
@@ -1165,8 +1325,11 @@ def validate_routes(foundation: dict, documents: dict[str, SourceDocument], serv
                      or (not_activatable and bool(entry.get("authenticationGap"))),
                      f"route {route_id} has no gateway authentication and is neither PUBLIC, BLOCKED nor a design with a declared authenticationGap")
         if entry["mechanism"] == "NONE":
-            _require("NO_GATEWAY_AUTHENTICATION" in findings or "PLUGIN_SET_UNSPECIFIED" in findings,
+            _require("NO_GATEWAY_AUTHENTICATION" in findings or "PLUGIN_SET_UNSPECIFIED" in findings or terminated,
                      f"route {route_id} claims mechanism NONE but an authentication plugin is present")
+        if "RETIRED_UPSTREAM_ALIAS" in findings:
+            _require(entry["lifecycle"] in rules["retiredAliasLifecycles"],
+                     f"route {route_id} targets a retired Middleware alias and is not a non-activatable or retiring lifecycle")
         if entry["mechanism"] == "KEY_AUTH_SHARED":
             _require(entry["lifecycle"] in rules["sharedKeyLifecycles"], f"shared-key route {route_id} must be legacy")
             _require("LEGACY_SHARED_KEY" in findings, f"route {route_id} claims KEY_AUTH_SHARED without key-auth")
@@ -1224,6 +1387,7 @@ def validate_precedence(foundation: dict, routes: dict[str, dict], materialized:
             continue
         universes.setdefault(entry["environment"], {})[route_id] = route
     declared = {(c["left"], c["right"]): c for c in foundation["precedence"]["knownConflicts"]}
+    service_index = _index(foundation["services"], "serviceId")
     seen: set[tuple[str, str]] = set()
     overlaps: list[Overlap] = []
     for environment, universe in universes.items():
@@ -1243,9 +1407,16 @@ def validate_precedence(foundation: dict, routes: dict[str, dict], materialized:
                              f"canonical runtime route {route_id} is in an ambiguous overlap")
             else:
                 loser = overlap.right if overlap.winner == overlap.left else overlap.left
-                if routes[loser]["lifecycle"] == "CANONICAL" and routes[overlap.winner]["lifecycle"] in ("LEGACY", "TRANSITIONAL"):
+                winner_entry, loser_entry = routes[overlap.winner], routes[loser]
+                # A canonical successor shadowed by the legacy/transitional route (or
+                # service family) it replaces must be acknowledged as such; unrelated
+                # routes that win by specificity keep their own authority.
+                replaces = (winner_entry.get("supersededBy") == loser
+                            or (winner_entry["serviceId"] is not None and loser_entry["serviceId"] is not None
+                                and service_index[winner_entry["serviceId"]].get("supersededBy") == loser_entry["serviceId"]))
+                if loser_entry["lifecycle"] == "CANONICAL" and winner_entry["lifecycle"] in ("LEGACY", "TRANSITIONAL") and replaces:
                     _require(conflict["resolution"] == "LEGACY_SHADOWS_SUCCESSOR_UNTIL_RETIRED",
-                             f"canonical route {loser} is shadowed by {overlap.winner}; resolution must acknowledge it")
+                             f"canonical route {loser} is shadowed by the route it replaces, {overlap.winner}; resolution must acknowledge it")
             seen.add(key)
             overlaps.append(overlap)
     stale = set(declared) - seen
@@ -1409,6 +1580,7 @@ def validate_foundation(root: Path = ROOT, foundation_path: Path | None = None) 
     validate_inventory_gates(foundation, root)
     profiles, policy = validate_access_policy(foundation, documents, routes, materialized, root)
     validate_token_settings(documents, profiles, root)
+    validate_denied_aliases(foundation, documents, root)
     secret_hits = validate_secret_boundary(root)
     return {
         "foundation": foundation, "documents": documents, "services": services,
@@ -1546,6 +1718,12 @@ def validate_access_policy(foundation: dict, documents: dict[str, SourceDocument
         else:
             _require(parties == profile["authorizedParties"] or (isinstance(parties, list) and parties),
                      f"route {route_id}: authorized parties must be the profile marker {profile['authorizedParties']!r} or an explicit list")
+        # the contracted azp (literal client or symbolic family) the policy records must be
+        # exactly what the authority declares and what the generated guard forwards upstream
+        if route.expected_azp is not None or "contractExpectedAzp" in item:
+            _require(route.expected_azp is not None and "contractExpectedAzp" in item
+                     and canonical_azp(item["contractExpectedAzp"]) == route.expected_azp,
+                     f"route {route_id}: access policy contractExpectedAzp {item.get('contractExpectedAzp')!r} != contracted/forwarded azp {route.expected_azp!r}")
         # principals
         _require(set(item["principalClasses"]) <= set(profile["principalClasses"]) and item["principalClasses"], f"route {route_id}: principal classes outside the profile")
         if item["accessClass"] == "ADMIN_INTERNAL" and entry["activation"] != "BLOCKED":
@@ -1594,6 +1772,29 @@ def validate_access_policy(foundation: dict, documents: dict[str, SourceDocument
     return profiles, policy
 
 
+def validate_denied_aliases(foundation: dict, documents: dict[str, SourceDocument], root: Path = ROOT) -> None:
+    """Every retired alias the canonical contract denies is answered by
+    request-termination 404 alone: no service, no upstream, no other plugin, in
+    the contract and in every generated manifest."""
+    for source in foundation["sources"]:
+        document = documents[source["path"]]
+        if document.format == "canonical-middleware-contract":
+            for denied in load_json(root / source["path"]).get("deniedRoutes", []):
+                _require(denied.get("statusCode") == 404 and "serviceHost" not in denied and "servicePort" not in denied,
+                         f"{source['path']}: denied alias {denied.get('name')} must be a 404 with no upstream")
+        if document.format == "kong-declarative":
+            raw = load_yaml(root / source["path"])
+            for route in raw.get("routes", []) or []:
+                plugins = route.get("plugins", []) or []
+                _require([p.get("name") for p in plugins] == ["request-termination"] and "service" not in route,
+                         f"{source['path']}: service-less route {route.get('name')} must carry request-termination only")
+                _require((plugins[0].get("config", {}) or {}).get("status_code") == 404,
+                         f"{source['path']}: denied alias {route.get('name')} must terminate with 404")
+    for entry in foundation["routes"]:
+        if "GATEWAY_TERMINATED" in entry["acceptedFindings"]:
+            _require(entry.get("deniedStatus") == 404, f"route {entry['routeId']}: gateway-terminated route must record deniedStatus 404")
+
+
 def validate_token_settings(documents: dict[str, SourceDocument], profiles: dict, root: Path = ROOT) -> None:
     """openid-connect configurations in declarative sources must keep the vault salt,
     bounded leeway and bounded caches; jwt configurations must verify exp."""
@@ -1607,10 +1808,15 @@ def validate_token_settings(documents: dict[str, SourceDocument], profiles: dict
             plugin_blocks += list(svc.get("plugins", []) or [])
             for route in svc.get("routes", []) or []:
                 plugin_blocks += list(route.get("plugins", []) or [])
+        for route in raw.get("routes", []) or []:
+            plugin_blocks += list(route.get("plugins", []) or [])
         for plugin in plugin_blocks:
             config = plugin.get("config", {}) or {}
             if plugin.get("name") == "openid-connect":
                 _require(str(config.get("cache_tokens_salt", "")).startswith("{vault://env/"), f"{path}: openid-connect must reference cache_tokens_salt through the vault")
+                if document.format == "kong-declarative":
+                    _require(bool(config.get("scopes_required")) and all(s not in ("*", "") for s in config["scopes_required"]),
+                             f"{path}: every deployable openid-connect block must require at least one explicit scope (scopes_required)")
                 _require(config.get("leeway", 0) <= rules["maximumLeewaySeconds"], f"{path}: openid-connect leeway exceeds the bound")
                 _require(config.get("cache_ttl", 3600) <= rules["maximumCacheTtlSeconds"], f"{path}: openid-connect cache_ttl exceeds the bound")
                 _require(config.get("anonymous") in (None, ""), f"{path}: openid-connect must not fall back to an anonymous consumer")
@@ -1650,11 +1856,18 @@ def validate_secret_boundary(root: Path = ROOT) -> int:
 
 
 def m1_dependency_status(foundation: dict, root: Path = ROOT) -> dict:
-    """Whether the Mission 1 reconciliation (PR #105) has landed in this tree."""
+    """Whether the Mission 1 reconciliation (PR #105) has landed in this tree and
+    what residue of the retired ``:8080`` alias the registry still records."""
     reconciled = (root / "config/kong-middleware-authority.v2.json").is_file()
-    transitional = [a for a in foundation["boundaryRules"]["middlewareUpstreamAliases"] if a["port"] == 8080]
+    aliases = foundation["boundaryRules"]["middlewareUpstreamAliases"]
+    transitional = [a for a in aliases if a["port"] == 8080 and not str(a.get("role", "")).startswith("RETIRED")]
+    retired = [a for a in aliases if str(a.get("role", "")).startswith("RETIRED")]
+    residue_services = sorted(s["serviceId"] for s in foundation["services"] if "RETIRED_UPSTREAM_ALIAS" in s["acceptedFindings"])
+    residue_routes = sorted(r["routeId"] for r in foundation["routes"] if "RETIRED_UPSTREAM_ALIAS" in r["acceptedFindings"])
     return {"reconciled": reconciled, "transitional8080Aliases": [a["host"] for a in transitional],
-            "state": "MERGED" if reconciled else "M1_DEPENDENCY_PENDING"}
+            "retiredAliases": [f"{a['host']}:{a['port']}" for a in retired],
+            "residueServices": residue_services, "residueRoutes": residue_routes,
+            "state": "MERGED" if reconciled and not transitional else "M1_DEPENDENCY_PENDING"}
 
 
 # --------------------------------------------------------------------------- rendering
@@ -1690,7 +1903,7 @@ def render_routes(result: dict) -> str:
     for route_id, entry in sorted(result["routes"].items(), key=lambda kv: (kv[1]["environment"], kv[0])):
         route = result["materialized"][route_id]
         rows.append("| " + " | ".join([
-            f"`{route_id}`", f"`{entry['serviceId']}`", entry["environment"], _fmt(route.hosts), _fmt(route.paths),
+            f"`{route_id}`", f"`{entry['serviceId']}`" if entry["serviceId"] else "*none (terminated)*", entry["environment"], _fmt(route.hosts), _fmt(route.paths),
             _fmt(route.methods), _fmt(route.strip_path), _fmt(route.preserve_host), entry["authentication"],
             entry["mechanism"], _fmt(entry.get("audience")), _fmt(entry.get("requiredScopes") or None),
             entry["rateLimitProfile"], entry["requestSizeProfile"], entry["trafficClass"], entry["lifecycle"],
@@ -1776,7 +1989,8 @@ def main(argv: list[str] | None = None) -> int:
     print("ACCESS_CLASSES=" + ",".join(f"{k}:{v}" for k, v in sorted(classes.items())))
     print(f"PUBLIC_ALLOWLIST={len(result['policy']['publicAllowlist'])} AUTH_PROFILES={len(result['profiles']['profiles'])} SECRET_HITS={result['secret_scan']}")
     dependency = m1_dependency_status(result["foundation"])
-    print(f"M1_DEPENDENCY={dependency['state']} TRANSITIONAL_8080_ALIASES={len(dependency['transitional8080Aliases'])}")
+    print(f"M1_DEPENDENCY={dependency['state']} TRANSITIONAL_8080_ALIASES={len(dependency['transitional8080Aliases'])} "
+          f"RETIRED_ALIAS_RESIDUE={len(dependency['residueServices'])}+{len(dependency['residueRoutes'])}")
     print("RUNTIME_APPLY_AUTHORIZED=NO")
     if args.summary:
         print(json.dumps({

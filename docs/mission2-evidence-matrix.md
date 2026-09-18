@@ -1,59 +1,83 @@
-# Kong Mission 2 — Evidence Matrix
+# Kong Mission 2 — Evidence Matrix (post-#105 reconciliation)
 
-Branch `feature/mission2-identity-access-security` (from Mission 1 foundation
-`50dad08`). Source-only; `runtimeApplyAuthorized: false` in every artifact.
-Windows workstation evidence; Linux CI (`validate.yml`) is the authority for
-the POSIX-only suites.
+Branch `feature/mission2-identity-access-security` = Mission 1 foundation
+(`50dad08`) + Mission 2 (`8d4ac7b`) + `main` at `6afd0bd` (PR #103, #104,
+#105) + the reconciliation commit. Source-only; `runtimeApplyAuthorized:
+false` and `providerEffectsEnabled: false` in every artifact; no runtime,
+Caddy, Keycloak, Middleware or provider was touched. Windows workstation
+evidence; Linux CI (`validate.yml`, `kong-config.yml`) is the authority for the
+POSIX-only suites.
 
 ## Freeze gate
 
 | Gate | Evidence | Result |
 | --- | --- | --- |
-| Route access classification | 79/79 routes carry an access class; `ACCESS_CLASSES=ADMIN_INTERNAL:2,AUTHENTICATED:24,INTERNAL:9,PUBLIC:7,SERVICE_AUTHENTICATED:37`; validator cross-checks class ↔ foundation; `test_unclassified_route_fails` | GREEN |
-| Public-route allowlist | 7 public routes = 7 allowlist entries with reasons; mutation-only public routes are legacy; `codestra-mail-api` stays `BLOCKED`, not public; `test_public_route_not_allowlisted_fails`, `test_route_cannot_be_reclassified_public_by_policy_alone` | GREEN |
-| Authentication profiles | 14 profiles (`config/kong-authentication-profiles.v1.json`); every route bound; class/mechanism/lifecycle/activation constraints; strength floors | GREEN |
-| Issuer contract | two realms, RS256 only, skew 0 s, no wildcard; source issuer ↔ environment ↔ profile; `test_wrong_issuer_in_a_source_fails`, catalogue mutations | GREEN |
-| Audience contract | 7 audience profiles, no wildcard, `clientIdIsAudience` only with contract (`sdk-intake`); policy audience ↔ foundation audience; mutations (missing, wrong, wildcard, uncontracted client-id) | GREEN |
-| Scope prerequisites | policy scopes == foundation scopes; no wildcard; `platform.admin` required on admin; `docs/gateway-scope-contract-v1.md`; mutations | GREEN |
-| Service identities | explicit `authorizedParties` per service family or `consumer-mapped`; source client must be listed; no shared universal credential; `docs/service-authentication-contract-v1.md` | GREEN |
-| Human / service separation | principal classes per route; HUMAN never on service/internal/admin; SERVICE never on admin; ADMIN-only admin route; `test_human_service_admin_and_internal_identities_are_separated` | GREEN |
-| Identity-header trust | `headerAuthorityAllowed: false`; 22 never-trusted headers; strip-before-mint proven on every policy; unstripped routes carry the explicit finding + mitigation | GREEN (M2-003 refactor deferred behind #105) |
-| Tenant boundary | 8 tenant policies, none header-authority; validator rejects `HEADER_AUTHORITY`; `docs/tenant-identity-boundary-v1.md` | GREEN |
-| Fail-closed identity behaviour | `FAIL_CLOSED_V1` on every canonical protected route; `downgradeToPublic: false`; openid-connect `anonymous` forbidden; discovery unavailable → plugin error, never allow | GREEN |
-| Token-cache secret boundary | vault salt required, ttl ≤ 3600 s, leeway ≤ 60 s; `KONG_OIDC_CACHE_TOKENS_SALT` declared by name only; jwt static-key rotation documented | GREEN |
-| Admin isolation | Mission 1 node checks unchanged; `test_logging_policy_and_admin_isolation_are_preserved` | GREEN |
-| Logging redaction | no log plugins; guards never log; constant error bodies; `neverPersisted` list; validator requires `redactsCredentials` on any future log plugin; secret scan 0 hits over 236 tracked files (sentinels only in tests) | GREEN |
-| Canonical validator | `python scripts/validate_kong_foundation.py` → `KONG_GATEWAY_FOUNDATION=PASS … SECRET_HITS=0 M1_DEPENDENCY=M1_DEPENDENCY_PENDING` | GREEN |
-| Focused M2 tests | `pytest -q tests/test_kong_identity_security.py` → 58 passed, 1 xfailed (strict M1 guard) | GREEN |
-| Mission 1 tests | `pytest -q tests/test_kong_foundation.py` → 58 passed | GREEN |
-| Full regression | `pytest -q --ignore=tests/test_kong_change_authority.py` → 655 passed, 1 xfailed, 4 failed + 4 errors (all pre-existing Windows host artifacts in the certification packager: symlink privilege, umask, 32 KiB env cap); 0 new failures vs. the entry baseline; `test_kong_change_authority.py` needs `fcntl` (Linux CI) | GREEN (CI-owned residue) |
-| Source validators | community n8n egress, calling policy (+self-test), production inventory, middleware edge contract, foundation, marketing, provider control, cells, standby: PASS; `compileall` PASS; JSON/YAML parse PASS; migration manifests regenerated (235 files) and verified in an LF worktree | GREEN |
-| luac / shellcheck | not installed on this workstation; no Lua or shell file changed in Mission 2 | CI-owned |
+| PR #105 dependency | merged into `main` as `6afd0bd` (2026-09-18T17:43:57Z) after independent approval; `main` merged into this branch; `M1_DEPENDENCY=MERGED`; no `m1Dependency` marker, no xfail, no "awaiting #105" statement remains | CLOSED |
+| Middleware `:8095` authority | `middlewareUpstreamAliases[0]` = `middleware-integration-api:8095` `CANONICAL_PUBLIC_API`; v2 authority, both generated manifests, campaign and (retired) n8n contracts bind it; `canonicalPublicApiListener: 8095` | GREEN |
+| Middleware `:8080` active alias | `TRANSITIONAL_8080_ALIASES=0`; alias role `RETIRED_DENIED_PR105`; `RETIRED_UPSTREAM_ALIAS` accepted only on `provider-control-middleware` (+6 routes, `PREPARED_DISABLED`) and the two live n8n routes (`RETIRE_CANDIDATE`, `knownDrift` 8080 → 8095); no `8080` literal in the generated manifests; `test_retired_middleware_8080_alias_has_no_activatable_route` | ZERO |
+| v2 authority registered | 4 new sources (`middleware-authority-v2`, 2 × `kong-declarative`, `platform-api-read-contract`); `SOURCES=24`; source discovery refuses any unregistered `config/kong-*` file (`test_unknown_source_and_unknown_route_fail`) | GREEN |
+| 80 shared-edge routes | 80 `middleware-*` production routes bound to canonical + manifest + authority, 80 staging twins bound to the staging manifest; every one carries routeId, serviceId, environment, bindings, traffic class, access class, profile, issuer, audience, scope, `contractExpectedAzp`, rate and size profile, lifecycle, activation, disposition — all derived from the authority (`test_v2_shared_edge_routes_are_governed_from_the_authority`) | GOVERNED |
+| 10 denied aliases | 10 production + 10 staging `DENIED_ALIAS` routes: `serviceId: null`, `request-termination` 404 only, no upstream, no provider/8080/wildcard fallback; `validate_denied_aliases`; `test_denied_aliases_are_fail_closed_404_terminations`; mutations (upstream added, status ≠ 404, extra plugin) fail | FAIL-CLOSED |
+| Platform API routes (PR #104) | 20 routes + `codestra-platform-api` registered as `TRANSITIONAL`, each `supersededBy` its v2 twin; v2 regex wins deterministically; overlaps declared; contradiction (`serviceTokenOnly` vs v2 `browser-session`) recorded as M2-016 | RECONCILED |
+| Route access classification | 279/279 routes classified: `ADMIN_INTERNAL:2 AUTHENTICATED:142 INTERNAL:9 PUBLIC:27 SERVICE_AUTHENTICATED:99`; `test_unclassified_route_fails`, `test_v2_route_without_access_class_or_profile_fails` | GREEN |
+| Public-route allowlist | 27 public routes = 27 allowlist entries with reasons (7 legacy/probe + 20 gateway-terminated aliases); `codestra-mail-api` stays `BLOCKED`, never public | GREEN |
+| Authentication profiles | 16 profiles (`HUMAN_OR_SERVICE_OIDC_V1` and `DENIED_TERMINATION_V1` added, `CAMPAIGN_MIDDLEWARE` audience retired with the source); strength floors; class/mechanism/lifecycle/activation constraints | GREEN |
+| Issuer enforcement | production `https://auth.codestra.co/realms/codestra`, staging `https://auth-staging.codestra.co/realms/codestra`, never collapsed (`test_environments_are_not_collapsed`); RS256 only, skew 0, no wildcard; wrong production/staging/foreign issuer in a manifest fails | GREEN |
+| Audience enforcement | every openid-connect block pins one non-wildcard audience; authority ↔ manifest ↔ registry ↔ policy agree; wrong/wildcard audience mutations fail | GREEN |
+| Scope enforcement | one explicit `scopes_required` per deployable openid-connect block (validator rule); policy scopes == foundation scopes == authority scope; missing/wildcard scope fails | GREEN |
+| Authorized-party enforcement | `consumer_claim: [azp]` on every v2 route; `contractExpectedAzp` (policy) == authority `azp` == the value the generated guard forwards; wrong client in the guard or the policy fails; explicit party lists preserved on the jwt routes | GREEN |
+| Identity-header boundary | generated post-function clears 18 client-asserted identity headers before minting (`OIDC_STRIP_AND_CONTRACT_METADATA`, 160 routes); `X-Codestra-*` metadata headers never trusted from clients; `headerAuthorityAllowed: false`; `test_generated_guard_strips_identity_before_minting_and_never_logs` | GREEN |
+| Tenant boundary | no `HEADER_AUTHORITY` tenant policy; v2 routes `CLAIM_ONLY_MIDDLEWARE_VALIDATES` (Middleware authorizes tenant/resource; `X-Tenant-ID` is a selector) | GREEN |
+| Route precedence | 60 declared overlaps in the post-#105 universe; every v2-vs-old and v2-vs-#104 pair won by the v2 route (`SUCCESSOR_REPLACES_LEGACY_ON_APPLY` / `DETERMINISTIC_SPECIFICITY`); one pre-existing declared ambiguity (M1, key-auth vs OIDC control plane, never co-applied); the generator's `regex_priority` removed the `/tenants/authorized` vs `/tenants/{id}` tie; undeclared overlap and duplicate authority mutations fail | GREEN |
+| Source discovery | 24 registered + 8 reasoned exclusions; unregistered file fails | GREEN |
+| Secret scan | `SECRET_HITS=0` over the authority roots (sentinels only in tests) | GREEN |
+| Foundation validator | `python scripts/validate_kong_foundation.py` → `KONG_GATEWAY_FOUNDATION=PASS SOURCES=24 SERVICES=37 ROUTES=279 PLUGINS=19 OVERLAPS=60 KNOWN_DRIFT=22 … M1_DEPENDENCY=MERGED TRANSITIONAL_8080_ALIASES=0 RETIRED_ALIAS_RESIDUE=1+8 RUNTIME_APPLY_AUTHORIZED=NO`; generated docs current | GREEN |
+| Source validators | production inventory, middleware edge contract, calling policy (+ `--self-test`), community n8n egress, provider control, cells, standby, marketing: all `PASS` / rc 0 | GREEN |
+| Mission 1 tests | `pytest -q tests/test_kong_foundation.py` → 58 passed (two fixtures retargeted: the n8n 8080 → 8095 drift is now declared, the public-mutation rule names gateway-terminated routes) | GREEN |
+| Mission 2 tests | `pytest -q tests/test_kong_identity_security.py` → 92 passed, 0 xfail (former strict M1 guard is now `test_retired_middleware_8080_alias_has_no_activatable_route`) | GREEN |
+| v2 Middleware tests | `tests/test_kong_middleware_contract_v2.py` + `tests/test_kong_route_authority_hardening.py` → 46 passed after regeneration; `tests/test_kong_canonical_route_contract.py`, `tests/test_oidc_auth.py` green | GREEN |
+| Full regression | `pytest -q --ignore=tests/test_kong_change_authority.py` → 694 passed, 4 failed + 4 errors, 16 subtests passed (16:47 on this workstation); the residue is the pre-existing Windows host-artifact set (certification packager: symlink privilege, umask, 32 KiB env cap), identical on a detached checkout of `origin/main` `6afd0bd`; `tests/test_kong_change_authority.py` needs `fcntl` (Linux CI) | GREEN (CI-owned residue) |
+| Migration manifests | regenerated from the LF-normalized tree: `MIGRATION_MANIFEST_GENERATION=PASS FILES=244`, `MIGRATION_MANIFEST_CHECK=PASS`, `MIGRATION_MANIFEST=PASS` (semantic equality); conflicts resolved by regeneration only | GREEN |
+| Linux-equivalent gates | `compileall` PASS; JSON/YAML parse PASS; `deck file validate` PASS on both generated manifests and the control plane (local decK 1.55; CI pins its own); 160 generated Lua chunks compile (`lupa`); `luac -p` / `shellcheck`: no Lua or shell file changed, CI-owned | GREEN / CI-owned |
+| Line endings | repository content LF; `core.autocrlf=false`; every modified file written LF; no `.gitattributes` added | GREEN |
+| Production safety | `RUNTIME_APPLY_AUTHORIZED=NO`, `provider_effects_enabled: false`, no deck sync / Admin API / deploy / provider / Caddy / Keycloak / Middleware change | 0 effects |
 
 ## Mission 1 preservation
 
 | Invariant | State |
 | --- | --- |
-| canonical Middleware = `:8095` | preserved (`canonicalPublicApiListener: 8095`) |
-| `:8080` = 0 after #105 | **M1_DEPENDENCY_PENDING** — one transitional alias (`appolon-middleware-integration-api:8080`, n8n control plane + prepared provider control); strict xfail guard flips to a failure when #105 lands |
+| canonical Middleware = `:8095` | preserved and consolidated (`middleware-integration-api:8095`) |
+| `:8080` = 0 after #105 | **0 activatable**: retired alias, residue declared (M2-017 prepared contract, M2-019 live readback) |
 | direct provider routes = 0 | preserved (validator blocks markers and IP literals) |
-| direct command bypass = 0 | preserved |
-| explicit methods / no wildcard fallback | preserved on every canonical route |
+| direct command bypass = 0 | preserved; retired aliases answer 404 at the gateway |
+| explicit methods / no wildcard fallback | preserved on every canonical route (`test_wildcard_route_in_the_canonical_contract_fails`) |
 | Caddy → Kong / Kong → Middleware boundaries | unchanged |
-| Admin isolation | unchanged |
+| Admin isolation | unchanged (`test_logging_policy_and_admin_isolation_are_preserved`) |
 
-## Dependency statement
+## Residue for the owners (not blocking, not hidden)
+
+1. `config/kong-provider-control-routes.v1.json` + its validator still pin the
+   retired 8080 alias (`PREPARED_DISABLED`; cross-repository re-pin before
+   activation).
+2. PR #104 `config/kong-platform-api-read-routes.v1.json` duplicates 20 v2
+   operations and contradicts the v2 principal model on session context; fold
+   into the generator or retire.
+3. The live n8n control-plane routes on 8080 must be deleted in the reviewed
+   apply that activates the generated deny manifest.
+4. `codestra-mail-api` (M2-001 / M1-001) remains `BLOCKED`, unowned and
+   unresolved.
+
+## Freeze statement
 
 ```text
-KONG MISSION 2:
-IMPLEMENTATION COMPLETE — FOUNDATION DEPENDENCY PENDING
+KONG MISSION 2 — IDENTITY, AUTHENTICATION & API ACCESS SECURITY
+POST-#105 RECONCILIATION COMPLETE
 
-DEPENDENCY:
-KONG PR #105 / MISSION 1 INDEPENDENT APPROVAL
-(also: Mission 1 foundation commit 50dad08 on feature/issue-58-canonical-campaign-routes, unmerged)
-
-PRODUCTION EFFECTS:
-0
+MISSION 1 DEPENDENCY: CLOSED
+CANONICAL MIDDLEWARE: middleware-integration-api:8095
+ACTIVE MIDDLEWARE :8080 ALIASES: 0
+RUNTIME APPLY AUTHORIZED: NO
+PROVIDER EFFECTS: 0
 ```
 
-Mission 3 does not start until the dependency closes.
+Mission 3 does not start in this change.

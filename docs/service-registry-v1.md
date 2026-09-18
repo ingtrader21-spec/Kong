@@ -49,13 +49,15 @@ rejects the registry.
 | `DESIGN_LOGICAL` | logical upstream families of the cell design | design only |
 
 Every Middleware-governed service must target one of the declared aliases in
-`boundaryRules.middlewareUpstreamAliases`. Today Middleware is reachable at
-three listeners, which is the 8080/8095/8096 split the audit flags:
+`boundaryRules.middlewareUpstreamAliases`. PR #105 consolidated the shared edge
+on the 8095 listener; the readback of 2026-09-06 still shows the 8080/8095/8096
+split, which the registry records as declared drift and retired residue:
 
 | Alias | Role | Disposition |
 | --- | --- | --- |
-| `codestra-middleware-integration-api-1:8095` | canonical public API (callbacks, campaign automation, intake, calling, website API, breero fail-closed target) | keep; every new governed route targets it |
-| `appolon-middleware-integration-api:8080` | transitional: n8n control plane and the prepared provider-control contract | consolidate to 8095 once Middleware confirms the listener (cross-repository change, PR 82/60 pins) |
+| `middleware-integration-api:8095` | **canonical public API** (PR #105): the v2 authority, both generated manifests, the campaign contract and the retired n8n contract bind it | keep; every Middleware authority targets it |
+| `codestra-middleware-integration-api-1:8095` | container name of the same listener (callbacks, intake, calling, PR #104 read contract, website API, breero fail-closed target) | keep; same listener |
+| `appolon-middleware-integration-api:8080` | **retired and denied** (`RETIRED_DENIED_PR105`); `RETIRED_UPSTREAM_ALIAS` is detected on anything that targets it | no activatable route: live n8n residue is `RETIRE_CANDIDATE` with `knownDrift`, the prepared provider-control contract must re-pin to 8095 before activation (cross-repository change, PR 82/60 pins) |
 | `codestra-integration-control-plane-api-1:8096` / `codestra-control-plane:8096` | communication control plane (legacy key-auth alias / canonical OIDC alias) | the OIDC candidate supersedes the key-auth routes |
 | `codestra-middleware-event-gateway-1:8095` | legacy webhook event gateway | deprecate with the shared-key routes |
 | `${MIDDLEWARE_TLS_HOST}:443` | proposed TLS egress | proposal; not activatable until a gateway authentication plugin is added |
@@ -87,8 +89,9 @@ Services are registered per environment. Staging overlays (`@staging`) bind
 only the staging overlay contract, which the validator proves uses the staging
 issuer, declares a subset of the production routes with identical matches, and
 records `sharedUpstreamAliases: true` because the overlays reuse the production
-container aliases (`codestra-middleware-integration-api-1:8095`,
-`appolon-middleware-integration-api:8080`). Those aliases are safe only because
+aliases (`middleware-integration-api:8095`, and the retired
+`appolon-middleware-integration-api:8080` only in the retired n8n overlay).
+Those aliases are safe only because
 the staging node runs in a dedicated stack with its own networks, Redis and
 database; that isolation is a deployment invariant, not a naming one, and it is
 listed as runtime certification evidence in the freeze document. Development
@@ -106,9 +109,9 @@ Generated from the registry and the bound sources by
 | `breero-production-api` | production | unassigned | MIDDLEWARE_GOVERNED | `http://codestra-middleware-integration-api-1:8095` | LEGACY_CONNECT_5S | UNRECORDED_READBACK | AUTHENTICATED | UNRECORDED_READBACK | UNRECORDED_READBACK | DNS_TARGET_PASSIVE | TRANSITIONAL | REFACTOR | RETRIES_UNRECORDED |
 | `codestra-callback-api` | production | middleware-integration | MIDDLEWARE_GOVERNED | `http://codestra-middleware-integration-api-1:8095` | FAST_SERVICE_API | TRANSPORT_CONNECT_ONLY_1 | SERVICE_AUTHENTICATED | ROUTE_SPECIFIC | STANDARD_API_1MB | DNS_TARGET_PASSIVE | CANONICAL | KEEP | — |
 | `codestra-calling-api` | production | middleware-telephony | MIDDLEWARE_GOVERNED | `http://codestra-middleware-integration-api-1:8095` | STANDARD_API | NONE | INTERNAL | ROUTE_SPECIFIC | STANDARD_API_1MB | DNS_TARGET_PASSIVE | CANONICAL | KEEP | — |
-| `codestra-campaign-automation-api` | production | middleware-integration | MIDDLEWARE_GOVERNED | `http://codestra-middleware-integration-api-1:8095` | STANDARD_API | NONE | SERVICE_AUTHENTICATED | ROUTE_SPECIFIC | STANDARD_API_1MB | DNS_TARGET_PASSIVE | CANONICAL | KEEP | — |
+| `codestra-campaign-automation-api` | production | middleware-integration | MIDDLEWARE_GOVERNED | `http://middleware-integration-api:8095` | STANDARD_API | NONE | SERVICE_AUTHENTICATED | ROUTE_SPECIFIC | STANDARD_API_1MB | DNS_TARGET_PASSIVE | CANONICAL | KEEP | — |
 | `codestra-communication-control-plane` | production | platform-control-plane | CONTROL_PLANE_GOVERNED | `http://codestra-integration-control-plane-api-1:8096` | KONG_DEFAULT_60S | UNRECORDED_READBACK | AUTHENTICATED | UNRECORDED_READBACK | UNRECORDED_READBACK | DNS_TARGET_PASSIVE | LEGACY | DEPRECATE | KONG_DEFAULT_TIMEOUTS, RETRIES_UNRECORDED |
-| `codestra-community-n8n-middleware` | production | middleware-integration | MIDDLEWARE_GOVERNED | `https://${MIDDLEWARE_TLS_HOST}:443` | STANDARD_API | NONE | SERVICE_AUTHENTICATED | UNSPECIFIED_CONTRACT | UNSPECIFIED_CONTRACT | DNS_TARGET_PASSIVE | PROPOSED | REFACTOR | RETRIES_UNDECLARED, TIMEOUTS_UNDECLARED |
+| `codestra-community-n8n-middleware` | production | middleware-integration | MIDDLEWARE_GOVERNED | `https://${MIDDLEWARE_TLS_HOST}:443` | STANDARD_API | NONE | SERVICE_AUTHENTICATED | UNSPECIFIED_CONTRACT | UNSPECIFIED_CONTRACT | DNS_TARGET_PASSIVE | RETIRE_CANDIDATE | DELETE | RETRIES_UNDECLARED, TIMEOUTS_UNDECLARED |
 | `codestra-control-plane` | production | platform-control-plane | CONTROL_PLANE_GOVERNED | `http://codestra-control-plane:8096` | STANDARD_API | NONE | SERVICE_AUTHENTICATED | AUTHENTICATED_STANDARD_120 | ROUTE_SPECIFIC | DNS_TARGET_PASSIVE | CANONICAL | KEEP | — |
 | `codestra-crm-api` | production | legacy-shared-key-consumers | LEGACY_AUTH_ADAPTER | `http://codestra-kong-service-auth-adapter-1:8080` | LEGACY_FAST_5S | UNRECORDED_READBACK | AUTHENTICATED | ROUTE_SPECIFIC | ROUTE_SPECIFIC | DNS_TARGET_PASSIVE | LEGACY | DEPRECATE | RETRIES_UNRECORDED |
 | `codestra-design-cell-upstreams` | production | architecture | DESIGN_LOGICAL | `None://middleware-*:None` | STANDARD_API | NONE | SERVICE_AUTHENTICATED | DESIGN_UNSPECIFIED | DESIGN_UNSPECIFIED | DNS_TARGET_PASSIVE | DESIGN_ONLY | KEEP | RETRIES_UNDECLARED, TIMEOUTS_UNDECLARED |
@@ -118,8 +121,9 @@ Generated from the registry and the bound sources by
 | `codestra-gateway-test` | production | unassigned | TEST | `http://kong-test-upstream:8080` | KONG_DEFAULT_60S | UNRECORDED_READBACK | AUTHENTICATED | NONE | NONE_READ_ONLY | NONE_FIXTURE | RETIRE_CANDIDATE | DELETE | KONG_DEFAULT_TIMEOUTS, RETRIES_UNRECORDED |
 | `codestra-mail-control-plane` | production | unassigned | APPLICATION_DIRECT | `http://codestra-mail-api:8098` | LEGACY_CONNECT_5S | UNRECORDED_READBACK | ADMIN_INTERNAL | NONE | UNBOUNDED | DNS_TARGET_PASSIVE | TRANSITIONAL | REFACTOR | RETRIES_UNRECORDED |
 | `codestra-middleware-intake` | production | middleware-integration | MIDDLEWARE_GOVERNED | `http://codestra-middleware-integration-api-1:8095` | STANDARD_API | NONE | SERVICE_AUTHENTICATED | ROUTE_SPECIFIC | STANDARD_API_1MB | DNS_TARGET_PASSIVE | CANONICAL | KEEP | — |
-| `codestra-middleware-n8n-control-plane` | production | middleware-integration | MIDDLEWARE_GOVERNED | `http://appolon-middleware-integration-api:8080` | FAST_SERVICE_API | TRANSPORT_CONNECT_ONLY_1 | SERVICE_AUTHENTICATED | ROUTE_SPECIFIC | STANDARD_API_1MB | DNS_TARGET_PASSIVE | CANONICAL | KEEP | — |
+| `codestra-middleware-n8n-control-plane` | production | middleware-integration | MIDDLEWARE_GOVERNED | `http://middleware-integration-api:8095` | FAST_SERVICE_API | TRANSPORT_CONNECT_ONLY_1 | SERVICE_AUTHENTICATED | ROUTE_SPECIFIC | STANDARD_API_1MB | DNS_TARGET_PASSIVE | RETIRE_CANDIDATE | DELETE | — |
 | `codestra-n8n-editor` | production | automation-platform | APPLICATION_DIRECT | `http://codestra-n8n-main:5678` | LONG_RUNNING_API | NONE | AUTHENTICATED | ROUTE_SPECIFIC | EDITOR_4MB | DNS_TARGET_PASSIVE | PROPOSED | KEEP | — |
+| `codestra-platform-api` | production | middleware-integration | MIDDLEWARE_GOVERNED | `http://codestra-middleware-integration-api-1:8095` | STANDARD_API | KONG_DEFAULT_IMPLICIT | SERVICE_AUTHENTICATED | ROUTE_SPECIFIC | STANDARD_API_1MB | DNS_TARGET_PASSIVE | TRANSITIONAL | REFACTOR | IMPLICIT_RETRIES |
 | `codestra-sms-api` | production | legacy-shared-key-consumers | LEGACY_AUTH_ADAPTER | `http://codestra-kong-service-auth-adapter-1:8080` | FAST_SERVICE_API | UNRECORDED_READBACK | AUTHENTICATED | ROUTE_SPECIFIC | ROUTE_SPECIFIC | DNS_TARGET_PASSIVE | LEGACY | DEPRECATE | RETRIES_UNRECORDED |
 | `codestra-sms-dlr` | production | legacy-shared-key-consumers | LEGACY_PROVIDER_ADAPTER | `http://codestra-sms-api-api-1:8080` | KONG_DEFAULT_60S | UNRECORDED_READBACK | AUTHENTICATED | ROUTE_SPECIFIC | ROUTE_SPECIFIC | DNS_TARGET_PASSIVE | LEGACY | DEPRECATE | KONG_DEFAULT_TIMEOUTS, RETRIES_UNRECORDED |
 | `codestra-sms-standby` | production | gateway-standby | STANDBY_AUTH_FIXTURE | `http://codestra-kong-standby-auth:8080` | STANDBY_FAST | NONE | INTERNAL | ROUTE_SPECIFIC | ROUTE_SPECIFIC | NONE_FIXTURE | STANDBY | KEEP | — |
@@ -128,14 +132,16 @@ Generated from the registry and the bound sources by
 | `codestra-webhooks` | production | legacy-shared-key-consumers | MIDDLEWARE_EVENT_GATEWAY | `http://codestra-middleware-event-gateway-1:8095` | KONG_DEFAULT_60S | UNRECORDED_READBACK | AUTHENTICATED | ROUTE_SPECIFIC | ROUTE_SPECIFIC | DNS_TARGET_PASSIVE | LEGACY | DEPRECATE | KONG_DEFAULT_TIMEOUTS, RETRIES_UNRECORDED |
 | `codestra-website-api` | production | website | MIDDLEWARE_GOVERNED | `http://codestra-middleware-integration-api-1:8095` | FAST_SERVICE_API | UNRECORDED_READBACK | PUBLIC | NONE | UNBOUNDED | DNS_TARGET_PASSIVE | TRANSITIONAL | REFACTOR | RETRIES_UNRECORDED |
 | `codestra-website-forms` | production | website | CONTROL_PLANE_GOVERNED | `http://codestra-integration-control-plane-api-1:8096` | KONG_DEFAULT_60S | UNRECORDED_READBACK | PUBLIC | UNRECORDED_READBACK | UNBOUNDED | DNS_TARGET_PASSIVE | LEGACY | MOVE | KONG_DEFAULT_TIMEOUTS, RETRIES_UNRECORDED |
+| `middleware-integration-api` | production | middleware-integration | MIDDLEWARE_GOVERNED | `http://middleware-integration-api:8095` | CANONICAL_EDGE_5S | NONE | AUTHENTICATED | ROUTE_SPECIFIC | ROUTE_SPECIFIC | DNS_TARGET_PASSIVE | CANONICAL | KEEP | — |
 | `moneybee-api` | production | moneybee-platform | APPLICATION_DIRECT | `http://moneybee-api:8000` | STANDARD_API | NONE | AUTHENTICATED | ROUTE_SPECIFIC | IDENTITY_BOOTSTRAP_64KB | DNS_TARGET_PASSIVE | CANONICAL | KEEP | — |
-| `provider-control-middleware` | production | middleware-integration | MIDDLEWARE_GOVERNED | `http://appolon-middleware-integration-api:8080` | STANDARD_API | NONE | SERVICE_AUTHENTICATED | UNSPECIFIED_CONTRACT | UNSPECIFIED_CONTRACT | DNS_TARGET_PASSIVE | PREPARED_DISABLED | KEEP | RETRIES_UNDECLARED, TIMEOUTS_UNDECLARED |
+| `provider-control-middleware` | production | middleware-integration | MIDDLEWARE_GOVERNED | `http://appolon-middleware-integration-api:8080` | STANDARD_API | NONE | SERVICE_AUTHENTICATED | UNSPECIFIED_CONTRACT | UNSPECIFIED_CONTRACT | DNS_TARGET_PASSIVE | PREPARED_DISABLED | KEEP | RETIRED_UPSTREAM_ALIAS, RETRIES_UNDECLARED, TIMEOUTS_UNDECLARED |
 | `codestra-ai` | staging | marketing-platform | APPLICATION_DIRECT | `http://codestra-ai:8000` | KONG_DEFAULT_IMPLICIT | KONG_DEFAULT_IMPLICIT | AUTHENTICATED | NONE | ROUTE_SPECIFIC | DNS_TARGET_PASSIVE | DESIGN_ONLY | REFACTOR | IMPLICIT_RETRIES, IMPLICIT_TIMEOUTS |
-| `codestra-campaign-automation-api@staging` | staging | middleware-integration | MIDDLEWARE_GOVERNED | `http://codestra-middleware-integration-api-1:8095` | STANDARD_API | NONE | SERVICE_AUTHENTICATED | ROUTE_SPECIFIC | STANDARD_API_1MB | DNS_TARGET_PASSIVE | CANONICAL | KEEP | — |
+| `codestra-campaign-automation-api@staging` | staging | middleware-integration | MIDDLEWARE_GOVERNED | `http://middleware-integration-api:8095` | STANDARD_API | NONE | SERVICE_AUTHENTICATED | ROUTE_SPECIFIC | STANDARD_API_1MB | DNS_TARGET_PASSIVE | CANONICAL | KEEP | — |
 | `codestra-communication` | staging | marketing-platform | APPLICATION_DIRECT | `http://codestra-communication:8000` | KONG_DEFAULT_IMPLICIT | KONG_DEFAULT_IMPLICIT | AUTHENTICATED | NONE | ROUTE_SPECIFIC | DNS_TARGET_PASSIVE | DESIGN_ONLY | REFACTOR | IMPLICIT_RETRIES, IMPLICIT_TIMEOUTS |
 | `codestra-marketing` | staging | marketing-platform | APPLICATION_DIRECT | `http://codestra-marketing:8000` | KONG_DEFAULT_IMPLICIT | KONG_DEFAULT_IMPLICIT | AUTHENTICATED | NONE | ROUTE_SPECIFIC | DNS_TARGET_PASSIVE | DESIGN_ONLY | REFACTOR | IMPLICIT_RETRIES, IMPLICIT_TIMEOUTS |
-| `codestra-middleware-n8n-control-plane@staging` | staging | middleware-integration | MIDDLEWARE_GOVERNED | `http://appolon-middleware-integration-api:8080` | FAST_SERVICE_API | TRANSPORT_CONNECT_ONLY_1 | SERVICE_AUTHENTICATED | ROUTE_SPECIFIC | STANDARD_API_1MB | DNS_TARGET_PASSIVE | CANONICAL | KEEP | — |
+| `codestra-middleware-n8n-control-plane@staging` | staging | middleware-integration | MIDDLEWARE_GOVERNED | `http://middleware-integration-api:8095` | FAST_SERVICE_API | TRANSPORT_CONNECT_ONLY_1 | SERVICE_AUTHENTICATED | ROUTE_SPECIFIC | STANDARD_API_1MB | DNS_TARGET_PASSIVE | RETIRE_CANDIDATE | DELETE | — |
 | `codestra-social` | staging | marketing-platform | APPLICATION_DIRECT | `http://codestra-social:8000` | KONG_DEFAULT_IMPLICIT | KONG_DEFAULT_IMPLICIT | AUTHENTICATED | NONE | ROUTE_SPECIFIC | DNS_TARGET_PASSIVE | DESIGN_ONLY | REFACTOR | IMPLICIT_RETRIES, IMPLICIT_TIMEOUTS |
+| `middleware-integration-api@staging` | staging | middleware-integration | MIDDLEWARE_GOVERNED | `http://middleware-integration-api:8095` | CANONICAL_EDGE_5S | NONE | AUTHENTICATED | ROUTE_SPECIFIC | ROUTE_SPECIFIC | DNS_TARGET_PASSIVE | CANONICAL | KEEP | — |
 | `moneybee-bootstrap` | staging | moneybee-platform | MIDDLEWARE_GOVERNED | `https://middleware.internal.codestra:443` | FAST_SERVICE_API | NONE | AUTHENTICATED | ROUTE_SPECIFIC | IDENTITY_BOOTSTRAP_64KB | ACTIVE_HTTP_REQUIRED | DESIGN_ONLY | KEEP | — |
 <!-- END GENERATED: services -->
 
