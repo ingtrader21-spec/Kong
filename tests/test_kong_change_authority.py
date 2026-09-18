@@ -502,43 +502,24 @@ def test_tracked_mode_guard_rejects_removed_executable_bit(tmp_path):
 
 
 def _probe_manifest_lock(root: Path) -> int:
-    if os.name == "nt":
-        code = (
-            "import msvcrt\n"
-            "import os\n"
-            "import sys\n"
-            "path = sys.argv[1]\n"
-            "fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)\n"
-            "try:\n"
-            "    try:\n"
-            "        msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)\n"
-            "    except OSError:\n"
-            "        raise SystemExit(75)\n"
-            "    else:\n"
-            "        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)\n"
-            "        raise SystemExit(0)\n"
-            "finally:\n"
-            "    os.close(fd)\n"
-        )
-    else:
-        code = (
-            "import fcntl\n"
-            "import os\n"
-            "import sys\n"
-            "path = sys.argv[1]\n"
-            "flags = os.O_RDWR | os.O_CREAT | getattr(os, 'O_CLOEXEC', 0) | getattr(os, 'O_NOFOLLOW', 0)\n"
-            "fd = os.open(path, flags, 0o600)\n"
-            "try:\n"
-            "    try:\n"
-            "        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)\n"
-            "    except BlockingIOError:\n"
-            "        raise SystemExit(75)\n"
-            "    else:\n"
-            "        fcntl.flock(fd, fcntl.LOCK_UN)\n"
-            "        raise SystemExit(0)\n"
-            "finally:\n"
-            "    os.close(fd)\n"
-        )
+    code = (
+        "import fcntl\n"
+        "import os\n"
+        "import sys\n"
+        "path = sys.argv[1]\n"
+        "flags = os.O_RDWR | os.O_CREAT | getattr(os, 'O_CLOEXEC', 0) | getattr(os, 'O_NOFOLLOW', 0)\n"
+        "fd = os.open(path, flags, 0o600)\n"
+        "try:\n"
+        "    try:\n"
+        "        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)\n"
+        "    except BlockingIOError:\n"
+        "        raise SystemExit(75)\n"
+        "    else:\n"
+        "        fcntl.flock(fd, fcntl.LOCK_UN)\n"
+        "        raise SystemExit(0)\n"
+        "finally:\n"
+        "    os.close(fd)\n"
+    )
     result = subprocess.run(
         [sys.executable, "-c", code, str(root / manifest_generator.LOCK_NAME)],
         timeout=5,
@@ -808,3 +789,92 @@ def test_transaction_recovery_files_are_unique_and_non_symlink(tmp_path):
     manifest_generator.generate(root, InspectRecovery())
     assert run_manifest_verifier(root).returncode == 0
     assert transaction_residue(root) == []
+
+
+# --- POSIX security invariants that must never be relaxed for developer convenience.
+# The generator is POSIX-only by design (fcntl.flock, geteuid, 0600 modes); running
+# it on a platform without those primitives is unsupported, not accommodated.
+
+
+def test_generator_is_posix_only_and_has_no_platform_shims():
+    source = (Path(manifest_generator.__file__)).read_text(encoding="utf-8")
+    assert "import fcntl" in source
+    for marker in ("msvcrt", 'os.name == "nt"', 'os.name != "nt"', "hasattr(os, \"geteuid\")", "hasattr(os, \"fchmod\")"):
+        assert marker not in source, marker
+    assert source.count("os.geteuid()") >= 5
+    assert "fcntl.flock(descriptor, fcntl.LOCK_EX)" in source
+    assert "fcntl.flock(descriptor, fcntl.LOCK_UN)" in source
+
+
+def test_manifest_lock_rejects_wrong_owner(tmp_path, monkeypatch):
+    root = copy_manifest_fixture(tmp_path)
+    with manifest_generator.generator_lock(root):
+        pass
+    real_uid = os.geteuid()
+    monkeypatch.setattr(manifest_generator.os, "geteuid", lambda: real_uid + 1)
+    with pytest.raises(manifest_generator.TransactionError, match="owned by the effective user"):
+        with manifest_generator.generator_lock(root):
+            pass
+
+
+def test_manifest_lock_rejects_non_regular_file(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    lock_path = root / manifest_generator.LOCK_NAME
+    lock_path.mkdir()
+    with pytest.raises(manifest_generator.TransactionError, match="manifest lock"):
+        with manifest_generator.generator_lock(root):
+            pass
+    lock_path.rmdir()
+    os.mkfifo(lock_path)
+    try:
+        with pytest.raises(manifest_generator.TransactionError, match="manifest lock"):
+            with manifest_generator.generator_lock(root):
+                pass
+    finally:
+        lock_path.unlink()
+
+
+def test_hard_linked_staging_candidate_aborts_transaction(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    previous = manifest_bytes(root)
+
+    class HardLinkCandidate(manifest_generator.FileOperations):
+        def checkpoint(self, name: str) -> None:
+            if name != "prepared":
+                return
+            prefix = manifest_generator.CANDIDATE_NAMES[manifest_generator.YAML_MANIFEST]
+            candidate = next(root.glob(f"{prefix}.*"))
+            os.link(candidate, root / "hard-linked-candidate")
+
+    with (root / "README.md").open("a") as stream:
+        stream.write("\nhard-link staging candidate\n")
+    with pytest.raises(manifest_generator.TransactionError, match="exactly one link"):
+        manifest_generator.generate(root, HardLinkCandidate())
+
+    (root / "hard-linked-candidate").unlink()
+    assert manifest_bytes(root) == previous
+    assert _probe_manifest_lock(root) == 0
+
+
+def test_staging_candidate_mode_drift_aborts_transaction(tmp_path):
+    root = copy_manifest_fixture(tmp_path)
+    generate_manifests(root)
+    previous = manifest_bytes(root)
+
+    class LoosenCandidate(manifest_generator.FileOperations):
+        def checkpoint(self, name: str) -> None:
+            if name != "prepared":
+                return
+            prefix = manifest_generator.CANDIDATE_NAMES[manifest_generator.YAML_MANIFEST]
+            candidate = next(root.glob(f"{prefix}.*"))
+            candidate.chmod(0o666)
+
+    with (root / "README.md").open("a") as stream:
+        stream.write("\nloosened staging candidate\n")
+    with pytest.raises(manifest_generator.TransactionError, match="mode drift"):
+        manifest_generator.generate(root, LoosenCandidate())
+
+    assert manifest_bytes(root) == previous
+    assert _probe_manifest_lock(root) == 0
+

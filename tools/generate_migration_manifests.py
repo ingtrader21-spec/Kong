@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
@@ -14,11 +15,6 @@ from pathlib import Path
 from typing import Iterator
 
 import yaml
-
-if os.name == "nt":
-    import msvcrt
-else:
-    import fcntl
 
 ROOT = Path(__file__).resolve().parents[1]
 YAML_MANIFEST = "MIGRATION_MANIFEST.yaml"
@@ -153,8 +149,6 @@ def validate_pair(outputs: dict[str, bytes], root: Path, *, validate_inventory: 
 
 
 def fsync_directory(root: Path) -> None:
-    if os.name == "nt":
-        return
     descriptor = os.open(root, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
     try:
         os.fsync(descriptor)
@@ -163,11 +157,6 @@ def fsync_directory(root: Path) -> None:
 
 
 FileIdentity = tuple[int, int]
-
-
-def effective_uid() -> int | None:
-    """Return the POSIX effective UID when the platform exposes one."""
-    return os.geteuid() if hasattr(os, "geteuid") else None
 
 
 def require_transaction_id(value: object) -> str:
@@ -204,12 +193,11 @@ def validate_staging_path(
         raise TransactionError(f"staging file path is unavailable: {path.name}: {error}") from error
     if stat.S_ISLNK(linked.st_mode) or not stat.S_ISREG(linked.st_mode):
         raise TransactionError(f"staging file must be a regular non-symlink: {path.name}")
-    uid = effective_uid()
-    if uid is not None and linked.st_uid != uid:
+    if linked.st_uid != os.geteuid():
         raise TransactionError(f"staging file must be owned by the effective user: {path.name}")
     if linked.st_nlink != 1:
         raise TransactionError(f"staging file must have exactly one link: {path.name}")
-    if os.name != "nt" and stat.S_IMODE(linked.st_mode) != mode:
+    if stat.S_IMODE(linked.st_mode) != mode:
         raise TransactionError(f"staging file mode drift: {path.name}")
     if (linked.st_dev, linked.st_ino) != identity:
         raise TransactionError(f"staging file inode changed: {path.name}")
@@ -225,12 +213,11 @@ def validate_open_staging_file(
     opened_identity = (opened.st_dev, opened.st_ino)
     if not stat.S_ISREG(opened.st_mode):
         raise TransactionError(f"staging descriptor must reference a regular file: {path.name}")
-    uid = effective_uid()
-    if uid is not None and opened.st_uid != uid:
+    if opened.st_uid != os.geteuid():
         raise TransactionError(f"staging descriptor must be owned by the effective user: {path.name}")
     if opened.st_nlink != 1:
         raise TransactionError(f"staging descriptor must have exactly one link: {path.name}")
-    if os.name != "nt" and stat.S_IMODE(opened.st_mode) != mode:
+    if stat.S_IMODE(opened.st_mode) != mode:
         raise TransactionError(f"staging descriptor mode drift: {path.name}")
     if identity is not None and opened_identity != identity:
         raise TransactionError(f"staging descriptor inode changed: {path.name}")
@@ -251,8 +238,7 @@ def write_durable(path: Path, content: bytes, mode: int) -> FileIdentity:
     except OSError as error:
         raise TransactionError(f"unable to create staging file safely: {path.name}: {error}") from error
     try:
-        if hasattr(os, "fchmod"):
-            os.fchmod(descriptor, mode)
+        os.fchmod(descriptor, mode)
         identity = validate_open_staging_file(descriptor, path, mode)
         with os.fdopen(descriptor, "wb", closefd=False) as stream:
             stream.write(content)
@@ -342,16 +328,12 @@ def restore_previous_pair(
         identity = write_durable(temporary, recovery[name], 0o644)
         validate_staging_path(temporary, identity, 0o644)
         os.replace(temporary, root / name)
-    if os.name != "nt":
-        for name in (YAML_MANIFEST, JSON_MANIFEST):
-            descriptor = os.open(
-                root / name,
-                os.O_RDONLY | getattr(os, "O_CLOEXEC", 0),
-            )
-            try:
-                os.fsync(descriptor)
-            finally:
-                os.close(descriptor)
+    for name in (YAML_MANIFEST, JSON_MANIFEST):
+        descriptor = os.open(root / name, os.O_RDONLY | getattr(os, "O_CLOEXEC", 0))
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
     fsync_directory(root)
     validate_pair(current_outputs(root), root, validate_inventory=False)
 
@@ -412,16 +394,9 @@ def open_manifest_lock(path: Path) -> int:
             raise TransactionError("manifest lock must not be a symbolic link")
         if not stat.S_ISREG(opened.st_mode) or not stat.S_ISREG(linked.st_mode):
             raise TransactionError("manifest lock must be a regular file")
-        uid = effective_uid()
-        if uid is not None and (opened.st_uid != uid or linked.st_uid != uid):
+        if opened.st_uid != os.geteuid() or linked.st_uid != os.geteuid():
             raise TransactionError("manifest lock must be owned by the effective user")
-        if (
-            os.name != "nt"
-            and (
-                stat.S_IMODE(opened.st_mode) != 0o600
-                or stat.S_IMODE(linked.st_mode) != 0o600
-            )
-        ):
+        if stat.S_IMODE(opened.st_mode) != 0o600 or stat.S_IMODE(linked.st_mode) != 0o600:
             raise TransactionError("manifest lock mode must be 0600")
         if opened.st_nlink != 1 or linked.st_nlink != 1:
             raise TransactionError("manifest lock must have exactly one link")
@@ -438,29 +413,18 @@ def generator_lock(root: Path) -> Iterator[None]:
     path = root / LOCK_NAME
     descriptor = open_manifest_lock(path)
     try:
-        if os.name == "nt":
-            msvcrt.locking(descriptor, msvcrt.LK_LOCK, 1)
-        else:
-            fcntl.flock(descriptor, fcntl.LOCK_EX)
+        fcntl.flock(descriptor, fcntl.LOCK_EX)
         linked = path.lstat()
         opened = os.fstat(descriptor)
         if (opened.st_dev, opened.st_ino) != (linked.st_dev, linked.st_ino):
             raise TransactionError("manifest lock inode changed while locked")
-        uid = effective_uid()
-        if os.name != "nt" and (
-            stat.S_IMODE(opened.st_mode) != 0o600
-            or (uid is not None and opened.st_uid != uid)
-        ):
+        if stat.S_IMODE(opened.st_mode) != 0o600 or opened.st_uid != os.geteuid():
             raise TransactionError("manifest lock ownership or mode changed while locked")
         if opened.st_nlink != 1 or linked.st_nlink != 1:
             raise TransactionError("manifest lock link count changed while locked")
         yield
     finally:
-        if os.name == "nt":
-            os.lseek(descriptor, 0, os.SEEK_SET)
-            msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
-        else:
-            fcntl.flock(descriptor, fcntl.LOCK_UN)
+        fcntl.flock(descriptor, fcntl.LOCK_UN)
         os.close(descriptor)
 
 
@@ -521,16 +485,15 @@ def generate(root: Path = ROOT, operations: FileOperations | None = None) -> Non
             operations.checkpoint("second_replaced")
             journal["state"] = "COMMITTED"
             write_journal(root, journal, transaction_id)
-            if os.name != "nt":
-                for name in (YAML_MANIFEST, JSON_MANIFEST):
-                    descriptor = os.open(
-                        root / name,
-                        os.O_RDONLY | getattr(os, "O_CLOEXEC", 0),
-                    )
-                    try:
-                        os.fsync(descriptor)
-                    finally:
-                        os.close(descriptor)
+            for name in (YAML_MANIFEST, JSON_MANIFEST):
+                descriptor = os.open(
+                    root / name,
+                    os.O_RDONLY | getattr(os, "O_CLOEXEC", 0),
+                )
+                try:
+                    os.fsync(descriptor)
+                finally:
+                    os.close(descriptor)
             fsync_directory(root)
             operations.checkpoint("before_final_verification")
             validate_pair(current_outputs(root), root)
