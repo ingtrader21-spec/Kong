@@ -1,0 +1,725 @@
+{
+  "schema": "codestra.kong.authentication-profiles.v1",
+  "version": "1.1.0",
+  "status": "SOURCE_CANDIDATE_NO_RUNTIME_APPLY",
+  "runtimeApplyAuthorized": false,
+  "foundation": "config/kong-gateway-foundation.v1.json",
+  "principalClasses": {
+    "ANONYMOUS": "no credential; public read-only or legacy browser form",
+    "HUMAN": "end-user token (authorization-code / session, or a bearer minted for a person such as a MoneyBee borrower)",
+    "SERVICE": "client_credentials service account (n8n, Odoo integration, SDK, Middleware worker) mapped by azp to a registered consumer",
+    "WORKLOAD": "private-network workload identity (private VLAN telephony, standby rehearsal) — service credential plus network restriction",
+    "ADMIN": "platform administration; requires the platform.admin scope and an explicitly declared administrative authorized party"
+  },
+  "issuerProfiles": {
+    "KEYCLOAK_CODESTRA_PRODUCTION": {
+      "environment": "production",
+      "issuer": "https://auth.codestra.co/realms/codestra",
+      "discovery": "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration",
+      "jwks": "https://auth.codestra.co/realms/codestra/protocol/openid-connect/certs",
+      "algorithms": [
+        "RS256"
+      ],
+      "clockSkewSeconds": 0,
+      "trustModel": "openid-connect: discovery + JWKS with rediscovery; jwt plugin: RS256 public key snapshot provisioned from JWKS by the reconciler"
+    },
+    "KEYCLOAK_CODESTRA_STAGING": {
+      "environment": "staging",
+      "issuer": "https://auth-staging.codestra.co/realms/codestra",
+      "discovery": "https://auth-staging.codestra.co/realms/codestra/.well-known/openid-configuration",
+      "jwks": "https://auth-staging.codestra.co/realms/codestra/protocol/openid-connect/certs",
+      "algorithms": [
+        "RS256"
+      ],
+      "clockSkewSeconds": 0,
+      "trustModel": "as production, staging realm only; certification identities test-syn-*"
+    },
+    "NONE": {
+      "environment": null,
+      "issuer": null,
+      "algorithms": [],
+      "clockSkewSeconds": 0,
+      "trustModel": "no token validation (public, blocked or design-unspecified)"
+    }
+  },
+  "audienceProfiles": {
+    "CONTROL_PLANE": {
+      "audience": "codestra-control-plane",
+      "clientIdIsAudience": false,
+      "enforcedBy": "openid-connect audience + scope-policy.lua"
+    },
+    "CALLBACK_API": {
+      "audience": "codestra-callback-api",
+      "clientIdIsAudience": false,
+      "enforcedBy": "openid-connect audience on the v2 callback routes; callback jwt claim guard (aud string or array) on the transitional routes"
+    },
+    "MIDDLEWARE_API": {
+      "audience": "middleware-api",
+      "clientIdIsAudience": false,
+      "enforcedBy": "openid-connect audience on the v2 canonical routes and the control-plane/calling/#104 contracts; n8n, campaign and provider-control jwt guards (aud string or array)"
+    },
+    "SDK_INTAKE_CLIENT": {
+      "audience": "sdk-intake",
+      "clientIdIsAudience": true,
+      "contractuallyDefinedBy": "config/kong-intake-routes.json requiredClientId, verified as the openid-connect audience by scripts/reconcile_kong_canonical_routes.py",
+      "enforcedBy": "openid-connect audience + intake guard"
+    },
+    "MONEYBEE_API": {
+      "audience": "moneybee-api",
+      "clientIdIsAudience": false,
+      "enforcedBy": "openid-connect audience + moneybee-identity-policy.lua"
+    },
+    "STANDBY_CODESTRA_API": {
+      "audience": "codestra-api",
+      "clientIdIsAudience": false,
+      "enforcedBy": "standby auth middleware (PyJWT RS256, leeway 0) behind ip-restriction"
+    },
+    "NONE": {
+      "audience": null,
+      "clientIdIsAudience": false,
+      "enforcedBy": "none"
+    }
+  },
+  "identityPropagationProfiles": {
+    "STRIP_ALL_PUBLIC": {
+      "stripsClientIdentity": true,
+      "mint": [],
+      "requirement": "public routes forward no identity header; the route or a request-transformer must remove client identity headers before the upstream"
+    },
+    "GATEWAY_MINTED_TENANT_ROLE": {
+      "stripsClientIdentity": true,
+      "source": "deploy/kong/scope-policy.lua",
+      "strip": [
+        "X-Authenticated-Client",
+        "X-Authenticated-Tenant",
+        "X-Authenticated-Role",
+        "X-Codestra-Gateway-Secret"
+      ],
+      "mint": [
+        "X-Authenticated-Client",
+        "X-Authenticated-Tenant",
+        "X-Authenticated-Role",
+        "X-Codestra-Gateway-Secret"
+      ]
+    },
+    "GATEWAY_MINTED_SUBJECT_TENANT_CAMPAIGN": {
+      "stripsClientIdentity": true,
+      "source": "deploy/kong/calling-policy.lua",
+      "strip": [
+        "X-Authenticated-Client",
+        "X-Authenticated-Subject",
+        "X-Authenticated-Tenant",
+        "X-Authenticated-Campaign",
+        "X-Authenticated-Role"
+      ],
+      "mint": [
+        "X-Authenticated-Client",
+        "X-Authenticated-Subject",
+        "X-Authenticated-Tenant",
+        "X-Authenticated-Campaign"
+      ]
+    },
+    "GATEWAY_MINTED_SUBJECT_EMAIL": {
+      "stripsClientIdentity": true,
+      "source": "deploy/kong/moneybee-identity-policy.lua",
+      "strip": [
+        "X-Authenticated-Client",
+        "X-Authenticated-Subject",
+        "X-Authenticated-Email"
+      ],
+      "mint": [
+        "X-Authenticated-Client",
+        "X-Authenticated-Subject",
+        "X-Authenticated-Email"
+      ]
+    },
+    "KONG_CONSUMER_HEADERS_ONLY": {
+      "stripsClientIdentity": false,
+      "source": "jwt plugin",
+      "mint": [
+        "X-Consumer-ID",
+        "X-Consumer-Username",
+        "X-Credential-Identifier"
+      ],
+      "clientHeadersForwarded": true,
+      "mitigation": "Middleware derives identity from the re-validated bearer token and ignores X-Authenticated-*; Kong overwrites X-Consumer-* after signature verification"
+    },
+    "REQUEST_CONTEXT_STRIP_AND_AUTHZ_MINT": {
+      "stripsClientIdentity": true,
+      "source": "deploy/kong/plugins/codestra-request-context + codestra-authz",
+      "strip": [
+        "X-Authenticated-Client",
+        "X-Authenticated-Subject",
+        "X-Authenticated-Email",
+        "X-Tenant-ID",
+        "X-Consumer-ID",
+        "X-Consumer-Username",
+        "X-Credential-Identifier",
+        "X-Anonymous-Consumer",
+        "X-Codestra-Tenant",
+        "X-Codestra-Scopes"
+      ],
+      "mint": [
+        "X-Authenticated-Client",
+        "X-Authenticated-Subject",
+        "X-Codestra-Tenant",
+        "X-Codestra-Scopes"
+      ]
+    },
+    "STANDBY_STRIP_LIST": {
+      "stripsClientIdentity": true,
+      "source": "deploy/kong-production-standby/kong/standby.json trustedHeadersToStrip via request-transformer",
+      "strip": [
+        "x-codestra-subject",
+        "x-codestra-tenant",
+        "x-codestra-roles",
+        "x-codestra-scopes",
+        "x-authenticated-user"
+      ],
+      "mint": []
+    },
+    "SESSION_OIDC_UPSTREAM": {
+      "stripsClientIdentity": false,
+      "source": "openid-connect session (proposal)",
+      "mint": [],
+      "clientHeadersForwarded": true,
+      "mitigation": "n8n native owner authentication remains enabled behind the gateway"
+    },
+    "LEGACY_UNVERIFIED": {
+      "stripsClientIdentity": false,
+      "source": "key-auth / none",
+      "mint": [
+        "X-Consumer-ID",
+        "X-Consumer-Username",
+        "X-Credential-Identifier"
+      ],
+      "clientHeadersForwarded": true
+    },
+    "DESIGN_UNSPECIFIED": {
+      "stripsClientIdentity": false,
+      "source": "design",
+      "mint": []
+    },
+    "OIDC_STRIP_AND_CONTRACT_METADATA": {
+      "stripsClientIdentity": true,
+      "source": "scripts/generate_middleware_routes.py post_function (UNTRUSTED_IDENTITY_HEADERS) + openid-connect consumer mapping",
+      "strip": [
+        "X-User-ID",
+        "X-Username",
+        "X-Email",
+        "X-Roles",
+        "X-Scopes",
+        "X-Authenticated-UserID",
+        "X-Authenticated-User",
+        "X-Authenticated-Client",
+        "X-Authenticated-Subject",
+        "X-Authenticated-Tenant",
+        "X-Authenticated-Campaign",
+        "X-Authenticated-Role",
+        "X-Authenticated-Email",
+        "X-Codestra-Tenant",
+        "X-Codestra-Scopes",
+        "X-Codestra-Gateway-Secret",
+        "X-Internal-Service",
+        "X-Admin"
+      ],
+      "mint": [
+        "X-Consumer-ID",
+        "X-Consumer-Username",
+        "X-Credential-Identifier",
+        "X-Codestra-Contract-Operation",
+        "X-Codestra-Expected-Azp",
+        "X-Codestra-Required-Scope"
+      ],
+      "note": "the generated post-function clears every client-asserted identity header before it sets the contract metadata; X-Consumer-* are set by openid-connect after signature verification (gateway-owned); X-Tenant-ID is left as a selector for Middleware, never an authority"
+    },
+    "PLATFORM_READ_STRIP_AND_MINT": {
+      "stripsClientIdentity": true,
+      "source": "config/kong-platform-api-read-routes.v1.json identity.stripInboundHeaders / mintedHeaders (guard source not vendored)",
+      "strip": [
+        "X-Authenticated-Client",
+        "X-Authenticated-Subject",
+        "X-Authenticated-Tenant",
+        "X-Authenticated-Campaign",
+        "X-Authenticated-Role"
+      ],
+      "mint": [
+        "X-Authenticated-Client",
+        "X-Authenticated-Subject",
+        "X-Authenticated-Tenant",
+        "X-Authenticated-Campaign"
+      ]
+    },
+    "NONE_TERMINATED": {
+      "stripsClientIdentity": true,
+      "source": "request-termination",
+      "mint": [],
+      "requirement": "nothing is forwarded; the gateway answers a constant status"
+    }
+  },
+  "tenantPolicies": {
+    "HEADER_SELECTOR_CLAIM_AUTHORITY": "X-Tenant-ID is an optional selector; when present it must equal the token tenant claim (403 cross_tenant_denied); the claim is the authority and is minted upstream",
+    "HEADER_REQUIRED_CLAIM_AUTHORITY": "X-Tenant-ID is required and must equal tenant_id or be one of tenant_ids in the token (403 tenant_denied); '*' is refused",
+    "CLAIM_FIXED_TENANT_CAMPAIGN": "the token tenant_id must equal the contract tenant and campaigns must contain the contract campaign (403 tenant_campaign_denied)",
+    "CLAIM_ONLY_MIDDLEWARE_VALIDATES": "no gateway tenant comparison; Middleware compares any selector header against the re-validated token",
+    "NOT_APPLICABLE_IDENTITY": "identity bootstrap or session route without a tenant claim",
+    "NONE_PUBLIC": "no tenant context",
+    "LEGACY_UNVERIFIED": "shared-key route; tenant handling unknown at the gateway",
+    "DESIGN_UNSPECIFIED": "design route"
+  },
+  "failurePolicies": {
+    "FAIL_CLOSED_V1": {
+      "missingCredential": 401,
+      "malformedCredential": 401,
+      "expiredOrNotYetValid": 401,
+      "wrongIssuer": 401,
+      "wrongAudience": 401,
+      "missingRequiredScope": 403,
+      "unauthorizedClient": 403,
+      "tenantDenied": 403,
+      "identityDependencyUnavailable": 503,
+      "gatewayIdentityUnavailable": 503,
+      "forwardedSchemeNotHttps": 426,
+      "responseBodiesExposeTokenInternals": false,
+      "downgradeToPublic": false
+    },
+    "LEGACY_SHARED_KEY": {
+      "missingCredential": 401,
+      "invalidKey": 401,
+      "downgradeToPublic": false,
+      "responseBodiesExposeTokenInternals": false
+    },
+    "PUBLIC": {
+      "downgradeToPublic": false
+    }
+  },
+  "tokenCachePolicies": {
+    "OIDC_CACHE_V1": {
+      "cacheTokensSalt": "{vault://env/kong-oidc-cache-tokens-salt}",
+      "saltInGit": false,
+      "cacheTtlSeconds": 3600,
+      "cacheTtlSource": "Kong openid-connect default; bounded",
+      "rediscoveryLifetimeSeconds": 30,
+      "invalidation": "rotating the salt invalidates every cached credential; only a reviewed credential-cache rotation may change it (docs/DECK-OIDC-COMPATIBILITY.md)"
+    },
+    "JWT_STATIC_KEY_V1": {
+      "keySource": "realm JWKS RS256 signing key snapshot on the consumer credential",
+      "cache": "none",
+      "rotation": "re-run the reconciler with --jwks-url under change authority after a Keycloak key rotation; until then tokens signed by the new key are rejected (fail closed)"
+    },
+    "NONE": {
+      "cache": "none"
+    }
+  },
+  "profiles": {
+    "PUBLIC_V1": {
+      "accessClasses": [
+        "PUBLIC"
+      ],
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "mechanisms": [
+        "NONE",
+        "KEY_AUTH_SHARED"
+      ],
+      "issuerProfile": "NONE",
+      "audienceProfiles": [
+        "NONE"
+      ],
+      "scopes": "none",
+      "authorizedParties": "none",
+      "failurePolicy": "PUBLIC",
+      "tokenCache": "NONE",
+      "strength": 0,
+      "lifecycles": [
+        "TRANSITIONAL",
+        "LEGACY",
+        "RETIRE_CANDIDATE"
+      ],
+      "newProductionAllowed": false
+    },
+    "HUMAN_OIDC_V1": {
+      "accessClasses": [
+        "AUTHENTICATED"
+      ],
+      "principalClasses": [
+        "HUMAN"
+      ],
+      "mechanisms": [
+        "OIDC_BEARER_CLAIM_GUARD",
+        "OIDC_BEARER"
+      ],
+      "issuerProfile": "environment",
+      "audienceProfiles": [
+        "MONEYBEE_API",
+        "MIDDLEWARE_API"
+      ],
+      "scopes": "route",
+      "authorizedParties": "explicit",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "strength": 3
+    },
+    "HUMAN_SESSION_OIDC_V1": {
+      "accessClasses": [
+        "AUTHENTICATED"
+      ],
+      "principalClasses": [
+        "HUMAN"
+      ],
+      "mechanisms": [
+        "SESSION_OIDC"
+      ],
+      "issuerProfile": "environment",
+      "audienceProfiles": [
+        "NONE"
+      ],
+      "scopes": "realm-role",
+      "authorizedParties": "client",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "strength": 3,
+      "lifecycles": [
+        "PROPOSED"
+      ]
+    },
+    "SERVICE_OIDC_V1": {
+      "accessClasses": [
+        "SERVICE_AUTHENTICATED"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "mechanisms": [
+        "OIDC_BEARER_CLAIM_GUARD",
+        "OIDC_BEARER"
+      ],
+      "issuerProfile": "environment",
+      "audienceProfiles": [
+        "CONTROL_PLANE",
+        "MIDDLEWARE_API",
+        "CALLBACK_API"
+      ],
+      "scopes": "route",
+      "authorizedParties": "consumer-mapped",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "strength": 4
+    },
+    "SERVICE_JWT_V1": {
+      "accessClasses": [
+        "SERVICE_AUTHENTICATED"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "mechanisms": [
+        "JWT_RS256_CLAIM_GUARD"
+      ],
+      "issuerProfile": "environment",
+      "audienceProfiles": [
+        "CALLBACK_API",
+        "MIDDLEWARE_API"
+      ],
+      "scopes": "route",
+      "authorizedParties": "explicit",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "strength": 4
+    },
+    "SERVICE_OIDC_JWT_V1": {
+      "accessClasses": [
+        "SERVICE_AUTHENTICATED"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "mechanisms": [
+        "OIDC_AND_JWT_CLAIM_GUARD"
+      ],
+      "issuerProfile": "environment",
+      "audienceProfiles": [
+        "SDK_INTAKE_CLIENT"
+      ],
+      "scopes": "route",
+      "authorizedParties": "explicit",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "strength": 4
+    },
+    "ADMIN_INTERNAL_V1": {
+      "accessClasses": [
+        "ADMIN_INTERNAL"
+      ],
+      "principalClasses": [
+        "ADMIN"
+      ],
+      "mechanisms": [
+        "OIDC_BEARER_CLAIM_GUARD"
+      ],
+      "issuerProfile": "environment",
+      "audienceProfiles": [
+        "CONTROL_PLANE"
+      ],
+      "scopes": "route",
+      "requiredScopes": [
+        "platform.admin"
+      ],
+      "authorizedParties": "explicit-admin",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "strength": 5
+    },
+    "INTERNAL_SERVICE_V1": {
+      "accessClasses": [
+        "INTERNAL"
+      ],
+      "principalClasses": [
+        "WORKLOAD",
+        "SERVICE"
+      ],
+      "mechanisms": [
+        "OIDC_BEARER_CLAIM_GUARD"
+      ],
+      "issuerProfile": "environment",
+      "audienceProfiles": [
+        "MIDDLEWARE_API"
+      ],
+      "scopes": "route",
+      "authorizedParties": "consumer-mapped",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "strength": 4,
+      "networkRestriction": "private VLAN host"
+    },
+    "INTERNAL_STANDBY_V1": {
+      "accessClasses": [
+        "INTERNAL"
+      ],
+      "principalClasses": [
+        "WORKLOAD"
+      ],
+      "mechanisms": [
+        "IP_RESTRICTION"
+      ],
+      "issuerProfile": "environment",
+      "audienceProfiles": [
+        "STANDBY_CODESTRA_API"
+      ],
+      "scopes": "route",
+      "authorizedParties": "auth-middleware",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "NONE",
+      "strength": 4,
+      "networkRestriction": "ip-restriction allowlist"
+    },
+    "LEGACY_SHARED_KEY_V1": {
+      "accessClasses": [
+        "AUTHENTICATED",
+        "PUBLIC"
+      ],
+      "principalClasses": [
+        "SERVICE",
+        "ANONYMOUS"
+      ],
+      "mechanisms": [
+        "KEY_AUTH_SHARED"
+      ],
+      "issuerProfile": "NONE",
+      "audienceProfiles": [
+        "NONE"
+      ],
+      "scopes": "none",
+      "authorizedParties": "kong-consumer",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "strength": 1,
+      "lifecycles": [
+        "LEGACY",
+        "RETIRE_CANDIDATE"
+      ],
+      "newProductionAllowed": false
+    },
+    "HMAC_WEBHOOK_V1": {
+      "accessClasses": [
+        "SERVICE_AUTHENTICATED"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "mechanisms": [
+        "HMAC_WEBHOOK"
+      ],
+      "issuerProfile": "NONE",
+      "audienceProfiles": [
+        "NONE"
+      ],
+      "scopes": "none",
+      "authorizedParties": "key-id",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "NONE",
+      "strength": 4,
+      "lifecycles": [
+        "DESIGN_ONLY"
+      ]
+    },
+    "DESIGN_OIDC_V1": {
+      "accessClasses": [
+        "AUTHENTICATED"
+      ],
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "mechanisms": [
+        "OIDC_BEARER",
+        "OIDC_BEARER_CLAIM_GUARD"
+      ],
+      "issuerProfile": "environment",
+      "audienceProfiles": [
+        "MIDDLEWARE_API",
+        "MONEYBEE_API"
+      ],
+      "scopes": "route",
+      "authorizedParties": "design",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "strength": 3,
+      "lifecycles": [
+        "DESIGN_ONLY"
+      ],
+      "note": "cell design 'browser' chain: exact-origin CORS, OIDC-or-BFF auth, audience and scope checks"
+    },
+    "DESIGN_SERVICE_OIDC_V1": {
+      "accessClasses": [
+        "SERVICE_AUTHENTICATED"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "mechanisms": [
+        "OIDC_BEARER",
+        "OIDC_BEARER_CLAIM_GUARD"
+      ],
+      "issuerProfile": "environment",
+      "audienceProfiles": [
+        "MIDDLEWARE_API"
+      ],
+      "scopes": "route",
+      "authorizedParties": "design",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "strength": 4,
+      "lifecycles": [
+        "DESIGN_ONLY"
+      ],
+      "note": "cell design 'service' chain: private source policy, client credentials, audience, granular scope, workflow family and command prefix checks, upstream mTLS"
+    },
+    "BLOCKED_NONE_V1": {
+      "accessClasses": [
+        "PUBLIC",
+        "AUTHENTICATED",
+        "SERVICE_AUTHENTICATED",
+        "ADMIN_INTERNAL",
+        "INTERNAL"
+      ],
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "mechanisms": [
+        "NONE"
+      ],
+      "issuerProfile": "NONE",
+      "audienceProfiles": [
+        "NONE",
+        "MIDDLEWARE_API"
+      ],
+      "scopes": "none",
+      "authorizedParties": "none",
+      "failurePolicy": "PUBLIC",
+      "tokenCache": "NONE",
+      "strength": 0,
+      "activations": [
+        "BLOCKED",
+        "PROPOSED",
+        "DESIGN_ONLY"
+      ]
+    },
+    "HUMAN_OR_SERVICE_OIDC_V1": {
+      "accessClasses": [
+        "AUTHENTICATED"
+      ],
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "mechanisms": [
+        "OIDC_BEARER",
+        "OIDC_BEARER_CLAIM_GUARD"
+      ],
+      "issuerProfile": "environment",
+      "audienceProfiles": [
+        "MIDDLEWARE_API"
+      ],
+      "scopes": "route",
+      "authorizedParties": "consumer-mapped",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "strength": 3,
+      "note": "v2 'service-or-user-jwt' operations: Kong validates issuer, audience, expiry and the route scope and maps azp to a registered consumer; the contract's symbolic client family (platform-operator, production-operator, authorized-provisioning-client, observability-collector, browser-session, github-app) is forwarded as X-Codestra-Expected-Azp and enforced by Middleware together with tenant and resource ownership. Strength is that of the weakest admitted principal."
+    },
+    "DENIED_TERMINATION_V1": {
+      "accessClasses": [
+        "PUBLIC"
+      ],
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "mechanisms": [
+        "NONE"
+      ],
+      "issuerProfile": "NONE",
+      "audienceProfiles": [
+        "NONE"
+      ],
+      "scopes": "none",
+      "authorizedParties": "none",
+      "failurePolicy": "PUBLIC",
+      "tokenCache": "NONE",
+      "strength": 0,
+      "terminatesAtGateway": true,
+      "note": "request-termination 404 for a retired alias: no credential is evaluated because nothing is proxied; explicit on the public allowlist so an unauthenticated route can never be public by omission"
+    }
+  },
+  "classMinimumStrength": {
+    "PUBLIC": 0,
+    "AUTHENTICATED": 1,
+    "SERVICE_AUTHENTICATED": 4,
+    "ADMIN_INTERNAL": 5,
+    "INTERNAL": 4
+  },
+  "canonicalMinimumStrength": {
+    "PUBLIC": 0,
+    "AUTHENTICATED": 3,
+    "SERVICE_AUTHENTICATED": 4,
+    "ADMIN_INTERNAL": 5,
+    "INTERNAL": 4
+  },
+  "rules": {
+    "wildcardAudienceAllowed": false,
+    "wildcardScopeAllowed": false,
+    "clientIdIsAudienceRequiresContract": true,
+    "humanProfilesForbiddenOn": [
+      "SERVICE_AUTHENTICATED",
+      "INTERNAL",
+      "ADMIN_INTERNAL"
+    ],
+    "serviceProfilesForbiddenOn": [
+      "ADMIN_INTERNAL"
+    ],
+    "identityHeaderAuthorityAllowed": false,
+    "maximumLeewaySeconds": 60,
+    "maximumCacheTtlSeconds": 3600
+  }
+}

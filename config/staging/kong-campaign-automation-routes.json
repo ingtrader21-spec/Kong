@@ -8,7 +8,11 @@
     "name": "codestra-campaign-automation-api",
     "host": "middleware-integration-api",
     "port": 8095,
-    "protocol": "http"
+    "protocol": "http",
+    "connect_timeout": 3000,
+    "read_timeout": 30000,
+    "write_timeout": 30000,
+    "retries": 0
   },
   "consumers": [
     {

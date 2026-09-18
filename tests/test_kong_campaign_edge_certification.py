@@ -302,6 +302,14 @@ def test_renderer_emits_exact_routes_plugins_and_consumers(environment):
         "middleware-integration-api",
         8095,
     )
+    # Explicit transport policy: Kong would otherwise default to 60s timeouts and
+    # five retries on a service that carries command submissions.
+    assert (service["connect_timeout"], service["read_timeout"], service["write_timeout"], service["retries"]) == (
+        3000,
+        30000,
+        30000,
+        0,
+    )
     routes = {r["name"]: r for r in service["routes"]}
     assert set(routes) == {r["name"] for r in manifest["routes"]}
     for row in manifest["routes"]:

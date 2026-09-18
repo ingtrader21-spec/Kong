@@ -459,6 +459,7 @@ def _control_plane_live_objects():
         "connect_timeout": 3000,
         "read_timeout": 30000,
         "write_timeout": 30000,
+        "retries": 0,
     }
     routes = [
         {
@@ -525,6 +526,7 @@ def test_control_plane_verifier_accepts_exact_declarative_authority(monkeypatch)
         (lambda service, routes, plugins: service.update(path="/wrong"), "service.path"),
         (lambda service, routes, plugins: service.update(enabled=False), "service.enabled"),
         (lambda service, routes, plugins: service.update(read_timeout=60000), "service.read_timeout"),
+        (lambda service, routes, plugins: service.update(retries=5), "service.retries"),
         (lambda service, routes, plugins: routes[0].update(protocols=["https"]), "protocols"),
         (lambda service, routes, plugins: routes[0].update(strip_path=True), "strip_path"),
         (lambda service, routes, plugins: routes[0].update(preserve_host=True), "preserve_host"),

@@ -36,8 +36,8 @@ def test_example_compiles_to_guarded_upstream(contract):
     assert service["tls_verify"] is True
     assert service["retries"] == 0
     assert plugins["openid-connect"]["auth_methods"] == ["bearer"]
-    assert plugins["openid-connect"]["issuer"] == "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration"
-    assert plugins["codestra-authz"]["issuer"] == "https://auth.codestra.co/realms/codestra"
+    assert plugins["openid-connect"]["issuer"] == "https://auth-staging.codestra.co/realms/codestra/.well-known/openid-configuration"
+    assert plugins["codestra-authz"]["issuer"] == "https://auth-staging.codestra.co/realms/codestra"
     assert output["kong"]["plugins"][0]["name"] == "prometheus"
     assert plugins["openid-connect"]["bearer_token_param_type"] == ["header"]
     assert plugins["openid-connect"]["cache_tokens_salt"] == "{vault://env/kong-oidc-cache-tokens-salt}"
@@ -89,6 +89,7 @@ def test_every_policy_template_compiles(contract, template):
     ("policies", "corsOrigins", ["https://*.example.com"], "invalid_cors_origin"),
     ("policies", "redisHost", "redis.attacker.example", "redis_not_registered"),
     ("authentication", "scopes", ["unregistered.scope"], "unknown_scope"),
+    ("authentication", "issuer", "https://auth.codestra.co/realms/codestra", "issuer_environment_mismatch"),
     ("authentication", "secretRef", "do-not-echo-me", "integration_schema_invalid"),
     ("release", "runtimeApplyAuthorized", True, "integration_schema_invalid"),
 ])
@@ -139,8 +140,12 @@ def test_route_collision_semantics(contract, left, right, match, collides):
 def test_method_and_environment_namespaces(contract):
     second = copy.deepcopy(contract)
     second["metadata"].update(id="second-integration", environment="production")
+    # A production integration must bind the production realm; the staging example
+    # cannot be promoted by relabelling its environment alone.
+    second["spec"]["authentication"]["issuer"] = "https://auth.codestra.co/realms/codestra"
     validate_set([contract, second])
     second["metadata"]["environment"] = "staging"
+    second["spec"]["authentication"]["issuer"] = contract["spec"]["authentication"]["issuer"]
     contract["spec"]["policies"]["corsOrigins"] = []
     second["spec"]["policies"]["corsOrigins"] = []
     second["spec"]["routes"][0].update(methods=["GET"], operationIds=["get-account"])

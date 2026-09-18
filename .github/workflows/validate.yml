@@ -53,6 +53,7 @@ jobs:
           python3 scripts/validate_kong_calling_policy.py --self-test
           python3 scripts/validate_kong_production_inventory.py
           python3 scripts/validate_middleware_edge_contract.py
+          python3 scripts/validate_kong_foundation.py
           luac -p deploy/kong/scope-policy.lua
           luac -p deploy/kong/calling-policy.lua
           luac -p deploy/kong/correlation-required.lua
@@ -75,11 +76,23 @@ jobs:
             tests/test_kong_change_authority.py \
             tests/test_release_governance.py \
             tests/test_kong_observability.py \
-            tests/test_kong_calling_policy.py
+            tests/test_kong_calling_policy.py \
+            tests/test_kong_foundation.py \
+            tests/test_kong_production_inventory.py \
+            tests/test_kong_identity_security.py \
+            tests/test_kong_middleware_contract_v2.py
           pytest -q tests/test_runtime_integration_preflight.py tests/test_kong_read_only_capture.py tests/test_gateway_release_boundaries.py tests/test_kong_runtime_certification.py tests/test_release_candidate_promotion.py tests/test_kong_admin_channel.py tests/test_kong_standby_apply.py tests/test_kong_standby_rollback.py tests/test_gateway_integrations.py tests/test_gateway_plugins.py tests/test_gateway_foundation_authority.py
           pytest -q tests/test_community_n8n_egress.py
           python3 tools/generate_migration_manifests.py --check
           python3 tools/verify_migration_manifest.py
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - name: Run the complete test regression
+        run: |
+          # Every test module in the repository, on Linux, in addition to the
+          # enumerated authority suites above: no module can be left out of
+          # the gate by omission.
+          pytest -q -p no:cacheprovider
           git diff --exit-code
           test -z "$(git status --porcelain)"
 

@@ -1,0 +1,4 @@
+# Exact-fingerprint exemptions only (commit:file:rule:line). Each entry names a
+# documentation line that quotes a validator-enforced profile identifier, never a
+# credential; see .gitleaks.toml for the JSON-key allowlist.
+45b32862467e939b5c6e440e0388f8a158433a9b:docs/mission2-evidence-matrix.md:generic-api-key:33

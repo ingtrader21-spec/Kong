@@ -133,7 +133,7 @@ def verify_control_plane(admin: str, declared: dict, routes: list[dict], service
             expected_service["enabled"],
             "control-plane.service.enabled",
         )
-        for field in ("connect_timeout", "read_timeout", "write_timeout"):
+        for field in ("connect_timeout", "read_timeout", "write_timeout", "retries"):
             require_equal(service.get(field), expected_service[field], f"control-plane.service.{field}")
         service_plugins = enabled_service_plugins(admin, service["id"])
         expected_service_plugins = {plugin["name"] for plugin in expected_service.get("plugins", [])}

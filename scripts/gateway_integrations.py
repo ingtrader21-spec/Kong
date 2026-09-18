@@ -15,6 +15,12 @@ ROOT = Path(__file__).resolve().parents[1]
 AUTHORITY = ROOT / "config/integrations"
 MAX_BYTES = 1_048_576
 OIDC = {"public-oidc-api", "internal-service-jwt", "private-mtls-api", "websocket-api"}
+# Issuer per environment: a staging integration must never validate production
+# tokens and vice versa. Development binds a local realm chosen at render time.
+ENVIRONMENT_ISSUERS = {
+    "production": "https://auth.codestra.co/realms/codestra",
+    "staging": "https://auth-staging.codestra.co/realms/codestra",
+}
 POLICY_PLUGINS = {
     "public-oidc-api": ["openid-connect", "codestra-authz"],
     "internal-service-jwt": ["openid-connect", "codestra-authz", "ip-restriction"],
@@ -104,6 +110,9 @@ def validate(document, *, today=None):
     _require(policy["plugins"] == POLICY_PLUGINS[template], "policy_plugin_authority_mismatch")
     _require(all(value <= policy["maximumTimeoutMs"] for value in upstream["timeouts"].values()), "policy_timeout_limit")
     _require(meta["environment"] != "production" or policy["newProductionAllowed"], "legacy_production_forbidden")
+    if template in OIDC:
+        expected_issuer = ENVIRONMENT_ISSUERS.get(meta["environment"])
+        _require(expected_issuer is None or auth["issuer"] == expected_issuer, "issuer_environment_mismatch")
     for name in (spec["host"], upstream["dnsName"], policies["redisHost"]):
         hostname(name)
     _require("." in spec["host"], "route_host_must_be_fqdn")
