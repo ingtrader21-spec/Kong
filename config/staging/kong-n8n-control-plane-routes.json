@@ -1,14 +1,15 @@
 {
   "schema_version": "1.1",
   "environment": "staging",
-  "status": "PREPARED_STAGING_NO_RUNTIME_APPLY",
+  "status": "RETIRED_DENY_ONLY_STAGING",
+  "runtime_apply_authorized": false,
   "production_authority": "config/kong-n8n-control-plane-routes.json",
   "service": {
     "name": "codestra-middleware-n8n-control-plane",
-    "host": "appolon-middleware-integration-api",
-    "port": 8080,
+    "host": "middleware-integration-api",
+    "port": 8095,
     "protocol": "http",
-    "enabled": true,
+    "enabled": false,
     "retries": 1,
     "connect_timeout": 3000,
     "read_timeout": 10000,
@@ -29,6 +30,7 @@
   "routes": [
     {
       "name": "codestra-n8n-command-submit",
+      "classification": "denied",
       "path": "/v1/integrations/n8n/commands",
       "method": "POST",
       "scope": "middleware.request.forward",
@@ -43,6 +45,7 @@
     },
     {
       "name": "codestra-n8n-command-read",
+      "classification": "denied",
       "path": "/v1/integrations/n8n/operations",
       "method": "GET",
       "scope": "middleware.status.read",
@@ -61,7 +64,7 @@
     "middleware_revalidates_identity": true,
     "oidc_required": true,
     "oidc_enforcement": "jwt-rs256-plus-claim-guard",
-    "legacy_jwt_validation_retained": true,
+    "legacy_jwt_validation_retained": false,
     "production_identity_allowed": false,
     "application_mutations_authorized_by_reconciliation": false,
     "provider_effects_authorized": false

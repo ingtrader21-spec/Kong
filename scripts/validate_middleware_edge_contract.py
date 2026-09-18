@@ -35,6 +35,12 @@ CANONICAL = ROOT / "config/kong-canonical-middleware-routes.json"
 PRODUCTION = ROOT / "config/kong-campaign-automation-routes.json"
 STAGING = ROOT / "config/staging/kong-campaign-automation-routes.json"
 CERTIFIED_SCOPES = {"n8n.results.submit", "n8n.results.read", "odoo.campaigns.read"}
+CERTIFIED_ROUTES = {
+    ("POST", "/api/v1/integrations/n8n/results"),
+    ("GET", "/api/v1/integrations/n8n/results/{event_id}"),
+    ("GET", "/api/v1/integrations/odoo/campaigns/{campaign_id}"),
+    ("GET", "/api/v1/integrations/odoo/campaigns/{campaign_id}/desired-state"),
+}
 RETIRED = ("campaign-actions", "campaign-commands")
 STAGING_ISSUER = "https://auth-staging.codestra.co/realms/codestra"
 
@@ -78,36 +84,44 @@ def validate() -> list[str]:
     for manifest in (production, staging):
         campaign.validate_manifest_routes(manifest)
 
+    production_by_key = {
+        (row["method"], row.get("path_template", row["path"])): row
+        for row in production["routes"]
+    }
     declared: dict[tuple[str, str], dict] = {}
     for route in canonical["contractRoutes"]:
-        if route["securityAuthority"] != "config/kong-campaign-automation-routes.json":
+        template = route["pathTemplate"]
+        key = (route["methods"][0], template)
+        if key not in CERTIFIED_ROUTES:
             continue
-        authority = next(
-            (row for row in production["routes"] if row["name"] == route["name"]), None
-        )
+        authority = production_by_key.get(key)
         if authority is None:
-            fail(f"canonical route {route['name']} has no production authority row")
+            fail(f"canonical route {key[0]} {key[1]} has no production authority row")
         if route["methods"] != [campaign.route_method(authority)]:
             fail(f"canonical route {route['name']} method drift")
-        if route["paths"] != [authority["path"]]:
-            fail(f"canonical route {route['name']} path drift")
-        template = route.get("pathTemplate", route["paths"][0])
         if template != authority.get("path_template", authority["path"]):
             fail(f"canonical route {route['name']} pathTemplate drift")
-        declared[(route["methods"][0], template)] = {"name": route["name"], "scope": authority["scope"]}
+        generated = route["paths"][0]
+        if not generated.startswith("~^") or not generated.endswith("$"):
+            fail(f"canonical route {route['name']} is not exact")
+        if route["serviceHost"] != "middleware-integration-api" or route["servicePort"] != 8095:
+            fail(f"canonical route {route['name']} upstream drift")
+        declared[key] = {"name": route["name"], "scope": authority["scope"]}
 
     rows = []
     for row in contract["routes"]:
-        if not row.get("scope"):
+        if row["classification"] != "shared_edge":
             continue
         key = (row["method"], row["path"])
+        if key not in CERTIFIED_ROUTES:
+            continue
         entry = declared.get(key)
         if entry is None:
             fail(f"contract route not declared in Kong: {row['method']} {row['path']}")
         if entry["scope"] != row["scope"]:
             fail(f"scope drift for {row['method']} {row['path']}: kong {entry['scope']} contract {row['scope']}")
         rows.append(f"ROUTE={row['method']}|{row['path']}|{row['scope']}|{entry['name']}|PASS")
-    if {row["scope"] for row in contract["routes"] if row.get("scope")} != CERTIFIED_SCOPES:
+    if {row["scope"] for row in contract["routes"] if (row["method"], row["path"]) in CERTIFIED_ROUTES} != CERTIFIED_SCOPES:
         fail("contract scope set drift")
 
     production_routes = {row["name"]: row for row in production["routes"]}
@@ -135,10 +149,18 @@ def validate() -> list[str]:
             fail(f"staging consumer {consumer['custom_id']} is not a certification identity")
         if set(consumer["scopes"]) - CERTIFIED_SCOPES:
             fail(f"staging consumer {consumer['custom_id']} holds a non-certified scope")
-    for manifest in (production, staging, canonical):
+    for manifest in (production, staging):
         text = json.dumps(manifest)
         if any(marker in text for marker in RETIRED):
             fail("retired campaign surface referenced")
+    active = json.dumps(canonical["contractRoutes"])
+    if any(marker in active for marker in RETIRED):
+        fail("retired campaign surface active in canonical routes")
+    contract_active = json.dumps(
+        [row for row in contract["routes"] if row["classification"] != "denied"]
+    )
+    if any(marker in contract_active for marker in RETIRED):
+        fail("retired campaign surface is not classified denied")
     return [
         f"MIDDLEWARE_EDGE_CONTRACT_SHA256={digest}",
         f"MIDDLEWARE_EDGE_CONTRACT=PASS ROUTES={len(rows)} STAGING_IDENTITIES={len(staging['consumers'])}",

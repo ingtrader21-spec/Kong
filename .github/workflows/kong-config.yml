@@ -35,5 +35,7 @@ jobs:
           /tmp/deck file validate /tmp/kong-campaign-automation-production.yml
           python3 scripts/render_kong_campaign_automation_routes.py --environment staging > /tmp/kong-campaign-automation-staging.yml
           /tmp/deck file validate /tmp/kong-campaign-automation-staging.yml
+          /tmp/deck file validate config/kong-middleware-routes.production.yml
+          /tmp/deck file validate config/staging/kong-middleware-routes.staging.yml
           python3 scripts/validate_middleware_edge_contract.py
           pytest -q tests/test_kong_canonical_route_contract.py tests/test_kong_route_authority_hardening.py tests/test_kong_campaign_edge_certification.py

@@ -15,7 +15,16 @@ current = contract["current_runtime_authority"]
 promotion = contract["promotion_gates"]
 
 assert contract["schema_version"] == "1.1"
-assert contract["status"] == "PROPOSED_NOT_APPLIED"
+# The /v1/integrations/n8n aliases are denied by the canonical Middleware edge
+# contract, so this HTTPS egress proposal is superseded and can never be applied.
+assert contract["status"] == "SUPERSEDED_NOT_APPLIED"
+superseded = contract["superseded_by"]
+assert superseded["decision"] == "R6-2026-09-16-canonical-middleware-upstream"
+assert (root / superseded["contract"]).is_file()
+assert (root / superseded["contract_sha256_pin"]).is_file()
+for manifest in superseded["canonical_manifests"]:
+    assert (root / manifest).is_file(), manifest
+    assert "8080" not in (root / manifest).read_text(encoding="utf-8"), manifest
 assert contract["public_endpoint"] == "https://api.codestra.co/v1/integrations/n8n"
 assert service["protocol"] == "https" and service["port"] == 443 and service["tls_verify"] is True
 assert service["host_source"] == "MIDDLEWARE_TLS_HOST"
@@ -30,24 +39,35 @@ assert contract["identity"]["middleware_revalidates_token"] is True
 assert contract["safety"]["external_effects_enabled"] is False
 assert contract["safety"]["current_route_mutation_authorized"] is False
 
-# Preserve the uniquely verified current runtime while the HTTPS design remains
-# proposed. A source-only promotion PR must never replace this host by an
-# ambiguous Docker alias without fresh topology evidence and independent review.
-assert current["status"] == "VERIFIED_UNCHANGED"
+# The route authority is retired deny-only and bound to the single canonical
+# Middleware upstream. The legacy runtime verified in PR #30 stays recorded as
+# retired so no source-only change can route the denied aliases back to it.
+assert current["status"] == "RETIRED_DENY_ONLY"
 assert current["authority_path"] == "config/kong-n8n-control-plane-routes.json"
-assert current["service_host"] == "appolon-middleware-integration-api"
-assert current["service_port"] == 8080
+assert current["service_host"] == "middleware-integration-api"
+assert current["service_port"] == 8095
 assert current["service_protocol"] == "http"
+assert current["service_enabled"] is False
 assert current["mutation_authorized"] is False
 assert current["evidence_url"] == "https://github.com/appolon1908-hue/Kong/pull/30"
 denied_aliases = set(current["ambiguous_aliases_denied"])
-assert denied_aliases == {"middleware-integration-api"}
+assert denied_aliases == {"appolon-middleware-integration-api"}
+legacy = current["retired_legacy_runtime"]
+assert legacy["host"] == "appolon-middleware-integration-api"
+assert legacy["port"] == 8080
+assert legacy["evidence_url"] == current["evidence_url"]
 
 production_service = route_authority["service"]
+assert route_authority["status"] == "RETIRED_DENY_ONLY"
+assert route_authority["runtime_apply_authorized"] is False
+assert production_service["enabled"] is False
 assert production_service["host"] == current["service_host"]
 assert production_service["port"] == current["service_port"]
 assert production_service["protocol"] == current["service_protocol"]
 assert production_service["host"] not in denied_aliases
+assert production_service["host"] != legacy["host"]
+assert production_service["port"] != legacy["port"]
+assert {item["classification"] for item in route_authority["routes"]} == {"denied"}
 assert route_authority["client_id"] == contract["identity"]["client_id"]
 assert route_authority["audience"] == contract["identity"]["audience"]
 
@@ -127,5 +147,6 @@ if host:
         raise AssertionError("MIDDLEWARE_TLS_HOST must be a DNS name, not an IP literal")
 
 print("KONG_COMMUNITY_N8N_EGRESS=PASS")
-print("CURRENT_N8N_RUNTIME_AUTHORITY=PRESERVED")
+print("CURRENT_N8N_RUNTIME_AUTHORITY=RETIRED_DENY_ONLY")
+print("CANONICAL_MIDDLEWARE_UPSTREAM=middleware-integration-api:8095")
 print("COMMUNITY_HTTPS_PROMOTION=NOT_AUTHORIZED")

@@ -16,6 +16,9 @@ SCOPE_POLICY_PATH = ROOT / "deploy/kong/scope-policy.lua"
 STANDBY_APPLIER_PATH = ROOT / "scripts/apply_kong_standby.py"
 CAMPAIGN_RECONCILER_PATH = ROOT / "scripts/reconcile_kong_campaign_automation.py"
 PROVIDER_CONTROL_VALIDATOR_PATH = ROOT / "scripts/validate_provider_control_routes.py"
+CONTRACT_PATH = ROOT / "config/middleware-public-api-route-contract.v1.json"
+MIDDLEWARE_AUTHORITY_PATH = ROOT / "config/kong-middleware-authority.v2.json"
+GENERATOR_PATH = ROOT / "scripts/generate_middleware_routes.py"
 
 
 def _load(path: Path, name: str):
@@ -223,72 +226,34 @@ def test_contract_routes_bind_exact_dedicated_security_authority():
         authority = ROOT / route["securityAuthority"]
         assert authority.is_file()
         assert route["hosts"] == ["api.codestra.co"]
-        if route["securityAuthority"] == "config/kong-n8n-control-plane-routes.json":
-            assert route["serviceHost"] == "appolon-middleware-integration-api"
-            assert route["servicePort"] == 8080
-        else:
-            assert route["serviceHost"] == "codestra-middleware-integration-api-1"
-            assert route["servicePort"] == 8095
-        assert {"jwt", "correlation-id", "rate-limiting", "request-size-limiting"} <= set(
-            route["requiredPlugins"]
-        )
+        assert route["securityAuthority"] == "config/kong-middleware-authority.v2.json"
+        assert route["serviceHost"] == "middleware-integration-api"
+        assert route["servicePort"] == 8095
+        assert {
+            "openid-connect",
+            "correlation-id",
+            "rate-limiting",
+            "request-size-limiting",
+        } <= set(route["requiredPlugins"])
         assert "post-function" in route["requiredPlugins"]
         assert "pre-function" not in route["requiredPlugins"]
 
 
 def test_callback_contract_rejects_security_plugin_config_drift():
-    module = _module()
-    canonical = json.loads(MANIFEST_PATH.read_text())
-    expected = next(
-        row for row in canonical["contractRoutes"] if row["name"] == "codestra-callback-control"
+    generator = _load(GENERATOR_PATH, "generate_middleware_callback_drift")
+    contract = json.loads(CONTRACT_PATH.read_text())
+    authority = json.loads(MIDDLEWARE_AUTHORITY_PATH.read_text())
+    source = next(
+        row for row in contract["routes"] if row["path"] == "/api/v1/callbacks"
     )
-    authority_path, spec, route = module.security_authority(ROOT, expected)
-    callback = module.security_module(ROOT, "reconcile_kong_callback_routes")
-    plugins = {
-        "jwt": {
-            "enabled": True,
-            "config": {
-                "header_names": ["authorization"],
-                "uri_param_names": [],
-                "cookie_names": [],
-                "claims_to_verify": ["exp"],
-                "key_claim_name": "azp",
-                "run_on_preflight": False,
-                "secret_is_base64": False,
-                "anonymous": None,
-            },
-        },
-        "post-function": {
-            "enabled": True,
-            "config": {"access": [callback.claim_guard(spec, route["requiredScope"])]},
-        },
-        "request-size-limiting": {
-            "enabled": True,
-            "config": {"allowed_payload_size": route["maxBodyMb"]},
-        },
-        "rate-limiting": {
-            "enabled": True,
-            "config": {
-                "minute": route["ratePerMinute"],
-                "policy": "redis",
-                "fault_tolerant": False,
-                "limit_by": "ip",
-                "redis": {"host": "codestra-redis", "port": 6379},
-            },
-        },
-        "correlation-id": {
-            "enabled": True,
-            "config": {
-                "header_name": "X-Correlation-ID",
-                "generator": "uuid",
-                "echo_downstream": True,
-            },
-        },
-    }
-    module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
-    plugins["jwt"]["config"]["key_claim_name"] = "sub"
-    with pytest.raises(RuntimeError, match="jwt_key_claim"):
-        module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
+    committed = next(
+        row for row in authority["routes"] if row["operation_id"] == source["operation_id"]
+    )
+    assert generator.authority_route(source, committed["issuer"]) == committed
+
+    drifted = copy.deepcopy(source)
+    drifted["audience"] = "wrong-api"
+    assert generator.authority_route(drifted, committed["issuer"]) != committed
 
 
 def _intake_plugins(route: dict) -> dict[str, dict]:
@@ -332,111 +297,67 @@ def _intake_plugins(route: dict) -> dict[str, dict]:
     }
 
 
-def test_intake_contract_parser_and_plugins_are_verified_exactly():
-    module = _module()
+def test_event_intake_contract_and_authority_are_generated_exactly():
+    generator = _load(GENERATOR_PATH, "generate_middleware_intake_exact")
+    contract = json.loads(CONTRACT_PATH.read_text())
     canonical = json.loads(MANIFEST_PATH.read_text())
-    expected = next(
-        row for row in canonical["contractRoutes"] if row["name"] == "codestra-intake-leads"
+    authority = json.loads(MIDDLEWARE_AUTHORITY_PATH.read_text())
+    source = next(
+        row for row in contract["routes"] if row["path"] == "/api/v1/odoo/events"
     )
-    authority_path, spec, route = module.security_authority(ROOT, expected)
-    plugins = _intake_plugins(route)
-
-    assert authority_path.name == "kong-intake-routes.json"
-    module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
-
-
-def test_intake_contract_rejects_identity_scope_and_header_drift():
-    module = _module()
-    canonical = json.loads(MANIFEST_PATH.read_text())
-    expected = next(
-        row for row in canonical["contractRoutes"] if row["name"] == "codestra-intake-leads"
+    expected_route = generator.canonical_route(source)
+    assert expected_route in canonical["contractRoutes"]
+    committed = next(
+        row for row in authority["routes"] if row["operation_id"] == source["operation_id"]
     )
-    authority_path, spec, route = module.security_authority(ROOT, expected)
+    assert generator.authority_route(source, committed["issuer"]) == committed
 
-    plugins = _intake_plugins(route)
-    plugins["openid-connect"]["config"]["audience"] = ["wrong-client"]
-    with pytest.raises(RuntimeError, match="openid_connect.audience drift"):
-        module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
 
-    plugins = _intake_plugins(route)
-    plugins["openid-connect"]["config"]["scopes_required"] = ["wrong.scope"]
-    with pytest.raises(RuntimeError, match="openid_connect.scope drift"):
-        module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
-
-    plugins = _intake_plugins(route)
-    plugins["post-function"]["config"]["access"] = ["return true"]
-    with pytest.raises(RuntimeError, match="post_function missing"):
-        module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
+def test_event_intake_contract_rejects_identity_scope_and_client_drift():
+    generator = _load(GENERATOR_PATH, "generate_middleware_intake_drift")
+    contract = json.loads(CONTRACT_PATH.read_text())
+    authority = json.loads(MIDDLEWARE_AUTHORITY_PATH.read_text())
+    source = next(
+        row for row in contract["routes"] if row["path"] == "/api/v1/odoo/events"
+    )
+    committed = next(
+        row for row in authority["routes"] if row["operation_id"] == source["operation_id"]
+    )
+    for key, value in (
+        ("audience", "wrong-api"),
+        ("scope", "wrong.scope"),
+        ("calling_client", "wrong-client"),
+    ):
+        drifted = copy.deepcopy(source)
+        drifted[key] = value
+        assert generator.authority_route(drifted, committed["issuer"]) != committed
 
 
 def test_intake_contract_cannot_authorize_runtime_apply():
-    module = _module()
     canonical = json.loads(MANIFEST_PATH.read_text())
-    expected = next(
-        row for row in canonical["contractRoutes"] if row["name"] == "codestra-intake-leads"
-    )
-    authority_path, spec, route = module.security_authority(ROOT, expected)
-    spec["activation"]["runtimeApplyAuthorized"] = True
-    with pytest.raises(RuntimeError, match="runtime_apply_authority"):
-        module.verify_security_plugins(
-            ROOT,
-            authority_path,
-            spec,
-            route,
-            _intake_plugins(route),
-            expected,
-        )
+    authority = json.loads(MIDDLEWARE_AUTHORITY_PATH.read_text())
+    assert canonical["runtimeApplyAuthorized"] is False
+    assert canonical["providerEffectsEnabled"] is False
+    assert authority["runtime_apply_authorized"] is False
+    assert authority["provider_effects_enabled"] is False
 
 
 def test_campaign_contract_rejects_scope_guard_drift():
-    module = _module()
-    canonical = json.loads(MANIFEST_PATH.read_text())
-    expected = next(
-        row for row in canonical["contractRoutes"] if row["name"] == "codestra-campaign-policy-check"
+    generator = _load(GENERATOR_PATH, "generate_middleware_campaign_drift")
+    contract = json.loads(CONTRACT_PATH.read_text())
+    authority = json.loads(MIDDLEWARE_AUTHORITY_PATH.read_text())
+    source = next(
+        row
+        for row in contract["routes"]
+        if row["path"] == "/api/v1/automation/policy-check"
     )
-    authority_path, spec, route = module.security_authority(ROOT, expected)
-    campaign = module.security_module(ROOT, "reconcile_kong_campaign_automation")
-    plugins = {
-        "jwt": {
-            "enabled": True,
-            "config": {
-                "key_claim_name": "azp",
-                "claims_to_verify": ["exp"],
-                "header_names": ["authorization"],
-                "run_on_preflight": True,
-            },
-        },
-        "post-function": {
-            "enabled": True,
-            "config": {"access": [campaign.claim_guard(spec, route["scope"])]},
-        },
-        "request-size-limiting": {
-            "enabled": True,
-            "config": {"allowed_payload_size": route["max_body_mb"]},
-        },
-        "rate-limiting": {
-            "enabled": True,
-            "config": {
-                "minute": route["rate_per_minute"],
-                "policy": "redis",
-                "fault_tolerant": False,
-                "limit_by": "consumer",
-                "redis": {"host": "codestra-redis", "port": 6379},
-            },
-        },
-        "correlation-id": {
-            "enabled": True,
-            "config": {
-                "header_name": "X-Correlation-ID",
-                "generator": "uuid",
-                "echo_downstream": True,
-            },
-        },
-    }
-    module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
-    plugins["post-function"]["config"]["access"] = ["return true"]
-    with pytest.raises(RuntimeError, match="claim_guard"):
-        module.verify_security_plugins(ROOT, authority_path, spec, route, plugins, expected)
+    committed = next(
+        row for row in authority["routes"] if row["operation_id"] == source["operation_id"]
+    )
+    assert generator.authority_route(source, committed["issuer"]) == committed
+    drifted = copy.deepcopy(source)
+    drifted["scope"] = "wrong.scope"
+    assert generator.authority_route(drifted, committed["issuer"]) != committed
 
 
 def test_reconciler_pagination_cannot_leave_the_selected_admin_origin():

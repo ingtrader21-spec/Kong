@@ -1,29 +1,39 @@
 # Community n8n gateway and egress gate
 
-This source remains `PROPOSED_NOT_APPLIED`. The public n8n Middleware authority
-is fixed at `https://api.codestra.co/v1/integrations/n8n`; the proposed future
-Kong-to-Middleware hop requires a DNS upstream on HTTPS/443 with certificate and
-hostname verification. Middleware continues to revalidate the original
-`n8n-automation` token.
+This source is `SUPERSEDED_NOT_APPLIED`. The canonical Middleware edge contract
+(`config/middleware-public-api-route-contract.v1.json`, pinned by
+`config/middleware-public-api-route-contract.sha256`) classifies every
+`/v1/integrations/n8n/*` alias as `denied`, so the public endpoint this proposal
+targeted no longer exists as a shared-edge route. The only shared-edge upstream
+is `middleware-integration-api:8095`, generated into
+`config/kong-middleware-routes.production.yml` and
+`config/staging/kong-middleware-routes.staging.yml`. Middleware continues to
+revalidate the original `n8n-automation` token on the canonical
+`/v2/automation/*` and result submit/read routes.
 
-## Current production authority stays unchanged
+## Decision R6-2026-09-16-canonical-middleware-upstream
 
-The currently reviewed production route remains:
+Kong PR #30 collected read-only runtime evidence showing that, at that time,
+the generic `middleware-integration-api` Docker alias resolved to a different,
+legacy runtime and that `appolon-middleware-integration-api:8080` was the
+unique runtime serving the `/v1/integrations/n8n` routes. Two authorities then
+disagreed: that evidence bound the route authority to the legacy host, while the
+Middleware repository's own public route contract names the service
+`middleware-integration-api` listening on `8095`.
 
-```text
-appolon-middleware-integration-api:8080
-```
-
-That unique Docker DNS name was selected after read-only runtime evidence proved
-that the generic `middleware-integration-api` alias resolved to a different,
-legacy runtime. The generic alias is therefore explicitly denied by the source
-contract. The proposed HTTPS design is not permission to change the current
-route, reconcile Kong, or apply a firewall.
+The contract wins. The route authority in
+`config/kong-n8n-control-plane-routes.json` is retired deny-only, its service is
+disabled, and it is bound to `middleware-integration-api:8095`. The legacy host
+and port are recorded under `retired_legacy_runtime` and listed in
+`ambiguous_aliases_denied`; no Kong route may target them. This decision is
+source-only: it is not permission to reconcile Kong, change the deployed
+runtime, or apply a firewall, and `runtime_apply_authorized` stays `false`.
 
 ## Required topology evidence
 
-Before `PROPOSED_NOT_APPLIED` can change, run the read-only collector from an
-exact, clean checkout of the reviewed Kong SHA:
+Before any runtime reconciliation toward the canonical upstream can be
+authorized, run the read-only collector from an exact, clean checkout of the
+reviewed Kong SHA:
 
 ```bash
 python3 operations/community-n8n/collect_topology_evidence.py \
@@ -40,8 +50,10 @@ file. It then:
   rather than a caller-supplied name or abbreviated ID;
 - applies the same Kong identity verification when `--kong-container` is used,
   rejecting an unrelated or stopped container;
-- resolves the unique current runtime, denied generic alias, and proposed TLS
-  hostname from inside that verified Kong network namespace;
+- resolves the canonical `middleware-integration-api` runtime, the retired
+  `appolon-middleware-integration-api` host, and the proposed TLS hostname from
+  inside that verified Kong network namespace, proving the canonical alias is
+  unique and the retired host is not that runtime;
 - requires every resolved TLS address and every Docker alias candidate to map
   exclusively to the verified Appolon Middleware runtime; one matching address
   cannot hide another legacy or unrelated target;

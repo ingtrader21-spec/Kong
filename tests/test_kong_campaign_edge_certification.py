@@ -22,7 +22,7 @@ CANONICAL = ROOT / "config/kong-canonical-middleware-routes.json"
 PRODUCTION = ROOT / "config/kong-campaign-automation-routes.json"
 STAGING = ROOT / "config/staging/kong-campaign-automation-routes.json"
 VENDORED = ROOT / "config/middleware-public-api-route-contract.v1.json"
-EDGE_CONTRACT_SHA256 = "af984cbaa41d1e3602ceb40be6fe383c0030a3c10cbea772efab7ff95d602d36"
+EDGE_CONTRACT_SHA256 = "7580123dead97ea342c704a57a3c8eed9f5dce69aab247d4b693db96bc7334d5"
 
 CANONICAL_ROUTES = {
     ("POST", "/api/v1/integrations/n8n/results"): ("codestra-campaign-result-submit", "n8n.results.submit"),
@@ -77,32 +77,47 @@ def test_vendored_middleware_contract_hashes_to_the_pin():
         json.dumps(contract, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
     assert digest == pin["sha256"]
-    assert contract["schema"] == pin["schema"] == "codestra.middleware.public-api-route-contract.v1"
+    assert contract["schema"] == pin["schema"] == "codestra.middleware.public-api-route-contract.v2"
     assert contract["service"] == "middleware-integration-api"
     assert contract["listener_port"] == 8095
 
 
 def test_every_scoped_contract_route_is_declared_with_the_same_method_and_scope():
     contract = load(VENDORED)
-    scoped = {(r["method"], r["path"]): r["scope"] for r in contract["routes"] if r.get("scope")}
+    scoped = {
+        (r["method"], r["path"]): r["scope"]
+        for r in contract["routes"]
+        if r["classification"] == "shared_edge" and (r["method"], r["path"]) in CANONICAL_ROUTES
+    }
     assert scoped == {key: value[1] for key, value in CANONICAL_ROUTES.items()}
-    canonical = {r["name"]: r for r in load(CANONICAL)["contractRoutes"]}
-    authority = {r["name"]: r for r in load(PRODUCTION)["routes"]}
+    canonical = {
+        (r["methods"][0], r["pathTemplate"]): r for r in load(CANONICAL)["contractRoutes"]
+    }
+    authority = {
+        (r["method"], r.get("path_template", r["path"])): r for r in load(PRODUCTION)["routes"]
+    }
     for (method, template), (name, scope) in CANONICAL_ROUTES.items():
-        route = canonical[name]
+        route = canonical[(method, template)]
         assert route["methods"] == [method]
-        assert route.get("pathTemplate", route["paths"][0]) == template
-        assert route["securityAuthority"] == "config/kong-campaign-automation-routes.json"
-        assert route["serviceHost"] == "codestra-middleware-integration-api-1"
+        assert route["pathTemplate"] == template
+        assert route["securityAuthority"] == "config/kong-middleware-authority.v2.json"
+        assert route["serviceHost"] == "middleware-integration-api"
         assert route["servicePort"] == 8095
         assert route["stripPath"] is False
-        assert {"jwt", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"} == set(
+        assert {"openid-connect", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"} == set(
             route["requiredPlugins"]
         )
-        row = authority[name]
+        row = authority[(method, template)]
+        assert row["name"] == name
         assert row["method"] == method
         assert row["scope"] == scope
-        assert [row["path"]] == route["paths"]
+        generated = re.compile(route["paths"][0][1:])
+        assert generated.fullmatch(concrete(template))
+        legacy = row["path"]
+        if legacy.startswith("~"):
+            assert re.compile(legacy[1:]).fullmatch(concrete(template))
+        else:
+            assert legacy == concrete(template)
 
 
 # --- exact paths ----------------------------------------------------------------
@@ -133,9 +148,20 @@ def test_read_and_desired_state_regexes_do_not_overlap():
 
 
 def test_retired_campaign_surfaces_are_absent_everywhere():
-    for path in (CANONICAL, PRODUCTION, STAGING, VENDORED):
+    for path in (PRODUCTION, STAGING):
         text = path.read_text(encoding="utf-8")
         assert "campaign-actions" not in text and "campaign-commands" not in text, path
+    contract = load(VENDORED)
+    assert all(
+        row["classification"] == "denied"
+        for row in contract["routes"]
+        if "campaign-actions" in row["path"] or "campaign-commands" in row["path"]
+    )
+    canonical = load(CANONICAL)
+    active = json.dumps(canonical["contractRoutes"])
+    denied = json.dumps(canonical["deniedRoutes"])
+    assert "campaign-actions" not in active and "campaign-commands" not in active
+    assert "campaign-actions" in denied and "campaign-commands" in denied
 
 
 # --- identities and scope guard ---------------------------------------------------
@@ -150,7 +176,7 @@ def test_production_consumers_separate_n8n_and_odoo_reader_identities():
     }
     assert production["forbidden_scopes"] == ["odoo.campaign.control.write"]
     assert production["issuer"] == "https://auth.codestra.co/realms/codestra"
-    assert production["audience"] == "codestra-middleware"
+    assert production["audience"] == "middleware-api"
     assert production["environment"] == "production"
 
 
@@ -162,7 +188,7 @@ def test_staging_manifest_is_test_syn_only_and_not_apply_authorized():
     assert staging["issuer"] == "https://auth-staging.codestra.co/realms/codestra"
     assert staging["oidc_discovery"] == staging["issuer"] + "/.well-known/openid-configuration"
     assert staging["jwks_uri"] == staging["issuer"] + "/protocol/openid-connect/certs"
-    assert staging["audience"] == "codestra-middleware"
+    assert staging["audience"] == "middleware-api"
     assert staging["campaign_scope"] == ["TEST_SYN"]
     assert "auth.codestra.co/" not in STAGING.read_text(encoding="utf-8")
     assert staging["safety"]["reconciliation_apply"] is False
@@ -273,7 +299,7 @@ def test_renderer_emits_exact_routes_plugins_and_consumers(environment):
     service = document["services"][0]
     assert (service["name"], service["host"], service["port"]) == (
         "codestra-campaign-automation-api",
-        "codestra-middleware-integration-api-1",
+        "middleware-integration-api",
         8095,
     )
     # Explicit transport policy: Kong would otherwise default to 60s timeouts and

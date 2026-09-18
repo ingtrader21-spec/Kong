@@ -1,6 +1,16 @@
 {
   "schema_version": "1.1",
-  "status": "PROPOSED_NOT_APPLIED",
+  "status": "SUPERSEDED_NOT_APPLIED",
+  "superseded_by": {
+    "decision": "R6-2026-09-16-canonical-middleware-upstream",
+    "contract": "config/middleware-public-api-route-contract.v1.json",
+    "contract_sha256_pin": "config/middleware-public-api-route-contract.sha256",
+    "canonical_manifests": [
+      "config/kong-middleware-routes.production.yml",
+      "config/staging/kong-middleware-routes.staging.yml"
+    ],
+    "reason": "The canonical Middleware edge contract classifies /v1/integrations/n8n/* as denied aliases and names middleware-integration-api:8095 as the only shared-edge upstream. This HTTPS egress proposal targeted the retired alias and cannot be promoted."
+  },
   "public_endpoint": "https://api.codestra.co/v1/integrations/n8n",
   "service": {
     "name": "codestra-community-n8n-middleware",
@@ -30,12 +40,19 @@
     "middleware_revalidates_token": true
   },
   "current_runtime_authority": {
-    "status": "VERIFIED_UNCHANGED",
+    "status": "RETIRED_DENY_ONLY",
     "authority_path": "config/kong-n8n-control-plane-routes.json",
-    "service_host": "appolon-middleware-integration-api",
-    "service_port": 8080,
+    "service_host": "middleware-integration-api",
+    "service_port": 8095,
     "service_protocol": "http",
-    "ambiguous_aliases_denied": ["middleware-integration-api"],
+    "service_enabled": false,
+    "ambiguous_aliases_denied": ["appolon-middleware-integration-api"],
+    "retired_legacy_runtime": {
+      "host": "appolon-middleware-integration-api",
+      "port": 8080,
+      "evidence_url": "https://github.com/appolon1908-hue/Kong/pull/30",
+      "note": "PR #30 read-only topology evidence bound the /v1/integrations/n8n aliases to this runtime. Those aliases are now denied by the canonical contract and no Kong route may target this host or port. The deployed Docker alias for middleware-integration-api must be re-collected with the topology collector before any runtime apply, which stays unauthorized."
+    },
     "evidence_url": "https://github.com/appolon1908-hue/Kong/pull/30",
     "mutation_authorized": false
   },
