@@ -1,0 +1,22 @@
+# gitleaks configuration for the Kong repository (loaded automatically by
+# `gitleaks git` / `gitleaks dir` from the repository root; the pinned version
+# is set in .github/workflows/security.yml).
+#
+# The default rule set stays fully enabled. The single allowlist below exempts
+# one JSON key whose values are not credentials: `authenticationProfile` in
+# config/kong-access-policy.v1.json names an entry of the authentication-profile
+# catalogue (config/kong-authentication-profiles.v1.json), and
+# scripts/validate_kong_foundation.py refuses any value that is not a catalogue
+# name, so the key can never carry a secret. Without this exemption the
+# generic-api-key entropy heuristic flags profile names such as
+# INTERNAL_STANDBY_V1 (entropy 3.68) as leaks.
+
+title = "Kong source authority"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "authenticationProfile values are validator-enforced catalogue identifiers, never credentials"
+regexTarget = "line"
+regexes = ['''^\s*"authenticationProfile":\s*"[A-Z][A-Z0-9_]*"\s*,?\s*$''']
