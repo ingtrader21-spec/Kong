@@ -1,0 +1,1858 @@
+{
+  "schema": "codestra.kong.access-policy.v1",
+  "version": "1.0.0",
+  "status": "SOURCE_CANDIDATE_NO_RUNTIME_APPLY",
+  "runtimeApplyAuthorized": false,
+  "foundation": "config/kong-gateway-foundation.v1.json",
+  "authenticationProfiles": "config/kong-authentication-profiles.v1.json",
+  "m1Dependency": {
+    "pullRequest": 105,
+    "head": "fb353cbbb0ef8ad5884e1a4d06e930a89d897bf8",
+    "state": "INDEPENDENT_APPROVAL_REQUIRED",
+    "effect": "retires the appolon-middleware-integration-api:8080 alias and binds every Middleware authority to :8095; this policy classifies the routes as they are declared on this branch and must be re-validated after #105 merges",
+    "foundationBranch": "feature/issue-58-canonical-campaign-routes (commit 50dad08), also unmerged"
+  },
+  "identityHeaders": {
+    "neverTrustedFromClients": [
+      "X-User-ID",
+      "X-Username",
+      "X-Email",
+      "X-Roles",
+      "X-Scopes",
+      "X-Consumer-ID",
+      "X-Consumer-Username",
+      "X-Credential-Identifier",
+      "X-Anonymous-Consumer",
+      "X-Authenticated-UserID",
+      "X-Authenticated-User",
+      "X-Authenticated-Client",
+      "X-Authenticated-Subject",
+      "X-Authenticated-Tenant",
+      "X-Authenticated-Campaign",
+      "X-Authenticated-Role",
+      "X-Authenticated-Email",
+      "X-Codestra-Tenant",
+      "X-Codestra-Scopes",
+      "X-Codestra-Gateway-Secret",
+      "X-Internal-Service",
+      "X-Admin"
+    ],
+    "selectorHeaders": {
+      "X-Tenant-ID": "optional or required selector compared against the token tenant claim by the guard or by Middleware; never an authority"
+    },
+    "mintedOnlyByGateway": [
+      "X-Authenticated-Client",
+      "X-Authenticated-Subject",
+      "X-Authenticated-Tenant",
+      "X-Authenticated-Campaign",
+      "X-Authenticated-Role",
+      "X-Authenticated-Email",
+      "X-Codestra-Tenant",
+      "X-Codestra-Scopes",
+      "X-Codestra-Gateway-Secret"
+    ],
+    "setByKongAfterAuthentication": [
+      "X-Consumer-ID",
+      "X-Consumer-Username",
+      "X-Credential-Identifier",
+      "X-Anonymous-Consumer"
+    ],
+    "headerAuthorityAllowed": false
+  },
+  "publicAllowlist": [
+    {
+      "routeId": "codestra-token-validation-certification",
+      "reason": "read-only (GET, OPTIONS) token-validation certification probe; no business data; rate limited; retire with the legacy host"
+    },
+    {
+      "routeId": "codestra-website-api-route",
+      "reason": "legacy browser website API; shared key ships in site JavaScript; MOVE to a governed website API"
+    },
+    {
+      "routeId": "website-form-demo-request",
+      "reason": "legacy public website form; bot-detection is the abuse control; MOVE to a governed forms API"
+    },
+    {
+      "routeId": "website-form-electronic-billing",
+      "reason": "legacy public website form; MOVE"
+    },
+    {
+      "routeId": "website-form-electronic-billing-registration",
+      "reason": "legacy public website form; MOVE"
+    },
+    {
+      "routeId": "website-form-pricing-request",
+      "reason": "legacy public website form; MOVE"
+    },
+    {
+      "routeId": "website-form-sales-contact",
+      "reason": "legacy public website form; MOVE"
+    }
+  ],
+  "corsPolicies": {
+    "LEGACY_UNVERIFIED_ORIGINS": "cors plugin present on a legacy key-auth route; origin list not captured by the readback; credentials with a wildcard origin are forbidden by boundaryRules and by the integration compiler"
+  },
+  "findingCodes": {
+    "IDENTITY_HEADERS_NOT_STRIPPED": "the route forwards client-supplied identity headers; acceptable only with a recorded upstream mitigation and never as an authority",
+    "ADMIN_PARTIES_UNDECLARED": "no explicit list of authorized parties for platform.admin; activation prerequisite",
+    "AUDIENCE_IS_CLIENT_ID": "audience equals the client id by contract",
+    "GUARD_SOURCE_NOT_IN_REPOSITORY": "the claim guard is verified live by markers but its source is not vendored here"
+  },
+  "logging": {
+    "neverPersisted": [
+      "Authorization",
+      "Proxy-Authorization",
+      "Cookie",
+      "Set-Cookie",
+      "access_token",
+      "refresh_token",
+      "id_token",
+      "client_secret",
+      "X-Codestra-Gateway-Secret"
+    ],
+    "proxyAccessLogFormat": "nginx combined on /dev/stdout: no request headers, no bodies",
+    "logPluginsRegistered": [],
+    "logPluginRule": "any log plugin must be registered with redactsCredentials true and a custom_fields_by_lua/redaction configuration",
+    "traceability": [
+      "X-Correlation-ID",
+      "X-Request-ID",
+      "traceparent"
+    ]
+  },
+  "routes": [
+    {
+      "routeId": "control-plane-control",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CONTROL_PLANE",
+      "requiredScopes": [
+        "communications.message.create",
+        "communications.message.dispatch",
+        "campaign.write",
+        "agent.write",
+        "sync.execute",
+        "mapping.read",
+        "mapping.read.minimum"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "GATEWAY_MINTED_TENANT_ROLE",
+      "tenantPolicy": "HEADER_SELECTOR_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [],
+      "scopeAuthority": "deploy/kong/scope-policy.lua"
+    },
+    {
+      "routeId": "communication-message-read",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CONTROL_PLANE",
+      "requiredScopes": [
+        "communications.message.read",
+        "communications.message.events.read"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "GATEWAY_MINTED_TENANT_ROLE",
+      "tenantPolicy": "HEADER_SELECTOR_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [],
+      "scopeAuthority": "deploy/kong/scope-policy.lua"
+    },
+    {
+      "routeId": "control-plane-events",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CONTROL_PLANE",
+      "requiredScopes": [],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "GATEWAY_MINTED_TENANT_ROLE",
+      "tenantPolicy": "HEADER_SELECTOR_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [],
+      "scopeAuthority": "deploy/kong/scope-policy.lua"
+    },
+    {
+      "routeId": "control-plane-results",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CONTROL_PLANE",
+      "requiredScopes": [
+        "sync.result.write",
+        "communications.result.write"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "GATEWAY_MINTED_TENANT_ROLE",
+      "tenantPolicy": "HEADER_SELECTOR_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [],
+      "scopeAuthority": "deploy/kong/scope-policy.lua"
+    },
+    {
+      "routeId": "control-plane-reconciliation",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CONTROL_PLANE",
+      "requiredScopes": [
+        "communications.reconciliation.read",
+        "communications.reconciliation.execute"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "GATEWAY_MINTED_TENANT_ROLE",
+      "tenantPolicy": "HEADER_SELECTOR_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [],
+      "scopeAuthority": "deploy/kong/scope-policy.lua"
+    },
+    {
+      "routeId": "control-plane-health",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CONTROL_PLANE",
+      "requiredScopes": [],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "GATEWAY_MINTED_TENANT_ROLE",
+      "tenantPolicy": "HEADER_SELECTOR_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [],
+      "scopeAuthority": "deploy/kong/scope-policy.lua"
+    },
+    {
+      "routeId": "control-plane-system-admin",
+      "environment": "production",
+      "accessClass": "ADMIN_INTERNAL",
+      "authenticationProfile": "ADMIN_INTERNAL_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CONTROL_PLANE",
+      "requiredScopes": [
+        "platform.admin"
+      ],
+      "authorizedParties": [],
+      "principalClasses": [
+        "ADMIN"
+      ],
+      "identityPropagation": "GATEWAY_MINTED_TENANT_ROLE",
+      "tenantPolicy": "HEADER_SELECTOR_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "ADMIN_PARTIES_UNDECLARED"
+      ],
+      "scopeAuthority": "deploy/kong/scope-policy.lua",
+      "activationPrerequisites": [
+        "declare the Keycloak clients (azp) permitted to hold platform.admin in the Keycloak contract and list them as authorizedParties"
+      ]
+    },
+    {
+      "routeId": "codestra-callback-control",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CALLBACK_API",
+      "requiredScopes": [
+        "callbacks.write"
+      ],
+      "authorizedParties": [
+        "codestra-odoo-callback-service"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_FIXED_TENANT_CAMPAIGN",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "notes": "jwt run_on_preflight=false is safe only because the route declares no OPTIONS method; live guard phase drift (pre-function) is declared in the foundation knownDrift"
+    },
+    {
+      "routeId": "codestra-callback-read",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CALLBACK_API",
+      "requiredScopes": [
+        "callbacks.read"
+      ],
+      "authorizedParties": [
+        "codestra-odoo-callback-service"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_FIXED_TENANT_CAMPAIGN",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "notes": "jwt run_on_preflight=false is safe only because the route declares no OPTIONS method; live guard phase drift (pre-function) is declared in the foundation knownDrift"
+    },
+    {
+      "routeId": "codestra-campaign-policy-check",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CAMPAIGN_MIDDLEWARE",
+      "requiredScopes": [
+        "n8n.policy.check"
+      ],
+      "authorizedParties": [
+        "codestra-n8n-campaign-crm-production"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-campaign-result-submit",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CAMPAIGN_MIDDLEWARE",
+      "requiredScopes": [
+        "n8n.results.submit"
+      ],
+      "authorizedParties": [
+        "codestra-n8n-campaign-crm-production"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-campaign-result-read",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CAMPAIGN_MIDDLEWARE",
+      "requiredScopes": [
+        "n8n.results.read"
+      ],
+      "authorizedParties": [
+        "codestra-n8n-campaign-crm-production"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-odoo-campaign-read",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CAMPAIGN_MIDDLEWARE",
+      "requiredScopes": [
+        "odoo.campaigns.read"
+      ],
+      "authorizedParties": [
+        "codestra-odoo-campaign-reader-production"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-odoo-campaign-desired-state-read",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "CAMPAIGN_MIDDLEWARE",
+      "requiredScopes": [
+        "odoo.campaigns.read"
+      ],
+      "authorizedParties": [
+        "codestra-odoo-campaign-reader-production"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-campaign-result-submit@staging",
+      "environment": "staging",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "CAMPAIGN_MIDDLEWARE",
+      "requiredScopes": [
+        "n8n.results.submit"
+      ],
+      "authorizedParties": [
+        "test-syn-n8n-submit"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-campaign-result-read@staging",
+      "environment": "staging",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "CAMPAIGN_MIDDLEWARE",
+      "requiredScopes": [
+        "n8n.results.read"
+      ],
+      "authorizedParties": [
+        "test-syn-n8n-read",
+        "test-syn-wrong-tenant"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-odoo-campaign-read@staging",
+      "environment": "staging",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "CAMPAIGN_MIDDLEWARE",
+      "requiredScopes": [
+        "odoo.campaigns.read"
+      ],
+      "authorizedParties": [
+        "test-syn-odoo-reader",
+        "test-syn-wrong-tenant"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-odoo-campaign-desired-state-read@staging",
+      "environment": "staging",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "CAMPAIGN_MIDDLEWARE",
+      "requiredScopes": [
+        "odoo.campaigns.read"
+      ],
+      "authorizedParties": [
+        "test-syn-odoo-reader",
+        "test-syn-wrong-tenant"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-intake-leads",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_OIDC_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "SDK_INTAKE_CLIENT",
+      "requiredScopes": [
+        "leads.write"
+      ],
+      "authorizedParties": [
+        "sdk-intake"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "HEADER_REQUIRED_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "AUDIENCE_IS_CLIENT_ID",
+        "GUARD_SOURCE_NOT_IN_REPOSITORY",
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-intake-survey-responses",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_OIDC_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "SDK_INTAKE_CLIENT",
+      "requiredScopes": [
+        "surveys.write"
+      ],
+      "authorizedParties": [
+        "sdk-intake"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "HEADER_REQUIRED_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "AUDIENCE_IS_CLIENT_ID",
+        "GUARD_SOURCE_NOT_IN_REPOSITORY",
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-n8n-command-submit",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "middleware.request.forward"
+      ],
+      "authorizedParties": [
+        "n8n-automation"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "HEADER_REQUIRED_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "m1Dependency": "PR #105 binds this authority to codestra-middleware-integration-api-1:8095 and retires the 8080 alias; until it merges the foundation records the transitional alias"
+    },
+    {
+      "routeId": "codestra-n8n-command-read",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "middleware.status.read"
+      ],
+      "authorizedParties": [
+        "n8n-automation"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "HEADER_REQUIRED_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "m1Dependency": "PR #105 binds this authority to codestra-middleware-integration-api-1:8095 and retires the 8080 alias; until it merges the foundation records the transitional alias"
+    },
+    {
+      "routeId": "codestra-n8n-command-submit@staging",
+      "environment": "staging",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "middleware.request.forward"
+      ],
+      "authorizedParties": [
+        "n8n-automation"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "HEADER_REQUIRED_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "m1Dependency": "PR #105 binds this authority to codestra-middleware-integration-api-1:8095 and retires the 8080 alias; until it merges the foundation records the transitional alias"
+    },
+    {
+      "routeId": "codestra-n8n-command-read@staging",
+      "environment": "staging",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "middleware.status.read"
+      ],
+      "authorizedParties": [
+        "n8n-automation"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "HEADER_REQUIRED_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "m1Dependency": "PR #105 binds this authority to codestra-middleware-integration-api-1:8095 and retires the 8080 alias; until it merges the foundation records the transitional alias"
+    },
+    {
+      "routeId": "codestra-calling-command-submit",
+      "environment": "production",
+      "accessClass": "INTERNAL",
+      "authenticationProfile": "INTERNAL_SERVICE_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "telephony:command"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "WORKLOAD"
+      ],
+      "identityPropagation": "GATEWAY_MINTED_SUBJECT_TENANT_CAMPAIGN",
+      "tenantPolicy": "HEADER_SELECTOR_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": []
+    },
+    {
+      "routeId": "codestra-calling-operation-read",
+      "environment": "production",
+      "accessClass": "INTERNAL",
+      "authenticationProfile": "INTERNAL_SERVICE_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "telephony:status"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "WORKLOAD"
+      ],
+      "identityPropagation": "GATEWAY_MINTED_SUBJECT_TENANT_CAMPAIGN",
+      "tenantPolicy": "HEADER_SELECTOR_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": []
+    },
+    {
+      "routeId": "codestra-calling-operation-cancel",
+      "environment": "production",
+      "accessClass": "INTERNAL",
+      "authenticationProfile": "INTERNAL_SERVICE_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "telephony:command"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "WORKLOAD"
+      ],
+      "identityPropagation": "GATEWAY_MINTED_SUBJECT_TENANT_CAMPAIGN",
+      "tenantPolicy": "HEADER_SELECTOR_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": []
+    },
+    {
+      "routeId": "codestra-calling-operation-reconcile",
+      "environment": "production",
+      "accessClass": "INTERNAL",
+      "authenticationProfile": "INTERNAL_SERVICE_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "telephony:status"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "WORKLOAD"
+      ],
+      "identityPropagation": "GATEWAY_MINTED_SUBJECT_TENANT_CAMPAIGN",
+      "tenantPolicy": "HEADER_SELECTOR_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": []
+    },
+    {
+      "routeId": "codestra-realtime-session-create",
+      "environment": "production",
+      "accessClass": "INTERNAL",
+      "authenticationProfile": "INTERNAL_SERVICE_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "realtime:session:create"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "WORKLOAD"
+      ],
+      "identityPropagation": "GATEWAY_MINTED_SUBJECT_TENANT_CAMPAIGN",
+      "tenantPolicy": "HEADER_SELECTOR_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": []
+    },
+    {
+      "routeId": "moneybee-account-bootstrap",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MONEYBEE_API",
+      "requiredScopes": [],
+      "authorizedParties": [
+        "moneybee-borrower"
+      ],
+      "principalClasses": [
+        "HUMAN"
+      ],
+      "identityPropagation": "GATEWAY_MINTED_SUBJECT_EMAIL",
+      "tenantPolicy": "NOT_APPLICABLE_IDENTITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": []
+    },
+    {
+      "routeId": "codestra-ai-inference-request",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "ai.inference.request"
+      ],
+      "authorizedParties": [
+        "codestra-ai"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "m1Dependency": "PR #105 binds this authority to codestra-middleware-integration-api-1:8095 and retires the 8080 alias; until it merges the foundation records the transitional alias"
+    },
+    {
+      "routeId": "codestra-communication-email-request",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "communication.email.request"
+      ],
+      "authorizedParties": [
+        "codestra-communication"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "m1Dependency": "PR #105 binds this authority to codestra-middleware-integration-api-1:8095 and retires the 8080 alias; until it merges the foundation records the transitional alias"
+    },
+    {
+      "routeId": "codestra-communication-sms-request",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "communication.sms.request"
+      ],
+      "authorizedParties": [
+        "codestra-communication"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "m1Dependency": "PR #105 binds this authority to codestra-middleware-integration-api-1:8095 and retires the 8080 alias; until it merges the foundation records the transitional alias"
+    },
+    {
+      "routeId": "codestra-marketing-campaign-request",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "marketing.campaign.request"
+      ],
+      "authorizedParties": [
+        "codestra-marketing"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "m1Dependency": "PR #105 binds this authority to codestra-middleware-integration-api-1:8095 and retires the 8080 alias; until it merges the foundation records the transitional alias"
+    },
+    {
+      "routeId": "codestra-odoo-event-publish",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "odoo.events.publish"
+      ],
+      "authorizedParties": [
+        "odoo-integration"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "m1Dependency": "PR #105 binds this authority to codestra-middleware-integration-api-1:8095 and retires the 8080 alias; until it merges the foundation records the transitional alias"
+    },
+    {
+      "routeId": "codestra-social-publication-request",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "SERVICE_JWT_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "social.publish.request"
+      ],
+      "authorizedParties": [
+        "codestra-social"
+      ],
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "KONG_CONSUMER_HEADERS_ONLY",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "JWT_STATIC_KEY_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "m1Dependency": "PR #105 binds this authority to codestra-middleware-integration-api-1:8095 and retires the 8080 alias; until it merges the foundation records the transitional alias"
+    },
+    {
+      "routeId": "codestra-n8n-editor-ui",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_SESSION_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": [
+        "n8n-editor"
+      ],
+      "principalClasses": [
+        "HUMAN"
+      ],
+      "identityPropagation": "SESSION_OIDC_UPSTREAM",
+      "tenantPolicy": "NOT_APPLICABLE_IDENTITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-community-n8n-middleware-route",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "BLOCKED_NONE_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [],
+      "authorizedParties": null,
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "STRIP_ALL_PUBLIC",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "PUBLIC",
+      "tokenCache": "NONE",
+      "acceptedFindings": []
+    },
+    {
+      "routeId": "codestra-sms-standby-route",
+      "environment": "production",
+      "accessClass": "INTERNAL",
+      "authenticationProfile": "INTERNAL_STANDBY_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "STANDBY_CODESTRA_API",
+      "requiredScopes": [
+        "sms.send"
+      ],
+      "authorizedParties": "auth-middleware",
+      "principalClasses": [
+        "WORKLOAD"
+      ],
+      "identityPropagation": "STANDBY_STRIP_LIST",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "NONE",
+      "acceptedFindings": []
+    },
+    {
+      "routeId": "codestra-email-standby-route",
+      "environment": "production",
+      "accessClass": "INTERNAL",
+      "authenticationProfile": "INTERNAL_STANDBY_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "STANDBY_CODESTRA_API",
+      "requiredScopes": [
+        "email.send"
+      ],
+      "authorizedParties": "auth-middleware",
+      "principalClasses": [
+        "WORKLOAD"
+      ],
+      "identityPropagation": "STANDBY_STRIP_LIST",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "NONE",
+      "acceptedFindings": []
+    },
+    {
+      "routeId": "codestra-sms-webhook-standby-route",
+      "environment": "production",
+      "accessClass": "INTERNAL",
+      "authenticationProfile": "INTERNAL_STANDBY_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "STANDBY_CODESTRA_API",
+      "requiredScopes": [
+        "webhooks.sms.ingest"
+      ],
+      "authorizedParties": "auth-middleware",
+      "principalClasses": [
+        "WORKLOAD"
+      ],
+      "identityPropagation": "STANDBY_STRIP_LIST",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "NONE",
+      "acceptedFindings": []
+    },
+    {
+      "routeId": "codestra-email-webhook-standby-route",
+      "environment": "production",
+      "accessClass": "INTERNAL",
+      "authenticationProfile": "INTERNAL_STANDBY_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "STANDBY_CODESTRA_API",
+      "requiredScopes": [
+        "webhooks.email.ingest"
+      ],
+      "authorizedParties": "auth-middleware",
+      "principalClasses": [
+        "WORKLOAD"
+      ],
+      "identityPropagation": "STANDBY_STRIP_LIST",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "NONE",
+      "acceptedFindings": []
+    },
+    {
+      "routeId": "codestra-communication-canonical-read",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "LEGACY_UNVERIFIED",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "m1Dependency": "PR #105 binds this authority to codestra-middleware-integration-api-1:8095 and retires the 8080 alias; until it merges the foundation records the transitional alias"
+    },
+    {
+      "routeId": "codestra-communication-canonical-write",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "LEGACY_UNVERIFIED",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "m1Dependency": "PR #105 binds this authority to codestra-middleware-integration-api-1:8095 and retires the 8080 alias; until it merges the foundation records the transitional alias"
+    },
+    {
+      "routeId": "breero-production-api-route",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "BLOCKED_NONE_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": null,
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "LEGACY_UNVERIFIED",
+      "failurePolicy": "PUBLIC",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-website-api-route",
+      "environment": "production",
+      "accessClass": "PUBLIC",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "NONE_PUBLIC",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "publicAllowlistReason": "legacy browser website API; shared key ships in site JavaScript; MOVE to a governed website API",
+      "corsPolicy": "LEGACY_UNVERIFIED_ORIGINS"
+    },
+    {
+      "routeId": "codestra-mail-api",
+      "environment": "production",
+      "accessClass": "ADMIN_INTERNAL",
+      "authenticationProfile": "BLOCKED_NONE_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": null,
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "LEGACY_UNVERIFIED",
+      "failurePolicy": "PUBLIC",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "codestra-token-validation-certification",
+      "environment": "production",
+      "accessClass": "PUBLIC",
+      "authenticationProfile": "PUBLIC_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": null,
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "NONE_PUBLIC",
+      "failurePolicy": "PUBLIC",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "publicAllowlistReason": "read-only (GET, OPTIONS) token-validation certification probe; no business data; rate limited; retire with the legacy host"
+    },
+    {
+      "routeId": "gateway-test-route",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "LEGACY_UNVERIFIED",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "crm-route",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "LEGACY_UNVERIFIED",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "corsPolicy": "LEGACY_UNVERIFIED_ORIGINS"
+    },
+    {
+      "routeId": "email-route",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "LEGACY_UNVERIFIED",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "sms-route",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "LEGACY_UNVERIFIED",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "sms-dlr-telnexa-route",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "LEGACY_UNVERIFIED",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "webhooks-route",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "LEGACY_UNVERIFIED",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "website-form-demo-request",
+      "environment": "production",
+      "accessClass": "PUBLIC",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "NONE_PUBLIC",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "publicAllowlistReason": "legacy public website form; bot-detection is the abuse control; MOVE to a governed forms API",
+      "corsPolicy": "LEGACY_UNVERIFIED_ORIGINS"
+    },
+    {
+      "routeId": "website-form-electronic-billing",
+      "environment": "production",
+      "accessClass": "PUBLIC",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "NONE_PUBLIC",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "publicAllowlistReason": "legacy public website form; MOVE",
+      "corsPolicy": "LEGACY_UNVERIFIED_ORIGINS"
+    },
+    {
+      "routeId": "website-form-electronic-billing-registration",
+      "environment": "production",
+      "accessClass": "PUBLIC",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "NONE_PUBLIC",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "publicAllowlistReason": "legacy public website form; MOVE",
+      "corsPolicy": "LEGACY_UNVERIFIED_ORIGINS"
+    },
+    {
+      "routeId": "website-form-pricing-request",
+      "environment": "production",
+      "accessClass": "PUBLIC",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "NONE_PUBLIC",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "publicAllowlistReason": "legacy public website form; MOVE",
+      "corsPolicy": "LEGACY_UNVERIFIED_ORIGINS"
+    },
+    {
+      "routeId": "website-form-sales-contact",
+      "environment": "production",
+      "accessClass": "PUBLIC",
+      "authenticationProfile": "LEGACY_SHARED_KEY_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "kong-consumer",
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "LEGACY_UNVERIFIED",
+      "tenantPolicy": "NONE_PUBLIC",
+      "failurePolicy": "LEGACY_SHARED_KEY",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ],
+      "publicAllowlistReason": "legacy public website form; MOVE",
+      "corsPolicy": "LEGACY_UNVERIFIED_ORIGINS"
+    },
+    {
+      "routeId": "moneybee-account-bootstrap:bootstrap",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "DESIGN_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MONEYBEE_API",
+      "requiredScopes": [
+        "moneybee.account.bootstrap"
+      ],
+      "authorizedParties": [
+        "moneybee-borrower"
+      ],
+      "principalClasses": [
+        "HUMAN"
+      ],
+      "identityPropagation": "REQUEST_CONTEXT_STRIP_AND_AUTHZ_MINT",
+      "tenantPolicy": "HEADER_SELECTOR_CLAIM_AUTHORITY",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": []
+    },
+    {
+      "routeId": "marketing-v1",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "BLOCKED_NONE_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": null,
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "PUBLIC",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "ai-v1",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "BLOCKED_NONE_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": null,
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "PUBLIC",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "communications-v1",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "BLOCKED_NONE_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": null,
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "PUBLIC",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "social-v1",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "BLOCKED_NONE_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": null,
+      "principalClasses": [
+        "ANONYMOUS"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "PUBLIC",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "platform-api",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "DESIGN_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [],
+      "authorizedParties": "design",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "forms-api",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "DESIGN_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [],
+      "authorizedParties": "design",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "crm-api",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "DESIGN_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [],
+      "authorizedParties": "design",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "email-api",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "DESIGN_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [],
+      "authorizedParties": "design",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "sms-api",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "DESIGN_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [],
+      "authorizedParties": "design",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "social-api",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "DESIGN_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [],
+      "authorizedParties": "design",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "crawler-api",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "DESIGN_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [],
+      "authorizedParties": "design",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "automation-private",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "DESIGN_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [],
+      "authorizedParties": "design",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "email-webhook",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "HMAC_WEBHOOK_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "key-id",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "sms-webhook",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "HMAC_WEBHOOK_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "key-id",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "social-webhook",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "HMAC_WEBHOOK_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "key-id",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "beyvra-public",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "DESIGN_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [],
+      "authorizedParties": "design",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "beyvra-automation-private",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "DESIGN_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [],
+      "authorizedParties": "design",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "telephony-private",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "DESIGN_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [],
+      "authorizedParties": "design",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    },
+    {
+      "routeId": "telephony-webhook-private",
+      "environment": "production",
+      "accessClass": "SERVICE_AUTHENTICATED",
+      "authenticationProfile": "HMAC_WEBHOOK_V1",
+      "issuerProfile": "NONE",
+      "audienceProfile": "NONE",
+      "requiredScopes": [],
+      "authorizedParties": "key-id",
+      "principalClasses": [
+        "SERVICE"
+      ],
+      "identityPropagation": "DESIGN_UNSPECIFIED",
+      "tenantPolicy": "DESIGN_UNSPECIFIED",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "NONE",
+      "acceptedFindings": [
+        "IDENTITY_HEADERS_NOT_STRIPPED"
+      ]
+    }
+  ]
+}

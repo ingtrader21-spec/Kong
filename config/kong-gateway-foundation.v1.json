@@ -1,6 +1,6 @@
 {
   "schema": "codestra.kong.gateway-foundation.v1",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "title": "Kong API Gateway Control Plane V1",
   "status": "SOURCE_CANDIDATE_NO_RUNTIME_APPLY",
   "runtimeApplyAuthorized": false,
@@ -780,6 +780,14 @@
       {
         "path": "config/kong-gateway-foundation.v1.json",
         "reason": "the registry itself"
+      },
+      {
+        "path": "config/kong-access-policy.v1.json",
+        "reason": "Mission 2 access policy overlay keyed by routeId; validated by validate_access_policy against this registry"
+      },
+      {
+        "path": "config/kong-authentication-profiles.v1.json",
+        "reason": "Mission 2 authentication profile catalogue; validated by validate_access_policy"
       },
       {
         "path": "config/codestra-kong-cells.v1.json",

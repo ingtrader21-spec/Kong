@@ -52,8 +52,8 @@
     },
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "9639214989ce76850cce148219df9338d31be13de45fe84d69d8dee669de9a1e",
-      "size": 6138
+      "sha256": "c0eb858b860b8ecbc911342fe3d043da4c19309730728731320209641962d1b5",
+      "size": 6189
     },
     {
       "path": ".gitignore",
@@ -156,6 +156,16 @@
       "size": 140
     },
     {
+      "path": "config/kong-access-policy.v1.json",
+      "sha256": "1e0569427001e2612acf9f5f62864626eadf280d8337c1455514374caf703d78",
+      "size": 62479
+    },
+    {
+      "path": "config/kong-authentication-profiles.v1.json",
+      "sha256": "3f99a4c851a2e091694897fa6c79b3f719f7b4bcde1c53d56817a298022410f0",
+      "size": 18645
+    },
+    {
       "path": "config/kong-callback-routes.json",
       "sha256": "a5df270de68fa7cb99d494bf80311e6f82c65c977fc0a0cc3068b1d64f141970",
       "size": 1073
@@ -182,8 +192,8 @@
     },
     {
       "path": "config/kong-gateway-foundation.v1.json",
-      "sha256": "5542b97d4e5c26784994106a8814d064d52b719fa4aa6a63afb26f838beb8f76",
-      "size": 174258
+      "sha256": "893cb0d6b8d73c41003732a0eba8fbc8fb6e2c0ffbd7392c260e876493d16224",
+      "size": 174636
     },
     {
       "path": "config/kong-intake-routes.json",
@@ -432,8 +442,8 @@
     },
     {
       "path": "docs/KONG_GATEWAY_CONTROL_PLANE_V1.md",
-      "sha256": "c1ede8c9d6ecac5c6ef24c373e71415d433cefb2490592560105f8bde0be1808",
-      "size": 9166
+      "sha256": "e20f834c03c17967d5a2874207205a452a4cedbee54223409012e156c6937148",
+      "size": 9728
     },
     {
       "path": "docs/KONG_RELEASE_AND_ADMIN_BOUNDARIES.md",
@@ -521,9 +531,19 @@
       "size": 21882
     },
     {
+      "path": "docs/gateway-scope-contract-v1.md",
+      "sha256": "0a956c24e7e7a539d5367e5aecb23980788e572735334701f62f965f4bfbbfaa",
+      "size": 3510
+    },
+    {
       "path": "docs/issue-trackers/issue-58.md",
       "sha256": "32dc117d9781e368c21ce930c11c01fc39760099d58cda25eaf0fc43d092a14c",
       "size": 450
+    },
+    {
+      "path": "docs/keycloak-kong-token-contract-v1.md",
+      "sha256": "93e2f8563ea9fa5f0beab9b2907f89ac9847d695f3065face6b66064e66b1bf2",
+      "size": 5685
     },
     {
       "path": "docs/kong-middleware-boundary-v1.md",
@@ -539,6 +559,16 @@
       "path": "docs/mission1-current-state-audit.md",
       "sha256": "2cf08d2ada977b7ac4d2822907f6fc711b29c50e3bca8b3c1ec7c8de2bb77d26",
       "size": 21601
+    },
+    {
+      "path": "docs/mission2-evidence-matrix.md",
+      "sha256": "1780962347edaa3310a498bafb1728fb29e57dcd1f6eaa8fa4ef4f1245fead6e",
+      "size": 5415
+    },
+    {
+      "path": "docs/mission2-identity-security-audit.md",
+      "sha256": "e3a8d162f23e78b9ff18fc479257289b1761d788021c099bbb9d12b6862ca52a",
+      "size": 9982
     },
     {
       "path": "docs/observability/prometheus.md",
@@ -561,9 +591,19 @@
       "size": 43208
     },
     {
+      "path": "docs/service-authentication-contract-v1.md",
+      "sha256": "3174ce09be1e2b8075407aaf6a9cc286bba46b19b5033845e98f657770d0c52a",
+      "size": 5182
+    },
+    {
       "path": "docs/service-registry-v1.md",
       "sha256": "050f96501aa80e74e787b11688adbc2ed7df239b0361c23b48e8eb729f1f4792",
       "size": 17013
+    },
+    {
+      "path": "docs/tenant-identity-boundary-v1.md",
+      "sha256": "d9d225aef38024edf4449550bbf513df7a054b89b1df56fead1c0a20a849aab9",
+      "size": 5010
     },
     {
       "path": "docs/timeout-profiles-v1.md",
@@ -887,8 +927,8 @@
     },
     {
       "path": "scripts/validate_kong_foundation.py",
-      "sha256": "fcf6efa299f3210ea51a97bc175a7dc5cc7275a081031f8d462182cdd4d445ac",
-      "size": 88146
+      "sha256": "922827446f88a0336dba71726eb45072ac93b821f05b75fbe0e35e6d6710ada9",
+      "size": 111355
     },
     {
       "path": "scripts/validate_kong_production_inventory.py",
@@ -989,6 +1029,11 @@
       "path": "tests/test_kong_foundation.py",
       "sha256": "854407ec34485a00d180bc1c63490d232e317a6aefcd55cdafa3823291e7dca5",
       "size": 24239
+    },
+    {
+      "path": "tests/test_kong_identity_security.py",
+      "sha256": "95981ba71bc5fc7e946fb90099d18efccbea0f6852d04311ccc0e3705059c397",
+      "size": 23873
     },
     {
       "path": "tests/test_kong_n8n_control_plane.py",
@@ -1137,7 +1182,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "57d715de1295e1d6b3918fe9e2c7f5589a25afc798f3f8ea931be72312fbb5f8",
+  "manifest_generation_id": "333c8fed1ed0af56afbae93ecefdf572bc4b8c7d33fe0ec722f646d2d7a81d41",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

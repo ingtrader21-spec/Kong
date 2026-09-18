@@ -24,7 +24,13 @@ the match from that source and proves:
 * the node configuration keeps Admin/Manager/Status private, trusts only the
   configured Caddy source, keeps TLS verification on and runs least-privilege;
 * every ``{vault://env/...}`` reference used by the deployed candidate is declared
-  in the runtime environment template.
+  in the runtime environment template;
+* (Mission 2) every route has an access-policy entry whose class, profile,
+  issuer, audience, scopes, authorized parties, principal classes, identity
+  propagation and tenant policy agree with the foundation and with the
+  authentication-profile catalogue; public routes are allowlisted; no identity
+  header is an authority; no profile is weaker than its class allows; token
+  cache and time settings are bounded; and no secret value is committed.
 
 Source-only. Nothing here contacts a Kong Admin API, Caddy, Keycloak, Middleware
 or Redis, and nothing here can authorize a runtime apply.
@@ -46,6 +52,23 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 FOUNDATION = ROOT / "config/kong-gateway-foundation.v1.json"
 SCHEMA = "codestra.kong.gateway-foundation.v1"
+ACCESS_POLICY = "config/kong-access-policy.v1.json"
+ACCESS_POLICY_SCHEMA = "codestra.kong.access-policy.v1"
+AUTH_PROFILES = "config/kong-authentication-profiles.v1.json"
+AUTH_PROFILES_SCHEMA = "codestra.kong.authentication-profiles.v1"
+ACCESS_CLASSES = ("PUBLIC", "AUTHENTICATED", "SERVICE_AUTHENTICATED", "ADMIN_INTERNAL", "INTERNAL")
+SECRET_SCAN_ROOTS = ("config", "deploy", "kong", "scripts", "tools", "tests", ".github/workflows", "operations", "orbit", "contracts")
+SECRET_PATTERNS = {
+    "private_key_block": re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH |DSA |)PRIVATE KEY-----"),
+    "jwt_compact_token": re.compile(rb"eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}"),
+    "client_secret_literal": re.compile(rb"client[_-]?secret[\"']?\s*[:=]\s*[\"']?(?P<value>(?!\{vault|\$\{|REQUIRED|<|null|None|\s)[A-Za-z0-9+/=_-]{16,})"),
+    "password_literal": re.compile(rb"password[\"']?\s*[:=]\s*[\"']?(?P<value>(?!\{vault|\$\{|REQUIRED|<|/run/secrets|None|null|\s)[A-Za-z0-9+/=_!@#$%^&*-]{12,})"),
+    "cache_salt_literal": re.compile(rb"cache_tokens_salt[\"']?\s*[:=]\s*[\"']?(?P<value>(?!\{vault)[A-Za-z0-9+/=_-]{8,})"),
+    "api_key_literal": re.compile(rb"(?:api[_-]?key|apikey)[\"']?\s*[:=]\s*[\"']?(?P<value>(?!\{vault|\$\{|REQUIRED|<)[A-Za-z0-9+/=_-]{20,})"),
+    "bearer_literal": re.compile(rb"Bearer\s+(?P<value>[A-Za-z0-9+/=_-]{30,})"),
+    "keycloak_admin_credential": re.compile(rb"KEYCLOAK_ADMIN(?:_PASSWORD)?\s*[:=]\s*[\"']?(?P<value>(?!\{vault|\$\{|REQUIRED|<)[^\s\"']{6,})"),
+}
+SYNTHETIC_MARKER = re.compile(rb"sentinel|do-not-|synthetic|placeholder|example|REQUIRED_|redacted|fixture", re.IGNORECASE)
 
 MUTATION_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 READ_ONLY_METHODS = {"GET", "HEAD", "OPTIONS"}
@@ -1384,10 +1407,254 @@ def validate_foundation(root: Path = ROOT, foundation_path: Path | None = None) 
     validate_environments(foundation, documents)
     validate_node(foundation, root)
     validate_inventory_gates(foundation, root)
+    profiles, policy = validate_access_policy(foundation, documents, routes, materialized, root)
+    validate_token_settings(documents, profiles, root)
+    secret_hits = validate_secret_boundary(root)
     return {
         "foundation": foundation, "documents": documents, "services": services,
         "routes": routes, "materialized": materialized, "overlaps": overlaps,
+        "profiles": profiles, "policy": policy, "secret_scan": secret_hits,
     }
+
+
+# --------------------------------------------------------------------------- identity & access (Mission 2)
+
+
+def validate_access_policy(foundation: dict, documents: dict[str, SourceDocument], routes: dict[str, dict],
+                           materialized: dict[str, SourceRoute], root: Path = ROOT) -> tuple[dict, dict]:
+    profiles = load_json(root / AUTH_PROFILES)
+    policy = load_json(root / ACCESS_POLICY)
+    _require(profiles["schema"] == AUTH_PROFILES_SCHEMA and profiles["runtimeApplyAuthorized"] is False, "authentication profiles must be the source-only v1 catalogue")
+    _require(policy["schema"] == ACCESS_POLICY_SCHEMA and policy["runtimeApplyAuthorized"] is False, "access policy must be the source-only v1 policy")
+    _require(policy["identityHeaders"]["headerAuthorityAllowed"] is False, "identity headers must never be an authority")
+    rules = profiles["rules"]
+    _require(rules["wildcardAudienceAllowed"] is False and rules["wildcardScopeAllowed"] is False and rules["identityHeaderAuthorityAllowed"] is False,
+             "wildcard audiences, wildcard scopes and identity-header authority must remain forbidden")
+    catalogue = profiles["profiles"]
+    issuers = profiles["issuerProfiles"]
+    audiences = profiles["audienceProfiles"]
+    propagation = profiles["identityPropagationProfiles"]
+    tenant_policies = profiles["tenantPolicies"]
+    failure_policies = profiles["failurePolicies"]
+    cache_policies = profiles["tokenCachePolicies"]
+    principal_classes = set(profiles["principalClasses"])
+    for name, profile in catalogue.items():
+        for key in ("accessClasses", "principalClasses", "mechanisms", "issuerProfile", "audienceProfiles", "scopes", "authorizedParties",
+                    "failurePolicy", "tokenCache", "strength"):
+            _require(key in profile, f"authentication profile {name} lacks {key}")
+        _require(set(profile["accessClasses"]) <= set(ACCESS_CLASSES), f"profile {name} names an unknown access class")
+        _require(set(profile["principalClasses"]) <= principal_classes, f"profile {name} names an unknown principal class")
+        _require(set(profile["mechanisms"]) <= set(foundation["enums"]["mechanisms"]), f"profile {name} names an unknown mechanism")
+        _require(profile["issuerProfile"] in issuers or profile["issuerProfile"] == "environment", f"profile {name} names an unknown issuer profile")
+        _require(set(profile["audienceProfiles"]) <= set(audiences), f"profile {name} names an unknown audience profile")
+        _require(profile["failurePolicy"] in failure_policies and profile["tokenCache"] in cache_policies, f"profile {name} names an unknown failure or cache policy")
+        if "HUMAN" in profile["principalClasses"]:
+            _require(not set(profile["accessClasses"]) & set(rules["humanProfilesForbiddenOn"]) or name.startswith("DESIGN_"),
+                     f"human profile {name} may not serve a service, internal or admin access class")
+        if profile["principalClasses"] == ["SERVICE"] or profile["principalClasses"] == ["SERVICE", "ANONYMOUS"]:
+            _require("ADMIN_INTERNAL" not in profile["accessClasses"], f"service profile {name} may not serve ADMIN_INTERNAL")
+        if "ADMIN_INTERNAL" in profile["accessClasses"] and name != "BLOCKED_NONE_V1":
+            _require(profile["principalClasses"] == ["ADMIN"] and "platform.admin" in profile.get("requiredScopes", []),
+                     f"admin profile {name} must be ADMIN-only and require platform.admin")
+    for name, aud in audiences.items():
+        _require(aud["audience"] not in ("*", ""), f"audience profile {name} must not be a wildcard")
+        if aud.get("clientIdIsAudience"):
+            _require(bool(aud.get("contractuallyDefinedBy")), f"audience profile {name} equates client id and audience without a contract")
+    for name, issuer in issuers.items():
+        if issuer["issuer"] is not None:
+            _require(issuer["environment"] in foundation["environments"], f"issuer profile {name} has an unknown environment")
+            _require(issuer["issuer"] == foundation["environments"][issuer["environment"]]["issuer"], f"issuer profile {name} does not match the environment issuer")
+            _require(issuer["algorithms"] == ["RS256"], f"issuer profile {name} must accept RS256 only")
+            _require(0 <= issuer["clockSkewSeconds"] <= rules["maximumLeewaySeconds"], f"issuer profile {name} clock skew is unbounded")
+            _require("*" not in issuer["issuer"], "issuer wildcards are forbidden")
+    for name, cache in cache_policies.items():
+        if "cacheTokensSalt" in cache:
+            _require(cache["cacheTokensSalt"].startswith("{vault://env/") and cache["saltInGit"] is False, f"cache policy {name} must reference the salt through the vault")
+        if "cacheTtlSeconds" in cache:
+            _require(0 < cache["cacheTtlSeconds"] <= rules["maximumCacheTtlSeconds"], f"cache policy {name} ttl is unbounded")
+
+    entries = _index(policy["routes"], "routeId")
+    _require(set(entries) == set(routes), f"access policy and foundation disagree on the route set: missing {sorted(set(routes) - set(entries))}, extra {sorted(set(entries) - set(routes))}")
+    allowlist = {item["routeId"]: item["reason"] for item in policy["publicAllowlist"]}
+    for route_id, reason in allowlist.items():
+        _require(route_id in entries and bool(reason), f"public allowlist entry {route_id} is unknown or unreasoned")
+    for route_id, item in entries.items():
+        entry = routes[route_id]
+        route = materialized[route_id]
+        for key in ("accessClass", "authenticationProfile", "issuerProfile", "audienceProfile", "requiredScopes", "authorizedParties",
+                    "principalClasses", "identityPropagation", "tenantPolicy", "failurePolicy", "tokenCache", "acceptedFindings"):
+            _require(key in item, f"access policy {route_id} lacks {key}")
+        _require(item["accessClass"] in ACCESS_CLASSES, f"access policy {route_id} has an unknown access class")
+        _require(item["accessClass"] == entry["authentication"], f"access policy {route_id} class {item['accessClass']} != foundation {entry['authentication']}")
+        _require(item["environment"] == entry["environment"], f"access policy {route_id} environment drift")
+        profile = catalogue.get(item["authenticationProfile"])
+        _require(profile is not None, f"access policy {route_id} uses unknown profile {item['authenticationProfile']}")
+        _require(item["accessClass"] in profile["accessClasses"], f"route {route_id}: profile {item['authenticationProfile']} does not serve class {item['accessClass']}")
+        _require(entry["mechanism"] in profile["mechanisms"], f"route {route_id}: mechanism {entry['mechanism']} is not part of profile {item['authenticationProfile']}")
+        if profile.get("lifecycles"):
+            _require(entry["lifecycle"] in profile["lifecycles"], f"route {route_id}: profile {item['authenticationProfile']} is not allowed for lifecycle {entry['lifecycle']}")
+        if profile.get("activations"):
+            _require(entry["activation"] in profile["activations"], f"route {route_id}: profile {item['authenticationProfile']} is not allowed for activation {entry['activation']}")
+        if profile.get("newProductionAllowed") is False:
+            _require(entry["lifecycle"] != "CANONICAL", f"route {route_id}: profile {item['authenticationProfile']} may not be used on a canonical route")
+        # strength / downgrade
+        minimum = profiles["classMinimumStrength"][item["accessClass"]]
+        if entry["activation"] in ("RUNTIME_OBSERVED", "SOURCE_CANDIDATE"):
+            _require(profile["strength"] >= minimum, f"route {route_id}: profile strength {profile['strength']} below class minimum {minimum} (authentication downgrade)")
+        elif entry["activation"] != "BLOCKED" and profile["strength"] < minimum:
+            _require(bool(entry.get("authenticationGap")), f"route {route_id}: weaker-than-class profile on a non-activatable route requires a declared authenticationGap")
+        if entry["lifecycle"] == "CANONICAL":
+            _require(profile["strength"] >= profiles["canonicalMinimumStrength"][item["accessClass"]], f"canonical route {route_id} uses a profile weaker than its class allows")
+        # issuer
+        _require(item["issuerProfile"] in issuers, f"route {route_id}: unknown issuer profile")
+        issuer = issuers[item["issuerProfile"]]
+        if profile["issuerProfile"] == "environment":
+            _require(issuer["environment"] == entry["environment"], f"route {route_id}: issuer profile {item['issuerProfile']} is not the {entry['environment']} realm")
+            if route.issuer is not None:
+                _require(route.issuer == issuer["issuer"], f"route {route_id}: source issuer {route.issuer} != profile issuer")
+        else:
+            _require(item["issuerProfile"] == "NONE", f"route {route_id}: profile {item['authenticationProfile']} does not validate an issuer")
+        # audience
+        _require(item["audienceProfile"] in audiences, f"route {route_id}: unknown audience profile")
+        aud = audiences[item["audienceProfile"]]
+        _require(aud["audience"] == entry.get("audience"), f"route {route_id}: audience profile {item['audienceProfile']} ({aud['audience']}) != foundation audience {entry.get('audience')}")
+        _require(item["audienceProfile"] in profile["audienceProfiles"], f"route {route_id}: audience profile {item['audienceProfile']} is not allowed by profile {item['authenticationProfile']}")
+        if entry["mechanism"] in foundation["debtRules"]["tokenMechanisms"]:
+            _require(aud["audience"] is not None, f"token route {route_id} has no audience")
+        if aud.get("clientIdIsAudience"):
+            _require("AUDIENCE_IS_CLIENT_ID" in entry["acceptedFindings"], f"route {route_id}: client-id audience must be an accepted foundation finding")
+        # scopes
+        _require(item["requiredScopes"] == entry.get("requiredScopes", []), f"route {route_id}: required scopes drift between access policy and foundation")
+        _require(all(scope not in ("*", "") and not scope.endswith("*") for scope in item["requiredScopes"]), f"route {route_id}: wildcard scope")
+        if item.get("scopeAuthority") or entry.get("scopeAuthority"):
+            _require(item.get("scopeAuthority") == entry.get("scopeAuthority"), f"route {route_id}: scope authority drift")
+        # authorized parties
+        parties = item["authorizedParties"]
+        if profile["authorizedParties"] in ("explicit", "explicit-admin"):
+            _require(isinstance(parties, list), f"route {route_id}: profile requires an explicit authorized-party list")
+            if profile["authorizedParties"] == "explicit":
+                _require(len(parties) > 0, f"route {route_id}: explicit authorized parties must not be empty")
+            if route.client_id is not None and parties:
+                _require(route.client_id in parties, f"route {route_id}: source client {route.client_id} is not an authorized party")
+            if not parties:
+                _require("ADMIN_PARTIES_UNDECLARED" in item["acceptedFindings"] and item.get("activationPrerequisites"),
+                         f"route {route_id}: empty authorized parties must be an accepted finding with activation prerequisites")
+        elif profile["authorizedParties"] == "consumer-mapped":
+            _require(parties == "consumer-mapped", f"route {route_id}: profile maps azp to a registered consumer")
+        elif profile["authorizedParties"] == "none":
+            _require(parties in (None, []), f"route {route_id}: an unauthenticated profile cannot name authorized parties")
+        else:
+            _require(parties == profile["authorizedParties"] or (isinstance(parties, list) and parties),
+                     f"route {route_id}: authorized parties must be the profile marker {profile['authorizedParties']!r} or an explicit list")
+        # principals
+        _require(set(item["principalClasses"]) <= set(profile["principalClasses"]) and item["principalClasses"], f"route {route_id}: principal classes outside the profile")
+        if item["accessClass"] == "ADMIN_INTERNAL" and entry["activation"] != "BLOCKED":
+            _require(item["principalClasses"] == ["ADMIN"], f"admin route {route_id} must be ADMIN-only")
+        if item["accessClass"] in ("SERVICE_AUTHENTICATED", "INTERNAL") and entry["activation"] != "BLOCKED":
+            _require("HUMAN" not in item["principalClasses"] or entry["lifecycle"] == "DESIGN_ONLY", f"route {route_id}: a human principal cannot reach a service/internal class")
+        # identity propagation
+        _require(item["identityPropagation"] in propagation, f"route {route_id}: unknown identity propagation profile")
+        prop = propagation[item["identityPropagation"]]
+        if not prop["stripsClientIdentity"]:
+            _require("IDENTITY_HEADERS_NOT_STRIPPED" in item["acceptedFindings"], f"route {route_id}: forwards client identity headers without accepting the finding")
+            if entry["lifecycle"] == "CANONICAL":
+                _require(bool(prop.get("mitigation")), f"canonical route {route_id} forwards client identity headers with no recorded mitigation")
+        else:
+            _require("IDENTITY_HEADERS_NOT_STRIPPED" not in item["acceptedFindings"], f"route {route_id}: finding claims unstripped headers but the profile strips them")
+        # tenant
+        _require(item["tenantPolicy"] in tenant_policies, f"route {route_id}: unknown tenant policy")
+        _require("AUTHORITY" not in item["tenantPolicy"] or "CLAIM_AUTHORITY" in item["tenantPolicy"], f"route {route_id}: a header may not be the tenant authority")
+        # failure / cache
+        _require(item["failurePolicy"] == profile["failurePolicy"] and item["tokenCache"] == profile["tokenCache"], f"route {route_id}: failure or cache policy drift from profile")
+        if entry["lifecycle"] == "CANONICAL" and item["accessClass"] != "PUBLIC":
+            _require(item["failurePolicy"] == "FAIL_CLOSED_V1", f"canonical protected route {route_id} must fail closed")
+        _require(failure_policies[item["failurePolicy"]].get("downgradeToPublic") is False, f"route {route_id}: failure policy allows downgrade to public")
+        # public governance
+        if item["accessClass"] == "PUBLIC":
+            _require(route_id in allowlist, f"public route {route_id} is not on the public allowlist")
+            _require(bool(item.get("publicAllowlistReason")), f"public route {route_id} lacks its allowlist reason")
+        else:
+            _require(route_id not in allowlist, f"non-public route {route_id} is on the public allowlist")
+        if "NO_GATEWAY_AUTHENTICATION" in entry["acceptedFindings"] and item["accessClass"] != "PUBLIC":
+            _require(item["authenticationProfile"] == "BLOCKED_NONE_V1", f"route {route_id} has no gateway authentication and is not classified as blocked")
+        if "CORS_WITH_SHARED_KEY" in entry["acceptedFindings"]:
+            _require(item.get("corsPolicy") in policy["corsPolicies"], f"route {route_id}: cors route without a cors policy")
+        for finding in item["acceptedFindings"]:
+            _require(finding in policy["findingCodes"], f"route {route_id}: unknown access-policy finding {finding}")
+    stale_allowlist = set(allowlist) - {r for r, i in entries.items() if i["accessClass"] == "PUBLIC"}
+    _require(not stale_allowlist, f"public allowlist names non-public routes: {sorted(stale_allowlist)}")
+    log_rules = policy["logging"]
+    for plugin in log_rules["logPluginsRegistered"]:
+        registered = next((p for p in foundation["plugins"] if p["plugin"] == plugin), None)
+        _require(registered is not None and registered.get("redactsCredentials") is True, f"log plugin {plugin} must be registered with credential redaction")
+    for plugin in foundation["plugins"]:
+        if plugin["plugin"] in ("file-log", "http-log", "tcp-log", "udp-log", "syslog", "loggly", "datadog"):
+            _require(plugin["plugin"] in log_rules["logPluginsRegistered"] and plugin.get("redactsCredentials") is True,
+                     f"log plugin {plugin['plugin']} is governed without credential redaction")
+    return profiles, policy
+
+
+def validate_token_settings(documents: dict[str, SourceDocument], profiles: dict, root: Path = ROOT) -> None:
+    """openid-connect configurations in declarative sources must keep the vault salt,
+    bounded leeway and bounded caches; jwt configurations must verify exp."""
+    rules = profiles["rules"]
+    for path, document in documents.items():
+        if document.format not in ("kong-declarative", "oidc-plugin-template"):
+            continue
+        raw = load_yaml(root / path)
+        plugin_blocks = list(raw.get("plugins", []) or [])
+        for svc in raw.get("services", []) or []:
+            plugin_blocks += list(svc.get("plugins", []) or [])
+            for route in svc.get("routes", []) or []:
+                plugin_blocks += list(route.get("plugins", []) or [])
+        for plugin in plugin_blocks:
+            config = plugin.get("config", {}) or {}
+            if plugin.get("name") == "openid-connect":
+                _require(str(config.get("cache_tokens_salt", "")).startswith("{vault://env/"), f"{path}: openid-connect must reference cache_tokens_salt through the vault")
+                _require(config.get("leeway", 0) <= rules["maximumLeewaySeconds"], f"{path}: openid-connect leeway exceeds the bound")
+                _require(config.get("cache_ttl", 3600) <= rules["maximumCacheTtlSeconds"], f"{path}: openid-connect cache_ttl exceeds the bound")
+                _require(config.get("anonymous") in (None, ""), f"{path}: openid-connect must not fall back to an anonymous consumer")
+                _require(config.get("auth_methods") == ["bearer"] or config.get("auth_methods") is None, f"{path}: only bearer authentication is approved for API routes")
+                _require(bool(config.get("audience")) and "*" not in config.get("audience", []), f"{path}: openid-connect must pin a non-wildcard audience")
+                _require("/.well-known/openid-configuration" in str(config.get("issuer", "")), f"{path}: openid-connect issuer must be a discovery document")
+            if plugin.get("name") == "jwt":
+                _require("exp" in (config.get("claims_to_verify") or []), f"{path}: jwt must verify exp")
+                _require(config.get("anonymous") in (None, ""), f"{path}: jwt must not fall back to an anonymous consumer")
+
+
+def scan_secrets(root: Path = ROOT) -> list[tuple[str, str, int]]:
+    hits: list[tuple[str, str, int]] = []
+    for top in SECRET_SCAN_ROOTS:
+        base = root / top
+        if not base.exists():
+            continue
+        for path in sorted(base.rglob("*")):
+            if not path.is_file() or "__pycache__" in path.parts or path.suffix in (".pyc", ".pyo"):
+                continue
+            data = path.read_bytes()
+            if b"\0" in data[:8000]:
+                continue
+            for name, pattern in SECRET_PATTERNS.items():
+                for match in pattern.finditer(data):
+                    value = match.groupdict().get("value") or match.group(0)
+                    if SYNTHETIC_MARKER.search(value) and path.relative_to(root).parts[0] == "tests":
+                        continue
+                    hits.append((name, path.relative_to(root).as_posix(), data.count(b"\n", 0, match.start()) + 1))
+    return hits
+
+
+def validate_secret_boundary(root: Path = ROOT) -> int:
+    hits = scan_secrets(root)
+    _require(not hits, "committed secret material detected (pattern, file:line): " + ", ".join(f"{n} {f}:{l}" for n, f, l in hits))
+    return len(hits)
+
+
+def m1_dependency_status(foundation: dict, root: Path = ROOT) -> dict:
+    """Whether the Mission 1 reconciliation (PR #105) has landed in this tree."""
+    reconciled = (root / "config/kong-middleware-authority.v2.json").is_file()
+    transitional = [a for a in foundation["boundaryRules"]["middlewareUpstreamAliases"] if a["port"] == 8080]
+    return {"reconciled": reconciled, "transitional8080Aliases": [a["host"] for a in transitional],
+            "state": "MERGED" if reconciled else "M1_DEPENDENCY_PENDING"}
 
 
 # --------------------------------------------------------------------------- rendering
@@ -1503,6 +1770,13 @@ def main(argv: list[str] | None = None) -> int:
     for entry in routes.values():
         counts[entry["lifecycle"]] = counts.get(entry["lifecycle"], 0) + 1
     print("LIFECYCLE=" + ",".join(f"{k}:{v}" for k, v in sorted(counts.items())))
+    classes: dict[str, int] = {}
+    for item in result["policy"]["routes"]:
+        classes[item["accessClass"]] = classes.get(item["accessClass"], 0) + 1
+    print("ACCESS_CLASSES=" + ",".join(f"{k}:{v}" for k, v in sorted(classes.items())))
+    print(f"PUBLIC_ALLOWLIST={len(result['policy']['publicAllowlist'])} AUTH_PROFILES={len(result['profiles']['profiles'])} SECRET_HITS={result['secret_scan']}")
+    dependency = m1_dependency_status(result["foundation"])
+    print(f"M1_DEPENDENCY={dependency['state']} TRANSITIONAL_8080_ALIASES={len(dependency['transitional8080Aliases'])}")
     print("RUNTIME_APPLY_AUTHORIZED=NO")
     if args.summary:
         print(json.dumps({

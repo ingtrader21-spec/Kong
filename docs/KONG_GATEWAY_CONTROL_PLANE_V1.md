@@ -44,6 +44,13 @@ state); n8n decides WHEN (automation). Kong never blurs into any of them.
 | [`docs/timeout-profiles-v1.md`](timeout-profiles-v1.md) · [`docs/retry-policy-v1.md`](retry-policy-v1.md) | transport policy profiles and failure/circuit behaviour |
 | [`docs/admin-boundary-v1.md`](admin-boundary-v1.md) | Admin/Manager/Status isolation, networks, secrets, container least privilege, logging |
 
+Mission 2 (identity, authentication and API access security) layers on this
+foundation: `config/kong-access-policy.v1.json`,
+`config/kong-authentication-profiles.v1.json`, `tests/test_kong_identity_security.py`
+and the [audit](mission2-identity-security-audit.md), [Keycloak token contract](keycloak-kong-token-contract-v1.md),
+[scope contract](gateway-scope-contract-v1.md), [service authentication contract](service-authentication-contract-v1.md),
+[tenant/identity boundary](tenant-identity-boundary-v1.md) and [evidence matrix](mission2-evidence-matrix.md).
+
 Existing authorities remain in force and are referenced, not duplicated:
 `docs/CADDY_EDGE_AUTHORITY.md`, `docs/MIDDLEWARE_EDGE_CONTRACT.md`,
 `docs/KONG_RELEASE_AND_ADMIN_BOUNDARIES.md`, `docs/KONG_RUNTIME_CERTIFICATION.md`,
