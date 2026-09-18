@@ -179,10 +179,13 @@ def test_approval_packet_has_every_required_document():
 
 def copy_manifest_fixture(tmp_path: Path) -> Path:
     destination = tmp_path / "repository"
+    # The generator's lock file is transient workspace state (gitignored); an
+    # earlier `--check` in the same CI job leaves it behind, and every lock test
+    # must start from a fixture that does not carry it.
     shutil.copytree(
         ROOT,
         destination,
-        ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache", "*.pyc"),
+        ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache", "*.pyc", manifest_generator.LOCK_NAME),
     )
     return destination
 
