@@ -52,8 +52,8 @@
     },
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "32d8dbe6e96b7e4fa916883258096a6cf8911405501d9bb26f51d1250fb18483",
-      "size": 5986
+      "sha256": "9639214989ce76850cce148219df9338d31be13de45fe84d69d8dee669de9a1e",
+      "size": 6138
     },
     {
       "path": ".gitignore",
@@ -92,8 +92,8 @@
     },
     {
       "path": "config/integrations/examples/moneybee-account-bootstrap.json",
-      "sha256": "1ea660819ab680301910b298067e3dbb946ac294f22a1d3ee1b98c673423844f",
-      "size": 2154
+      "sha256": "8ee303b9db39794568850e718605f6a24462614511f03a08ebaef2cbd49fceeb",
+      "size": 2162
     },
     {
       "path": "config/integrations/policies/internal-service-jwt.json",
@@ -137,8 +137,8 @@
     },
     {
       "path": "config/integrations/schemas/gateway-integration.schema.json",
-      "sha256": "1ae296845c936f13350a8c3f9ed77e7f533cb0df70809ddb3e2069868144a796",
-      "size": 13059
+      "sha256": "f449bbae91b9a5e336811f993bb5a237c2a7a9dcd94ced6398590f47a698496b",
+      "size": 13160
     },
     {
       "path": "config/integrations/schemas/gateway-policy.schema.json",
@@ -167,8 +167,8 @@
     },
     {
       "path": "config/kong-campaign-automation-routes.json",
-      "sha256": "1ad3d6ff3bec051af0721fce1a71542381349fc755ad9f5ba4190b22db57ace5",
-      "size": 2402
+      "sha256": "3c8f196f24bdc44076f625daba636849f841aff2311931d52f4815dc598506b4",
+      "size": 2504
     },
     {
       "path": "config/kong-canonical-middleware-routes.json",
@@ -181,9 +181,14 @@
       "size": 2310
     },
     {
+      "path": "config/kong-gateway-foundation.v1.json",
+      "sha256": "5542b97d4e5c26784994106a8814d064d52b719fa4aa6a63afb26f838beb8f76",
+      "size": 174258
+    },
+    {
       "path": "config/kong-intake-routes.json",
-      "sha256": "fac04e32cf124bd40cb1e8e00076b4ff4c7b116dbe112dadf38ffbe300dce9b7",
-      "size": 1719
+      "sha256": "7920954c55b5fc92bfed8440a8287d53bddddf120af2c04511f5677aa2581072",
+      "size": 1821
     },
     {
       "path": "config/kong-moneybee-identity-routes.json",
@@ -202,8 +207,8 @@
     },
     {
       "path": "config/kong-production-route-inventory.v2.json",
-      "sha256": "7296a8ffde779dd7ba9f7b1d0e358798b80478896e5cf56fbd14f1b31de26d4d",
-      "size": 21113
+      "sha256": "4212336304e6a03f0007e68f35a4a7020313661bb243e91030737186f5b2f25f",
+      "size": 21935
     },
     {
       "path": "config/kong-provider-control-routes.v1.json",
@@ -227,8 +232,8 @@
     },
     {
       "path": "config/staging/kong-campaign-automation-routes.json",
-      "sha256": "a589da72680239409aeee73d50b2d984f6ee4b36c7087f04083c25b195a93c54",
-      "size": 3755
+      "sha256": "0291949ec103330c60a82a51fdc1c6cf3ba71145baab8064cdab1f9b0a65df0a",
+      "size": 3857
     },
     {
       "path": "config/staging/kong-n8n-control-plane-routes.json",
@@ -347,8 +352,8 @@
     },
     {
       "path": "deploy/kong/control-plane.yml",
-      "sha256": "f1814c338b249a1154648d769ae1e7d4e2d0ae328133baf1253ff3a3d09a6ec6",
-      "size": 12789
+      "sha256": "bc611b461d9b2fd57da2e046ec9afc1aa6b6ce45f3b8e91588bcf0bb1e6b3008",
+      "size": 13162
     },
     {
       "path": "deploy/kong/correlation-required.lua",
@@ -402,8 +407,8 @@
     },
     {
       "path": "deploy/kong/runtime.env.example",
-      "sha256": "25626843913f7b6ee482ba0a7c097829acdc39057a42d40caf292441a16d0ee2",
-      "size": 2381
+      "sha256": "0c3ca231b0db8b3c26e2bfaf82e8663b9fe7f71b56888df44e17e9ba7a57ea27",
+      "size": 2972
     },
     {
       "path": "deploy/kong/scope-policy.lua",
@@ -424,6 +429,11 @@
       "path": "docs/DECK-OIDC-COMPATIBILITY.md",
       "sha256": "3a44ab1f7bf6891b88a6106d9acda408a04b13d06331a69517bdf0c156d5c5ba",
       "size": 837
+    },
+    {
+      "path": "docs/KONG_GATEWAY_CONTROL_PLANE_V1.md",
+      "sha256": "c1ede8c9d6ecac5c6ef24c373e71415d433cefb2490592560105f8bde0be1808",
+      "size": 9166
     },
     {
       "path": "docs/KONG_RELEASE_AND_ADMIN_BOUNDARIES.md",
@@ -454,6 +464,11 @@
       "path": "docs/PROVIDER_CONTROL_SERVICE_IDENTITY.md",
       "sha256": "15fe8056aaee9f2983aef798177dbd7953512fa04d0b787aa05f21f907070293",
       "size": 1188
+    },
+    {
+      "path": "docs/admin-boundary-v1.md",
+      "sha256": "1f595aba8b75fc1ef35697e626e9ace2ba1ebca628bdf62e50e363d550d67a16",
+      "size": 5483
     },
     {
       "path": "docs/architecture/CODESTRA_GATEWAY_PLATFORM.md",
@@ -491,6 +506,11 @@
       "size": 1032
     },
     {
+      "path": "docs/caddy-kong-boundary-v1.md",
+      "sha256": "4660116678c933ddf465fd5c43b4a5784e1c8303e808b8831ec18d0aa737e13c",
+      "size": 6837
+    },
+    {
       "path": "docs/evidence/PRODUCTION_HEAD_CANARY_20260906.json",
       "sha256": "37d038f5e4ea308b4939f699e88f8bd642b0c87adcc9b45eb8f71c8d4d4498ed",
       "size": 8930
@@ -506,14 +526,54 @@
       "size": 450
     },
     {
+      "path": "docs/kong-middleware-boundary-v1.md",
+      "sha256": "3a3580de6b0a4847053175bc02aff1f039764978760d8b9c6097cbc8cb6aebe0",
+      "size": 7393
+    },
+    {
       "path": "docs/migration/from-codestra-production-platform.md",
       "sha256": "d60890efc390f77f8ec93c92df157efb50e623af5b13b451470aba50145ae577",
       "size": 589
     },
     {
+      "path": "docs/mission1-current-state-audit.md",
+      "sha256": "2cf08d2ada977b7ac4d2822907f6fc711b29c50e3bca8b3c1ec7c8de2bb77d26",
+      "size": 21601
+    },
+    {
       "path": "docs/observability/prometheus.md",
       "sha256": "237971310641ca06c84a3147abf558f59160a9f528e82a921ffe84dbcc7717ac",
       "size": 2011
+    },
+    {
+      "path": "docs/plugin-governance-v1.md",
+      "sha256": "05f1f3d8128fd4d8375a89f9d8df3be44caa62409b9e6377cb20d76873f585b6",
+      "size": 15604
+    },
+    {
+      "path": "docs/retry-policy-v1.md",
+      "sha256": "be36376416a3f97f8323cff75dd248fa180f6c6f7c5f528e1d370e98462a11a4",
+      "size": 4721
+    },
+    {
+      "path": "docs/route-registry-v1.md",
+      "sha256": "c4d1f282ba14effc7774171910f3605ebcb0e853c2a28e1bfa763e92fe0bd381",
+      "size": 43208
+    },
+    {
+      "path": "docs/service-registry-v1.md",
+      "sha256": "050f96501aa80e74e787b11688adbc2ed7df239b0361c23b48e8eb729f1f4792",
+      "size": 17013
+    },
+    {
+      "path": "docs/timeout-profiles-v1.md",
+      "sha256": "a09e5aad6dfd6c8337f24100e676782c4d40bca9452baff0d39cdb8026000226",
+      "size": 4007
+    },
+    {
+      "path": "docs/token-validation-boundary-v1.md",
+      "sha256": "1a170480a2ddf7f8e53c6691696c76b7e044a781b42eb1626ba01500ab802e6b",
+      "size": 6116
     },
     {
       "path": "operations/community-n8n/README.md",
@@ -752,8 +812,8 @@
     },
     {
       "path": "scripts/gateway_integrations.py",
-      "sha256": "725194204f5a76f2009973c67002f4eba729cfd57c9f60095c7c95b2bc98fa8e",
-      "size": 20296
+      "sha256": "a96bdedaf45580c87d980ad61440aeb93232153a55c90fd6a6d5c7004c51bcdd",
+      "size": 20816
     },
     {
       "path": "scripts/kong_admin_channel.py",
@@ -777,8 +837,8 @@
     },
     {
       "path": "scripts/reconcile_kong_canonical_routes.py",
-      "sha256": "588b9844b08e4a41aa3935f6f49b181bb0f0f4b1e17eedde7a9199c5722d3a9c",
-      "size": 24171
+      "sha256": "f282ab977e782e48d3d81aa0953fb93431e3bb008daf40250c9efa3f95fca89c",
+      "size": 24182
     },
     {
       "path": "scripts/reconcile_kong_n8n_control_plane.py",
@@ -787,18 +847,18 @@
     },
     {
       "path": "scripts/render_kong_calling_routes.py",
-      "sha256": "ef9d5ee70ce3d8594f395957914be614b62f6f29557d401141a1c2d38e823e69",
-      "size": 5427
+      "sha256": "0e9a49f6dbc8451d66eb6c5d69d6da5a3d2eb485dfd98c5042fbe3aba45ef7d0",
+      "size": 5690
     },
     {
       "path": "scripts/render_kong_campaign_automation_routes.py",
-      "sha256": "8f808962e28fb43a042becda0fdf80acd3b0c479a143c2881a2f33bdd4e07d9c",
-      "size": 4557
+      "sha256": "a4a251e67efa977e639329e4b04c3da799288f6105d39cf802fe9f1871eeb3b7",
+      "size": 4783
     },
     {
       "path": "scripts/render_kong_moneybee_identity.py",
-      "sha256": "0362099b3bf318768d299e1d93a766c5c5514e7113c937f7b5bd64299bc1a829",
-      "size": 3039
+      "sha256": "b1a72df1d9711454ba6cfa4d2c0824e011189103de5ceb246937ef5569c7eb45",
+      "size": 3053
     },
     {
       "path": "scripts/rollback_kong_standby.py",
@@ -826,9 +886,14 @@
       "size": 14724
     },
     {
+      "path": "scripts/validate_kong_foundation.py",
+      "sha256": "fcf6efa299f3210ea51a97bc175a7dc5cc7275a081031f8d462182cdd4d445ac",
+      "size": 88146
+    },
+    {
       "path": "scripts/validate_kong_production_inventory.py",
-      "sha256": "cb37376f4594ee20745b2ddffc3d28bd7870d7a317f4523a1465e58e1cff746d",
-      "size": 2337
+      "sha256": "368cb0e1a805b9014192706dc781e5229cbb5fcf0a3866f808a47a0a750dabef",
+      "size": 2992
     },
     {
       "path": "scripts/validate_kong_production_standby.py",
@@ -877,8 +942,8 @@
     },
     {
       "path": "tests/test_gateway_integrations.py",
-      "sha256": "25be9d91c8959c3067057338a210616068e8f26f20499c9fbbaf147e0889b334",
-      "size": 13011
+      "sha256": "5389c77548ef54641da38b1575f4381f25041b2bedbc0e3a2d7afe0ec9455a49",
+      "size": 13468
     },
     {
       "path": "tests/test_gateway_plugins.py",
@@ -897,18 +962,18 @@
     },
     {
       "path": "tests/test_kong_calling_policy.py",
-      "sha256": "e0e16fc21f6d8cea9349eae6e1d59e3f4b1895435930fa466b27cf2eb9023d5c",
-      "size": 6365
+      "sha256": "8973ca267fca284d529a1280e75e317553d7303105690721323cd1b352166d25",
+      "size": 6400
     },
     {
       "path": "tests/test_kong_campaign_edge_certification.py",
-      "sha256": "aa39313f3840045bc0d423dacec40b369f792c7fd6c1c6c873eff7ed8f50c4f5",
-      "size": 15334
+      "sha256": "480e838b77e681f42c9dc860debbd2b5134b8888816643b4c713882709bbb77c",
+      "size": 15659
     },
     {
       "path": "tests/test_kong_canonical_route_contract.py",
-      "sha256": "fcc1decb88d0d89fba6f6878b07cc455b03478c74c12c71ca952f7a209e73942",
-      "size": 6414
+      "sha256": "89ca956615dd367bff914c31ffa6c84fdce051a2620471bbcc1bc0ad7c8223e3",
+      "size": 6809
     },
     {
       "path": "tests/test_kong_change_authority.py",
@@ -919,6 +984,11 @@
       "path": "tests/test_kong_database_operations.py",
       "sha256": "b6f3c3cb3ee82c3965e84f3903a3c19c9eaef49aa2a272b8902cb3a77d4833d7",
       "size": 6784
+    },
+    {
+      "path": "tests/test_kong_foundation.py",
+      "sha256": "854407ec34485a00d180bc1c63490d232e317a6aefcd55cdafa3823291e7dca5",
+      "size": 24239
     },
     {
       "path": "tests/test_kong_n8n_control_plane.py",
@@ -942,8 +1012,8 @@
     },
     {
       "path": "tests/test_kong_production_inventory.py",
-      "sha256": "06cb5d31352a2783c2664d63accbf57b5d38b8c31839d331dc768f468df53098",
-      "size": 1900
+      "sha256": "cadeb7d570db51f896965e363143db929add5fba3fe132deb0eedc606089fe3b",
+      "size": 3499
     },
     {
       "path": "tests/test_kong_read_only_capture.py",
@@ -952,8 +1022,8 @@
     },
     {
       "path": "tests/test_kong_route_authority_hardening.py",
-      "sha256": "b610f49280cb736533c954b889d80d44e7f9b27601208919bdc8ca45a5c70a3c",
-      "size": 27777
+      "sha256": "45fe93b1d67e171e6ca2f11eba58503998d7a85e2a2aed7c47d8e08d07f36fb5",
+      "size": 27888
     },
     {
       "path": "tests/test_kong_runtime_certification.py",
@@ -1067,7 +1137,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "7c3900efd78c56d4eb5a59cf408d5e94411f4e66fb2f6e1f4cd0d21e571c3afe",
+  "manifest_generation_id": "57d715de1295e1d6b3918fe9e2c7f5589a25afc798f3f8ea931be72312fbb5f8",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

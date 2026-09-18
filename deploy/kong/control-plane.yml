@@ -7,6 +7,10 @@ services:
     connect_timeout: 3000
     read_timeout: 30000
     write_timeout: 30000
+    # Explicit: Kong's default is 5. A command/control API must surface an
+    # upstream failure as the route's controlled error rather than re-attempt
+    # it (docs/retry-policy-v1.md, profile NONE).
+    retries: 0
     routes:
       - name: control-plane-control
         protocols: [http]
@@ -77,6 +81,9 @@ services:
         request_buffering: true
         response_buffering: true
         regex_priority: 0
+        plugins:
+          - name: request-size-limiting
+            config: {allowed_payload_size: 1, size_unit: megabytes, require_content_length: true}
       - name: control-plane-health
         protocols: [http]
         hosts: [api.codestra.co]

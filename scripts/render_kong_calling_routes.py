@@ -84,6 +84,10 @@ def render() -> dict[str, Any]:
                 "connect_timeout": service["connectTimeoutMs"],
                 "read_timeout": service["readTimeoutMs"],
                 "write_timeout": service["writeTimeoutMs"],
+                # Commands and idempotent-keyed operations are never re-sent by the
+                # gateway; the pinned contract does not carry retries, so the
+                # renderer applies the repository retry policy (NONE).
+                "retries": 0,
                 "routes": [route_entry(spec, route) for route in spec["routes"]],
                 "plugins": [
                     {

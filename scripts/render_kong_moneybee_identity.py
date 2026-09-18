@@ -24,7 +24,7 @@ def render() -> dict:
         "services": [{
             "name": upstream["serviceName"], "enabled": True,
             "protocol": upstream["protocol"], "host": upstream["host"], "port": upstream["port"],
-            "connect_timeout": 3000, "read_timeout": 30000, "write_timeout": 30000,
+            "connect_timeout": 3000, "read_timeout": 30000, "write_timeout": 30000, "retries": 0,
             "routes": [{
                 "name": route["name"], "protocols": ["http"],
                 "hosts": [spec["canonicalHost"]], "paths": [route["path"]],

@@ -116,6 +116,7 @@ def test_calling_policy_renders_as_executable_kong_configuration() -> None:
     assert service["name"] == policy["service"]["name"]
     assert service["host"] == policy["service"]["host"]
     assert service["enabled"] is True
+    assert service["retries"] == 0
 
     routes = {route["name"]: route for route in service["routes"]}
     assert set(routes) == set(validator.EXPECTED_ROUTES)

@@ -108,7 +108,10 @@
               "uniqueItems": true
             },
             "issuer": {
-              "const": "https://auth.codestra.co/realms/codestra"
+              "enum": [
+                "https://auth.codestra.co/realms/codestra",
+                "https://auth-staging.codestra.co/realms/codestra"
+              ]
             },
             "keyId": {
               "maxLength": 63,

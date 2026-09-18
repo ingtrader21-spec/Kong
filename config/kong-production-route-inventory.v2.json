@@ -4,6 +4,20 @@
   "runtimeApplyAuthorized": false,
   "expectedRouteCount": 27,
   "sourceEvidence": "docs/evidence/PRODUCTION_ROUTE_READBACK_20260906.json",
+  "activationBlockedRoutes": [
+    {
+      "route": "codestra-mail-api",
+      "reason": "exposes /api/v1/mail and /api/v1/admin/mail on the canonical host with no authentication plugin and no request-size limit; an administrative path must never be reachable without a gateway authentication prerequisite",
+      "requiredBeforeActivation": ["explicit authentication class and mechanism", "request-size-limiting on POST", "route contract naming owner, audience and scopes"],
+      "activationAuthorized": false
+    },
+    {
+      "route": "gateway-test-route",
+      "reason": "targets kong-test-upstream:8080 on the legacy host; a test upstream is not a production service and has no owner",
+      "requiredBeforeActivation": ["retirement under runtime change authority"],
+      "activationAuthorized": false
+    }
+  ],
   "intentionalFailClosedMigrations": [
     {
       "route": "breero-production-api-route",

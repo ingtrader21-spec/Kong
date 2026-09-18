@@ -37,6 +37,14 @@ def validate() -> None:
                     assert key not in keys, f"duplicate route match: {key}"
                     keys.add(key)
 
+    blocked = {item["route"]: item for item in candidate["activationBlockedRoutes"]}
+    assert set(blocked) == {"codestra-mail-api", "gateway-test-route"}
+    assert set(blocked) <= set(names), "activation gate names an unknown route"
+    for item in blocked.values():
+        assert item["activationAuthorized"] is False and item["reason"] and item["requiredBeforeActivation"]
+    by_name = {route["name"]: route for route in routes}
+    assert by_name["codestra-mail-api"]["plugins"] == [], "mail route gate assumes the observed empty plugin set"
+    assert by_name["gateway-test-route"]["service"]["host"] == "kong-test-upstream"
     migrations = {item["route"] for item in candidate["intentionalFailClosedMigrations"]}
     assert migrations == {"breero-production-api-route", "codestra-website-api-route"}
     assert evidence["actualRouteCount"] == 29
@@ -46,4 +54,4 @@ def validate() -> None:
 
 if __name__ == "__main__":
     validate()
-    print("KONG_PRODUCTION_INVENTORY=PASS ROUTES=27 RETIRED_DUPLICATES=2 UNKNOWN=0 DUPLICATES=0 DIRECT_PROVIDER=0")
+    print("KONG_PRODUCTION_INVENTORY=PASS ROUTES=27 RETIRED_DUPLICATES=2 ACTIVATION_BLOCKED=2 UNKNOWN=0 DUPLICATES=0 DIRECT_PROVIDER=0")

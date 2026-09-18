@@ -74,6 +74,10 @@ def test_intake_authority_is_service_only_and_fail_closed():
     assert INTAKE_AUTHORITY["host"] == "api.codestra.co"
     assert INTAKE_AUTHORITY["service"]["host"] == "codestra-middleware-integration-api-1"
     assert INTAKE_AUTHORITY["service"]["port"] == 8095
+    # Explicit transport policy: intake writes carry Idempotency-Key but the gateway
+    # still must not re-send them, and Kong must not fall back to 60s defaults.
+    assert (INTAKE_AUTHORITY["service"]["connect_timeout"], INTAKE_AUTHORITY["service"]["read_timeout"],
+            INTAKE_AUTHORITY["service"]["write_timeout"], INTAKE_AUTHORITY["service"]["retries"]) == (3000, 30000, 30000, 0)
     assert routes["codestra-intake-leads"]["requiredClientId"] == "sdk-intake"
     assert routes["codestra-intake-leads"]["requiredScope"] == "leads.write"
     assert routes["codestra-intake-survey-responses"]["requiredScope"] == "surveys.write"

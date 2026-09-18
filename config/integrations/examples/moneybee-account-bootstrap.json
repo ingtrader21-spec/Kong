@@ -16,7 +16,7 @@
       "authorizedParties": [
         "moneybee-borrower"
       ],
-      "issuer": "https://auth.codestra.co/realms/codestra",
+      "issuer": "https://auth-staging.codestra.co/realms/codestra",
       "roles": [
         "borrower"
       ],
