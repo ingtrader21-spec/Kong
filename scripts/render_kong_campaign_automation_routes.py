@@ -108,6 +108,10 @@ def render(environment: str) -> dict[str, Any]:
                 "protocol": service["protocol"],
                 "host": service["host"],
                 "port": service["port"],
+                "connect_timeout": service["connect_timeout"],
+                "read_timeout": service["read_timeout"],
+                "write_timeout": service["write_timeout"],
+                "retries": service["retries"],
                 "routes": [route_entry(manifest, route) for route in manifest["routes"]],
             }
         ],
