@@ -357,8 +357,8 @@ files:
   sha256: 2cf08d2ada977b7ac4d2822907f6fc711b29c50e3bca8b3c1ec7c8de2bb77d26
   size: 21601
 - path: docs/mission2-evidence-matrix.md
-  sha256: fd566b807ac9b12c3e622e1f6ba5ae50d8e5c4af778b612864c4f59ac258a3a9
-  size: 10274
+  sha256: a0779632b35bacac526e488c27c6e30c62f364f8c0fdc4aeef9d014ccbee836e
+  size: 10412
 - path: docs/mission2-identity-security-audit.md
   sha256: cea0c4059eca53d65fd60f7123c3e97d63a973cad3e53d3f28ce9b719a641501
   size: 14181
@@ -735,7 +735,7 @@ files:
   sha256: d8eca1dd7a2b4e06db51a58a50f986e3fd47611344636c63363264c0c57d4692
   size: 11461
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: b9a0512d09e39e40cae2ae64518eb59e6dd0d6edea8774094c44ad608e0e6d17
+manifest_generation_id: 33f734e8e8a7db4ddde8747c6d45fcc213d26798aecc059aeacf634c37e47850
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:
