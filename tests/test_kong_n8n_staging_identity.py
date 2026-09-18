@@ -35,7 +35,7 @@ def load(path: Path) -> dict:
 def test_staging_manifest_is_prepared_but_not_apply_authorized():
     staging = load(STAGING_PATH)
     assert staging["environment"] == "staging"
-    assert staging["status"] == "PREPARED_STAGING_NO_RUNTIME_APPLY"
+    assert staging["status"] == "RETIRED_DENY_ONLY_STAGING"
     assert staging["safety"]["reconciliation_apply"] is False
     assert staging["production_authority"] == "config/kong-n8n-control-plane-routes.json"
     assert staging["issuer"] == "https://auth-staging.codestra.co/realms/codestra"

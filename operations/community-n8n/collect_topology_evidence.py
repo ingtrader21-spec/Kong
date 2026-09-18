@@ -25,8 +25,13 @@ from pathlib import Path
 from typing import Any, Sequence
 
 ROOT = Path(__file__).resolve().parents[2]
-CURRENT_RUNTIME_HOST = "appolon-middleware-integration-api"
-AMBIGUOUS_ALIAS = "middleware-integration-api"
+# R6-2026-09-16-canonical-middleware-upstream: the canonical Middleware edge
+# contract names middleware-integration-api:8095 as the only shared-edge
+# upstream. The runtime verified in Kong PR #30 (appolon-middleware-integration-api
+# on 8080) is retired; the collector proves the canonical alias resolves to
+# exactly one runtime and that the retired host is not that runtime.
+CURRENT_RUNTIME_HOST = "middleware-integration-api"
+AMBIGUOUS_ALIAS = "appolon-middleware-integration-api"
 EXPECTED_KONG_SERVICE_LABEL = "kong-gateway"
 PROBE_PATH = (
     "/v1/integrations/n8n/operations/"

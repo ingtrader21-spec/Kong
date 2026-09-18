@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.1",
+  "environment": "staging",
+  "status": "PREPARED_STAGING_NO_RUNTIME_APPLY",
+  "production_authority": "config/kong-campaign-automation-routes.json",
+  "purpose": "Keycloak -> Caddy -> Kong -> Middleware edge certification for campaign TEST_SYN only. Same service, plugins and scope guard as production for the four certified routes; staging realm identities, one service client per scope. The policy-check route is production-only because no certification identity may hold n8n.policy.check.",
+  "service": {
+    "name": "codestra-campaign-automation-api",
+    "host": "middleware-integration-api",
+    "port": 8095,
+    "protocol": "http"
+  },
+  "consumers": [
+    {
+      "username": "test-syn-n8n-submit",
+      "custom_id": "test-syn-n8n-submit",
+      "scopes": ["n8n.results.submit"]
+    },
+    {
+      "username": "test-syn-n8n-read",
+      "custom_id": "test-syn-n8n-read",
+      "scopes": ["n8n.results.read"]
+    },
+    {
+      "username": "test-syn-odoo-reader",
+      "custom_id": "test-syn-odoo-reader",
+      "scopes": ["odoo.campaigns.read"]
+    },
+    {
+      "username": "test-syn-wrong-tenant",
+      "custom_id": "test-syn-wrong-tenant",
+      "scopes": ["n8n.results.read", "odoo.campaigns.read"],
+      "certification_role": "negative: valid audience and scopes for another tenant; must pass Kong so Middleware proves the cross-tenant 404/403"
+    },
+    {
+      "username": "test-syn-wrong-audience",
+      "custom_id": "test-syn-wrong-audience",
+      "scopes": [],
+      "certification_role": "negative: token audience test-syn-wrong-audience; the claim guard answers 401 invalid_audience"
+    }
+  ],
+  "forbidden_scopes": ["odoo.campaign.control.write"],
+  "issuer": "https://auth-staging.codestra.co/realms/codestra",
+  "oidc_discovery": "https://auth-staging.codestra.co/realms/codestra/.well-known/openid-configuration",
+  "jwks_uri": "https://auth-staging.codestra.co/realms/codestra/protocol/openid-connect/certs",
+  "audience": "middleware-api",
+  "host": "api.codestra.co",
+  "campaign_scope": ["TEST_SYN"],
+  "middleware_edge_contract": "config/middleware-public-api-route-contract.v1.json",
+  "safety": {
+    "reconciliation_apply": false,
+    "credentials_in_repository": false,
+    "direct_provider_routes": false,
+    "middleware_revalidates_identity": true,
+    "production_identity_allowed": false,
+    "provider_effects_authorized": false,
+    "odoo_writes_authorized": false
+  },
+  "routes": [
+    {
+      "name": "codestra-campaign-result-submit",
+      "method": "POST",
+      "path": "/api/v1/integrations/n8n/results",
+      "scope": "n8n.results.submit",
+      "rate_per_minute": 120,
+      "max_body_mb": 1
+    },
+    {
+      "name": "codestra-campaign-result-read",
+      "method": "GET",
+      "path": "~/api/v1/integrations/n8n/results/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "path_template": "/api/v1/integrations/n8n/results/{event_id}",
+      "scope": "n8n.results.read",
+      "rate_per_minute": 120,
+      "max_body_mb": 1
+    },
+    {
+      "name": "codestra-odoo-campaign-read",
+      "method": "GET",
+      "path": "~/api/v1/integrations/odoo/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "path_template": "/api/v1/integrations/odoo/campaigns/{campaign_id}",
+      "scope": "odoo.campaigns.read",
+      "rate_per_minute": 120,
+      "max_body_mb": 1
+    },
+    {
+      "name": "codestra-odoo-campaign-desired-state-read",
+      "method": "GET",
+      "path": "~/api/v1/integrations/odoo/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/desired-state$",
+      "path_template": "/api/v1/integrations/odoo/campaigns/{campaign_id}/desired-state",
+      "scope": "odoo.campaigns.read",
+      "rate_per_minute": 120,
+      "max_body_mb": 1
+    }
+  ]
+}
