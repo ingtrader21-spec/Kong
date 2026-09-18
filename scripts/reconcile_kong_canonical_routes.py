@@ -195,7 +195,12 @@ def security_authority(root: Path, expected: dict) -> tuple[Path, dict, dict]:
             )
     elif path.name == "kong-campaign-automation-routes.json":
         require_equal([route["path"]], expected["paths"], f"{route_name}.authority.paths")
-        require_equal(expected["methods"], ["POST"], f"{route_name}.authority.methods")
+        require_equal(expected["methods"], [route.get("method", "POST")], f"{route_name}.authority.methods")
+        require_equal(
+            expected.get("pathTemplate", expected["paths"][0]),
+            route.get("path_template", route["path"]),
+            f"{route_name}.authority.pathTemplate",
+        )
     elif path.name == "kong-n8n-control-plane-routes.json":
         require_equal([route["path"]], expected["paths"], f"{route_name}.authority.paths")
         require_equal([route["method"]], expected["methods"], f"{route_name}.authority.methods")

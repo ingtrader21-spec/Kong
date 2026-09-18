@@ -62,17 +62,21 @@ def test_admin_form_encoding_uses_lowercase_kong_booleans(monkeypatch):
     }
 
 
-def test_n8n_authority_is_production_approved_and_identity_exact():
+def test_legacy_n8n_authority_is_retired_and_identity_exact():
     spec = json.loads(SPEC_PATH.read_text())
-    assert spec["status"] == "APPROVED_PRODUCTION"
-    assert spec["safety"]["reconciliation_apply"] is True
+    assert spec["status"] == "RETIRED_DENY_ONLY"
+    assert spec["runtime_apply_authorized"] is False
+    assert spec["safety"]["reconciliation_apply"] is False
     assert spec["client_id"] == "n8n-automation"
     assert spec["consumer"]["custom_id"] == "n8n-automation"
     assert spec["audience"] == "middleware-api"
     assert spec["preserve_authorization_header"] is True
     assert spec["token_exchange"] is False
     assert spec["safety"]["middleware_revalidates_identity"] is True
-    assert spec["service"]["enabled"] is True
+    assert spec["service"]["host"] == "middleware-integration-api"
+    assert spec["service"]["port"] == 8095
+    assert spec["service"]["enabled"] is False
+    assert {route["classification"] for route in spec["routes"]} == {"denied"}
 
 
 def test_claim_guard_covers_identity_scope_tenant_headers_and_short_token_lifetime():
@@ -117,17 +121,15 @@ def test_canonical_manifest_uses_exact_n8n_security_authority():
     canonical = json.loads(CANONICAL_PATH.read_text())
     routes = [
         route for route in canonical["contractRoutes"]
-        if route["securityAuthority"] == "config/kong-n8n-control-plane-routes.json"
+        if route["pathTemplate"].startswith("/v2/automation/")
     ]
-    assert {route["name"] for route in routes} == {
-        "codestra-n8n-command-submit",
-        "codestra-n8n-command-read",
-    }
+    assert len(routes) == 13
     for route in routes:
         assert route["hosts"] == ["api.codestra.co"]
-        assert route["serviceHost"] == "appolon-middleware-integration-api"
-        assert route["servicePort"] == 8080
-        assert "codestra-middleware-integration-api-1" not in json.dumps(route)
+        assert route["serviceHost"] == "middleware-integration-api"
+        assert route["servicePort"] == 8095
+        assert route["securityAuthority"] == "config/kong-middleware-authority.v2.json"
+        assert "openid-connect" in route["requiredPlugins"]
         assert "post-function" in route["requiredPlugins"]
         assert "pre-function" not in route["requiredPlugins"]
 
@@ -136,10 +138,15 @@ def test_operations_uuid_path_matches_the_canonical_prefix_route():
     canonical = json.loads(CANONICAL_PATH.read_text())
     route = next(
         item for item in canonical["contractRoutes"]
-        if item["name"] == "codestra-n8n-command-read"
+        if item["pathTemplate"] == "/v2/automation/commands/{command_id}"
     )
-    sample = "/v1/integrations/n8n/operations/00000000-0000-0000-0000-000000000000"
-    assert any(sample.startswith(prefix + "/") for prefix in route["paths"])
+    sample = "/v2/automation/commands/00000000-0000-0000-0000-000000000000"
+    import re
+
+    assert re.fullmatch(route["paths"][0][1:], sample)
+    assert "/v1/integrations/n8n/operations" in {
+        item["pathTemplate"] for item in canonical["deniedRoutes"]
+    }
 
 
 def test_n8n_authority_has_no_direct_provider_or_legacy_repository_reference():
@@ -147,8 +154,7 @@ def test_n8n_authority_has_no_direct_provider_or_legacy_repository_reference():
     assert "codestra-srl" not in serialized
     assert "odoo" not in json.dumps(json.loads(SPEC_PATH.read_text())["service"]).lower()
     assert "vicidial" not in json.dumps(json.loads(SPEC_PATH.read_text())["service"]).lower()
-    assert json.loads(SPEC_PATH.read_text())["service"]["host"] == "appolon-middleware-integration-api"
-    assert json.loads(SPEC_PATH.read_text())["service"]["host"] != "middleware-integration-api"
+    assert json.loads(SPEC_PATH.read_text())["service"]["host"] == "middleware-integration-api"
     legacy = json.loads(SPEC_PATH.read_text())["legacy_contract_items"]
     assert legacy == [{
         "path": "/webhooks/vicidial/call-result/",
