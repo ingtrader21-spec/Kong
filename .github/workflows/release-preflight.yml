@@ -1,0 +1,216 @@
+name: Release supply-chain preflight
+
+# Proves, on the exact pull-request head and with the repository's own token,
+# that the standby auth image builds, passes its pre-publication checks,
+# publishes to the contracted registry namespace under an immutable
+# preflight tag, and yields registry digest, SBOM and provenance that the
+# release evidence contract accepts. The published version is
+# preflight-sha-<sha>: never promotable, never a release authority, and never
+# pulled by any runtime. Fork pull requests never reach the publish step.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: kong-release-preflight-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  release-preflight:
+    name: release-preflight
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+      KONG_IMAGE_REF: kong/kong-gateway:3.14.0.1-ubuntu
+    steps:
+      - name: Check out exact pull-request head
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ env.EXPECTED_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prove exact source identity
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
+          test -z "$(git status --porcelain)"
+
+      - name: Bind the release registry contract to this repository
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input PyYAML
+          python3 tools/release_contract.py \
+            --assert-repository "${GITHUB_REPOSITORY}" \
+            --assert-owner "${GITHUB_REPOSITORY_OWNER}"
+          image="$(python3 tools/release_contract.py --assert-repository "${GITHUB_REPOSITORY}" --print image)"
+          test "${image}" = "ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kong-standby-auth"
+          echo "STANDBY_IMAGE_REPOSITORY=${image}" >> "${GITHUB_ENV}"
+
+      - name: Record the head commit identity
+        id: commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          verification="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${EXPECTED_SHA}" --jq '.commit.verification.verified')"
+          if [[ "${verification}" == true ]]; then
+            echo "verification=VERIFIED" >> "${GITHUB_OUTPUT}"
+          else
+            echo "verification=UNVERIFIED_PREFLIGHT_HEAD" >> "${GITHUB_OUTPUT}"
+          fi
+          rollback_source_sha="$(git rev-parse HEAD^1)"
+          [[ "${rollback_source_sha}" =~ ^[0-9a-f]{40}$ ]]
+          echo "rollback_source_sha=${rollback_source_sha}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build the exact standby auth image without publishing
+        id: build
+        run: |
+          set -Eeuo pipefail
+          builder="kong-preflight-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          docker buildx create --name "${builder}" --driver docker-container --use
+          docker buildx inspect --bootstrap
+          echo "builder=${builder}" >> "${GITHUB_OUTPUT}"
+          local_tag="kong-standby-auth:preflight-${EXPECTED_SHA}"
+          docker buildx build \
+            --file deploy/kong-production-standby/auth-middleware/Dockerfile \
+            --platform linux/amd64 \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${EXPECTED_SHA}" \
+            --label "org.opencontainers.image.version=${EXPECTED_SHA}" \
+            --provenance=false \
+            --sbom=false \
+            --tag "${local_tag}" \
+            --load \
+            deploy/kong-production-standby/auth-middleware
+          echo "local_tag=${local_tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify the built image before publication
+        env:
+          LOCAL_TAG: ${{ steps.build.outputs.local_tag }}
+        run: |
+          set -Eeuo pipefail
+          python3 tools/verify_standby_image.py --image "${LOCAL_TAG}" --expected-revision "${EXPECTED_SHA}"
+
+      - name: Publish the immutable preflight version with attestations
+        id: standby
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          printf '%s' "${GHCR_TOKEN}" | docker login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
+          tag="${STANDBY_IMAGE_REPOSITORY}:preflight-sha-${EXPECTED_SHA}"
+          docker buildx build \
+            --file deploy/kong-production-standby/auth-middleware/Dockerfile \
+            --platform linux/amd64 \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${EXPECTED_SHA}" \
+            --label "org.opencontainers.image.version=${EXPECTED_SHA}" \
+            --label "co.codestra.release.stage=pull-request-preflight" \
+            --provenance=mode=max \
+            --sbom=true \
+            --tag "${tag}" \
+            --metadata-file "${RUNNER_TEMP}/standby-build-metadata.json" \
+            --push \
+            deploy/kong-production-standby/auth-middleware
+          digest="$(jq -r '."containerimage.digest"' "${RUNNER_TEMP}/standby-build-metadata.json")"
+          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          printf '%s@%s\n' "${STANDBY_IMAGE_REPOSITORY}" "${digest}" > "${RUNNER_TEMP}/standby-image.txt"
+
+      - name: Verify the registry digest and extract the attestations
+        id: attest
+        env:
+          LOCAL_DIGEST: ${{ steps.standby.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          docker buildx imagetools inspect "${STANDBY_IMAGE_REPOSITORY}@${LOCAL_DIGEST}" > "${RUNNER_TEMP}/standby-image-inspect.txt"
+          remote="$(awk '$1 == "Digest:" {print $2; exit}' "${RUNNER_TEMP}/standby-image-inspect.txt")"
+          [[ "${remote}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          test "${remote}" = "${LOCAL_DIGEST}"
+          printf '%s\n' "${remote}" > "${RUNNER_TEMP}/standby-remote-digest.txt"
+          docker buildx imagetools inspect "${STANDBY_IMAGE_REPOSITORY}@${LOCAL_DIGEST}" \
+            --format '{{ json .SBOM }}' > "${RUNNER_TEMP}/standby-sbom.attestation.json"
+          docker buildx imagetools inspect "${STANDBY_IMAGE_REPOSITORY}@${LOCAL_DIGEST}" \
+            --format '{{ json .Provenance }}' > "${RUNNER_TEMP}/standby-provenance.json"
+          python3 tools/extract_image_attestations.py \
+            --sbom-attestation "${RUNNER_TEMP}/standby-sbom.attestation.json" \
+            --sbom-output "${RUNNER_TEMP}/standby-sbom.spdx.json" \
+            --provenance "${RUNNER_TEMP}/standby-provenance.json" \
+            --expected-revision "${EXPECTED_SHA}" \
+            --github-output "${GITHUB_OUTPUT}"
+
+      - name: Resolve the exact upstream Kong image digest
+        id: kong
+        run: |
+          set -Eeuo pipefail
+          docker buildx imagetools inspect "${KONG_IMAGE_REF}" > "${RUNNER_TEMP}/kong-image-inspect.txt"
+          digest="$(awk '$1 == "Digest:" {print $2; exit}' "${RUNNER_TEMP}/kong-image-inspect.txt")"
+          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+          printf '%s@%s\n' "${KONG_IMAGE_REF}" "${digest}" > "${RUNNER_TEMP}/kong-image.txt"
+
+      - name: Generate and verify the preflight evidence
+        env:
+          COMMIT_VERIFICATION: ${{ steps.commit.outputs.verification }}
+          ROLLBACK_SOURCE_SHA: ${{ steps.commit.outputs.rollback_source_sha }}
+          KONG_IMAGE_DIGEST: ${{ steps.kong.outputs.digest }}
+          STANDBY_AUTH_IMAGE_DIGEST: ${{ steps.standby.outputs.digest }}
+          STANDBY_SBOM_SHA256: ${{ steps.attest.outputs.sbom_sha256 }}
+          STANDBY_PROVENANCE_SHA256: ${{ steps.attest.outputs.provenance_sha256 }}
+        run: |
+          set -Eeuo pipefail
+          python3 tools/generate_release_manifest.py \
+            --output "${RUNNER_TEMP}/release-manifest.json" \
+            --release-stage pull-request-preflight \
+            --commit-verification-status "${COMMIT_VERIFICATION}" \
+            --kong-image-digest "${KONG_IMAGE_DIGEST}" \
+            --standby-auth-image-digest "${STANDBY_AUTH_IMAGE_DIGEST}" \
+            --standby-auth-sbom-sha256 "${STANDBY_SBOM_SHA256}" \
+            --standby-auth-provenance-sha256 "${STANDBY_PROVENANCE_SHA256}" \
+            --staging-certification NOT_RUN_SOURCE_CANDIDATE \
+            --rollback-source-sha "${ROLLBACK_SOURCE_SHA}"
+          python3 tools/verify_release_evidence.py \
+            --manifest "${RUNNER_TEMP}/release-manifest.json" \
+            --expected-source-sha "${EXPECTED_SHA}" \
+            --expected-stage pull-request-preflight \
+            --sbom "${RUNNER_TEMP}/standby-sbom.spdx.json" \
+            --provenance "${RUNNER_TEMP}/standby-provenance.json" \
+            --registry-digest "$(cat "${RUNNER_TEMP}/standby-remote-digest.txt")"
+
+      - name: Upload bounded preflight evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: kong-release-preflight-${{ env.EXPECTED_SHA }}
+          path: |
+            ${{ runner.temp }}/release-manifest.json
+            ${{ runner.temp }}/standby-build-metadata.json
+            ${{ runner.temp }}/standby-image.txt
+            ${{ runner.temp }}/standby-remote-digest.txt
+            ${{ runner.temp }}/standby-image-inspect.txt
+            ${{ runner.temp }}/standby-sbom.spdx.json
+            ${{ runner.temp }}/standby-provenance.json
+            ${{ runner.temp }}/kong-image.txt
+            ${{ runner.temp }}/kong-image-inspect.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Close registry session and builder
+        if: always()
+        env:
+          BUILDER: ${{ steps.build.outputs.builder }}
+        run: |
+          docker logout ghcr.io || true
+          if [[ -n "${BUILDER}" ]]; then docker buildx rm "${BUILDER}" >/dev/null 2>&1 || true; fi

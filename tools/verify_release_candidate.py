@@ -14,9 +14,11 @@ from pathlib import Path
 import re
 import stat
 import subprocess
+import sys
 import zipfile
 
-REPOSITORY = 'appolon1908-hue/Kong'
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tools.release_contract import REPOSITORY, STANDBY_IMAGE, authoritative_tag  # noqa: E402
 SHA = re.compile(r'[0-9a-f]{40}\Z')
 DIGEST = re.compile(r'sha256:[0-9a-f]{64}\Z')
 MAX_ARCHIVE = 32 * 1024 * 1024
@@ -81,7 +83,11 @@ def verified_manifest(archive: bytes, artifact: dict, source: str) -> tuple[byte
     require(SHA.fullmatch(manifest.get('source_tree', '')) is not None, 'invalid_source_tree')
     require(SHA.fullmatch(manifest.get('rollback_source_sha', '')) is not None, 'invalid_rollback')
     require(manifest.get('kong_image') == 'kong/kong-gateway:3.14.0.1-ubuntu' and
-            manifest.get('standby_auth_image') == 'ghcr.io/appolon1908-hue/kong-standby-auth', 'wrong_image_authority')
+            manifest.get('standby_auth_image') == STANDBY_IMAGE, 'wrong_image_authority')
+    # A candidate may only ever be promoted under its authoritative immutable tag;
+    # a preflight or mutable tag is never a release authority.
+    tag = manifest.get('standby_auth_image_tag')
+    require(tag == authoritative_tag(source), 'non_authoritative_image_tag')
     return raw, manifest
 
 

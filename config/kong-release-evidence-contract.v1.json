@@ -1,0 +1,73 @@
+{
+  "schema": "codestra.kong.release-evidence-contract.v1",
+  "version": "1.0.0",
+  "status": "SOURCE_CANDIDATE_NO_RUNTIME_APPLY",
+  "runtimeApplyAuthorized": false,
+  "providerEffectsEnabled": false,
+  "registryContract": "config/kong-release-registry-contract.v1.json",
+  "producer": "tools/generate_release_manifest.py",
+  "verifier": "tools/verify_release_evidence.py",
+  "meaning": "release evidence proves that an exact, verified source commit was built, published by digest and attested; it is never an authorization to apply, deploy or activate anything",
+  "stages": {
+    "pull-request-preflight": {
+      "workflow": ".github/workflows/release-preflight.yml",
+      "tag": "preflight-sha-<source_sha>",
+      "promotable": false,
+      "purpose": "prove build, publish, digest, SBOM and provenance capability on the pull-request head before merge"
+    },
+    "protected-main-source-candidate": {
+      "workflow": ".github/workflows/release.yml",
+      "tag": "sha-<source_sha>",
+      "promotable": true,
+      "purpose": "the authoritative candidate every staging and production promotion must reuse byte-for-byte"
+    },
+    "staging-certified": {
+      "workflow": ".github/workflows/release.yml",
+      "tag": "sha-<certified source_sha> (reused, never rebuilt)",
+      "promotable": true,
+      "purpose": "the same candidate bound to a completed isolated staging certification"
+    },
+    "production": {
+      "workflow": ".github/workflows/release.yml",
+      "tag": "sha-<certified source_sha> (reused, never rebuilt)",
+      "promotable": false,
+      "purpose": "the same candidate bound to the production promotion record"
+    }
+  },
+  "bindings": {
+    "repository": {"rule": "equals registryContract.repository.fullName", "required": true},
+    "repository_id": {"rule": "equals registryContract.repository.id", "required": true},
+    "source_sha": {"rule": "40 lowercase hex; equals the checked-out commit that produced the evidence (or the certified source on promotion stages)", "required": true},
+    "source_tree": {"rule": "40 lowercase hex git tree of source_sha", "required": true},
+    "commit_verification_status": {"rule": "one of G, U, VERIFIED (GitHub-verified signature) on every promotable stage; pull-request-preflight may additionally record UNVERIFIED_PREFLIGHT_HEAD because a pull-request head is not GitHub-signed", "required": true},
+    "kong_image": {"rule": "kong/kong-gateway:3.14.0.1-ubuntu", "required": true},
+    "kong_image_digest": {"rule": "sha256:<64 hex>", "required": true},
+    "standby_auth_image": {"rule": "equals registryContract.registry.image", "required": true},
+    "standby_auth_image_tag": {"rule": "stage tag policy: preflight-sha-<source_sha> on pull-request-preflight, sha-<source_sha> otherwise; never a mutable tag", "required": true},
+    "standby_auth_image_digest": {"rule": "sha256:<64 hex>; equals the digest re-read from the registry after publication", "required": true},
+    "standby_auth_sbom_sha256": {"rule": "64 hex sha256 of standby-sbom.spdx.json extracted from the published image's SBOM attestation", "required": true},
+    "standby_auth_provenance_sha256": {"rule": "64 hex sha256 of standby-provenance.json extracted from the published image's provenance attestation", "required": true},
+    "manifest_generation_id": {"rule": "MIGRATION_MANIFEST manifest_generation_id of the exact tree", "required": true},
+    "migration_manifest_json_sha256": {"rule": "64 hex", "required": true},
+    "migration_manifest_yaml_sha256": {"rule": "64 hex", "required": true},
+    "kong_declarative_config_sha256": {"rule": "64 hex sha256 of deploy/kong/control-plane.yml", "required": true},
+    "middleware_contract_sha256": {"rule": "64 hex; the Middleware public API route contract digest pinned by config/kong-canonical-middleware-routes.json", "required": true},
+    "release_registry_contract_sha256": {"rule": "64 hex sha256 of config/kong-release-registry-contract.v1.json", "required": true},
+    "workflow_run_id": {"rule": "positive integer GITHUB_RUN_ID of the producing run", "required": true},
+    "workflow_run_attempt": {"rule": "positive integer GITHUB_RUN_ATTEMPT", "required": true},
+    "workflow_ref": {"rule": "GITHUB_WORKFLOW_REF of the producing run; must start with registryContract.repository.fullName + '/.github/workflows/'", "required": true},
+    "rollback_source_sha": {"rule": "40 lowercase hex", "required": true},
+    "staging_certification": {"rule": "NOT_RUN_SOURCE_CANDIDATE on pull-request-preflight and protected-main-source-candidate; PASS:<certified source_sha>:<identity> on promotion stages", "required": true},
+    "runtime_apply_authorized": {"rule": "false", "required": true},
+    "external_effects_enabled": {"rule": "false", "required": true},
+    "provider_effects_enabled": {"rule": "false", "required": true}
+  },
+  "failClosed": [
+    "any required binding absent, null, UNRESOLVED or malformed",
+    "standby_auth_image not equal to the registry contract image",
+    "a mutable or preflight tag on a promotable stage",
+    "an SBOM or provenance digest that does not match the extracted attestation file",
+    "a workflow_ref outside this repository",
+    "runtime_apply_authorized, external_effects_enabled or provider_effects_enabled true"
+  ]
+}

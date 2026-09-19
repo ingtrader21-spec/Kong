@@ -95,9 +95,19 @@ bounded read-back, not an atomic snapshot or proof of staging certification.
 ## Build on main, promote the same bytes
 
 The canonical `.github/workflows/release.yml` builds the standby image and resolves
-the upstream Kong digest **only on protected main**. Staging/production may not
-rebuild, re-resolve a mutable tag, or retag the candidate. Their protected environment
-must supply all of:
+the upstream Kong digest **only on protected main**. The image namespace is not a
+literal: `tools/release_contract.py` derives `ghcr.io/<repository owner>/kong-standby-auth`
+from `config/kong-release-registry-contract.v1.json` and the workflow proves the
+running repository matches it before `docker login` (the repository was transferred
+from `appolon1908-hue` and the stale namespace made every publication fail). The
+build is verified (`tools/verify_standby_image.py`) before it is published with
+BuildKit provenance and SBOM attestations, the registry digest is re-read and must
+equal the built digest, the attestations are extracted, and the release manifest is
+verified against `config/kong-release-evidence-contract.v1.json`
+(`tools/verify_release_evidence.py`). Pull requests exercise the same path through
+`.github/workflows/release-preflight.yml`, publishing only the non-promotable
+`preflight-sha-<sha>` version. Staging/production may not rebuild, re-resolve a
+mutable tag, or retag the candidate. Their protected environment must supply all of:
 
 - `KONG_CERTIFIED_SOURCE_SHA`: the original accepted main commit actually certified;
 - `KONG_CANDIDATE_RUN_ID`: the successful canonical main release run for that commit;
