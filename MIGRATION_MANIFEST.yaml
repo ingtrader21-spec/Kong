@@ -768,10 +768,10 @@ files:
   sha256: d8eca1dd7a2b4e06db51a58a50f986e3fd47611344636c63363264c0c57d4692
   size: 11461
 - path: tools/verify_standby_image.py
-  sha256: cbbafed549c2c9404bcbb4fccb54dad786dfd9bc5eca1ea7a7214298c966467f
-  size: 5087
+  sha256: 8ce9988ecece68671509320205a44ea4db92fbad7db15fa32fe7425b5f447a1f
+  size: 5410
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 80966bed827326bba9ab6a13dc5f1b1459c2b01c21ce2e7b0756a5d6921e3df2
+manifest_generation_id: 347eb319080bd925a5d1db9db4c8f8317b6dcb524cbf3a02e4edfbca431eb8df
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:

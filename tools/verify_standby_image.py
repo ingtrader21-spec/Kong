@@ -81,10 +81,15 @@ def main() -> int:
         require(isinstance(entries, list) and len(entries) == 1, "inspect_ambiguous")
         summary = check_config(entries[0], args.expected_revision)
         # Mirrors deploy/kong-production-standby/compose.standby.yaml: read-only root,
-        # tmpfs /tmp, all capabilities dropped, no new privileges, no network.
-        smoke = docker("run", "--rm", "--network", "none", "--read-only", "--tmpfs", "/tmp:rw,size=4m",
+        # tmpfs /tmp, a writable /data state volume (the application opens its
+        # SQLite state at import), all capabilities dropped, no new privileges,
+        # no network. The tmpfs stands in for the standby_state volume.
+        smoke = docker("run", "--rm", "--network", "none", "--read-only",
+                       "--tmpfs", "/tmp:rw,size=4m",
+                       "--tmpfs", "/data:rw,size=8m,uid=65532,gid=65532,mode=0700",
                        "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true",
-                       "--env", "PYTHONDONTWRITEBYTECODE=1", "--entrypoint", "sh", args.image, "-c", SMOKE)
+                       "--env", "PYTHONDONTWRITEBYTECODE=1", "--env", "STATE_DB=/data/state.sqlite3",
+                       "--entrypoint", "sh", args.image, "-c", SMOKE)
         require("STANDBY_IMPORT=OK" in smoke, "smoke_import_failed")
     except (ImageError, OSError, ValueError, subprocess.SubprocessError) as error:
         print(f"STANDBY_IMAGE=FAIL {error}")
