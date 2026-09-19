@@ -588,6 +588,39 @@ def load_platform_api_read_contract(path: str, doc: dict) -> SourceDocument:
     return out
 
 
+def load_middleware_v3_command_contract(path: str, doc: dict) -> SourceDocument:
+    """Prepared, disabled routes for the Middleware V3 platform kernel. Fails closed
+    unless the file says it is still pending the frozen Middleware V3 contract and
+    binds the canonical 8095 upstream; the frozen contract, not this file, is the
+    authority for names, azp allowlists and scopes once it exists."""
+    if doc.get("status") != "V3_PENDING_FINAL_MIDDLEWARE_CONTRACT" or doc.get("V3_PENDING_FINAL_MIDDLEWARE_CONTRACT") is not True:
+        raise FoundationError(f"{path}: V3 command routes must remain V3_PENDING_FINAL_MIDDLEWARE_CONTRACT")
+    if doc.get("runtimeApplyAuthorized") is not False or doc.get("activation", {}).get("runtimeApplyAuthorized") is not False:
+        raise FoundationError(f"{path}: V3 command routes may not authorise runtime apply")
+    svc = doc["service"]
+    if (svc.get("host"), svc.get("port")) != ("middleware-integration-api", 8095):
+        raise FoundationError(f"{path}: V3 command routes must bind middleware-integration-api:8095")
+    if doc.get("security", {}).get("businessAuthorizationInKong") is not False:
+        raise FoundationError(f"{path}: business authorization stays in Middleware")
+    out = SourceDocument(path=path, format="middleware-v3-command-contract", issuer=_issuer_realm(doc["identity"]["issuer"]))
+    out.declared_status = doc.get("status")
+    out.services[svc["name"]] = _service_from_contract(path, svc)
+    common = doc["commonPolicy"]
+    for route in doc["routes"]:
+        if "POST" in route["methods"] and route.get("idempotencyRequired") is not True:
+            raise FoundationError(f"{path}: V3 command route {route['name']} must require Idempotency-Key")
+        out.routes[route["name"]] = SourceRoute(
+            source=path, name=route["name"], hosts=(doc["host"],), paths=(route["path"],),
+            methods=_methods(route["methods"]), protocols=_tuple(common["protocols"]),
+            strip_path=common["stripPath"], preserve_host=common["preserveHost"], service_name=svc["name"],
+            upstream_protocol=svc["protocol"], upstream_host=svc["host"], upstream_port=svc["port"],
+            plugins=tuple(sorted(common["requiredPlugins"])), rate_per_minute=route["ratePerMinute"],
+            max_body_bytes=_mb(common["requestBodyLimitMb"]), required_scope=route["requiredScope"],
+            audience=doc["identity"]["audience"], issuer=out.issuer,
+        )
+    return out
+
+
 def load_community_n8n_egress_contract(path: str, doc: dict) -> SourceDocument:
     out = SourceDocument(path=path, format="community-n8n-egress-contract", issuer=doc["identity"]["issuer"])
     out.declared_status = doc.get("status")
@@ -706,6 +739,7 @@ LOADERS = {
     "community-n8n-egress-contract": (load_json, load_community_n8n_egress_contract),
     "middleware-authority-v2": (load_json, load_middleware_authority_v2),
     "platform-api-read-contract": (load_json, load_platform_api_read_contract),
+    "middleware-v3-command-contract": (load_json, load_middleware_v3_command_contract),
     "standby-design": (load_json, load_standby_design),
     "design-route-registry": (load_json, load_design_route_registry),
     "gateway-integration": (load_json, load_gateway_integration),

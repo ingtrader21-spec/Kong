@@ -1,0 +1,150 @@
+{
+  "schema": "codestra.kong.middleware-v3-command-routes.v1",
+  "status": "V3_PENDING_FINAL_MIDDLEWARE_CONTRACT",
+  "V3_PENDING_FINAL_MIDDLEWARE_CONTRACT": true,
+  "runtimeApplyAuthorized": false,
+  "authority": "ingtrader21-spec/Middleware-:mission/middleware-v3-platform-20260918 (app/platform/api.py; not yet in deploy/public-api-route-contract.json)",
+  "host": "api.codestra.co",
+  "service": {
+    "name": "middleware-v3-command-api",
+    "protocol": "http",
+    "host": "middleware-integration-api",
+    "port": 8095,
+    "connectTimeoutMs": 5000,
+    "readTimeoutMs": 30000,
+    "writeTimeoutMs": 30000,
+    "retries": 0
+  },
+  "identity": {
+    "issuer": "https://auth.codestra.co/realms/codestra/.well-known/openid-configuration",
+    "audience": "middleware-api",
+    "authMethods": ["bearer"],
+    "consumerClaim": "azp",
+    "stripInboundHeaders": [
+      "X-User-ID",
+      "X-Username",
+      "X-Email",
+      "X-Roles",
+      "X-Scopes",
+      "X-Authenticated-UserID",
+      "X-Authenticated-User",
+      "X-Authenticated-Client",
+      "X-Authenticated-Subject",
+      "X-Authenticated-Tenant",
+      "X-Authenticated-Campaign",
+      "X-Authenticated-Role",
+      "X-Authenticated-Email",
+      "X-Codestra-Tenant",
+      "X-Codestra-Scopes",
+      "X-Codestra-Gateway-Secret",
+      "X-Internal-Service",
+      "X-Admin"
+    ],
+    "mintedHeaders": {
+      "X-Codestra-Contract-Operation": "operation id from the frozen V3 contract",
+      "X-Codestra-Required-Scope": "route requiredScope"
+    },
+    "preservedClientHeaders": [
+      "Authorization",
+      "X-Correlation-ID",
+      "Idempotency-Key",
+      "traceparent",
+      "tracestate"
+    ]
+  },
+  "commonPolicy": {
+    "protocols": ["http"],
+    "httpsRedirectStatusCode": 426,
+    "stripPath": false,
+    "preserveHost": true,
+    "requestBuffering": true,
+    "responseBuffering": true,
+    "correlationHeader": "X-Correlation-ID",
+    "correlationRequired": true,
+    "idempotencyHeader": "Idempotency-Key",
+    "idempotencyRequiredForCommands": true,
+    "gatewayRetriesNonIdempotentPosts": false,
+    "requiredPlugins": [
+      "openid-connect",
+      "post-function",
+      "correlation-id",
+      "rate-limiting",
+      "request-size-limiting"
+    ],
+    "rateLimitPolicy": "redis",
+    "rateLimitFaultTolerant": false,
+    "requestBodyLimitMb": 1
+  },
+  "security": {
+    "browserTokensForbidden": true,
+    "serviceTokenOnly": true,
+    "businessAuthorizationInKong": false,
+    "directOdooRoutingForbidden": true,
+    "directN8nRoutingForbidden": true,
+    "directProviderRoutingForbidden": true,
+    "directMiddlewarePublicBypassForbidden": true,
+    "middlewareRevalidatesIdentity": true
+  },
+  "activation": {
+    "runtimeApplyAuthorized": false,
+    "requiresExactHeadCI": true,
+    "requiresKeycloakClient": null,
+    "prerequisites": [
+      "MIDDLEWARE_V3_FINAL_SHA frozen and the six /platform/v1 kernel operations present in the vendored Middleware contract (config/middleware-public-api-route-contract.v1.json) at a re-pinned digest",
+      "route names, expected azp allowlists and scopes re-derived from that frozen contract by scripts/generate_middleware_routes.py, not from this pending file",
+      "Keycloak client scopes platform.command, platform.command.read and platform.command.replay provisioned as optional client scopes on the calling service clients (never realm defaults)",
+      "BLOCKED_ON_MIDDLEWARE_V3_FINAL_SHA"
+    ]
+  },
+  "notes": "Prepared, disabled Kong routes for the Middleware V3 platform kernel (POST /platform/v1/commands, operation reads, cancel, replay, timeline, kernel describe). Kong validates issuer, audience, azp-to-consumer mapping and scope only; business authorization (policy engine, capability registry, safety engine, tenant/campaign ownership) stays in Middleware. Nothing here may be applied or merged until the final Middleware V3 route contract is frozen.",
+  "routes": [
+    {
+      "name": "middleware-v3-submit-command",
+      "path": "/platform/v1/commands",
+      "methods": ["POST"],
+      "requiredScope": "platform.command",
+      "idempotencyRequired": true,
+      "ratePerMinute": 60
+    },
+    {
+      "name": "middleware-v3-describe-kernel",
+      "path": "/platform/v1/kernel/describe",
+      "methods": ["GET"],
+      "requiredScope": "platform.command.read",
+      "idempotencyRequired": false,
+      "ratePerMinute": 240
+    },
+    {
+      "name": "middleware-v3-read-operation",
+      "path": "/platform/v1/operations/{operation_id}",
+      "methods": ["GET"],
+      "requiredScope": "platform.command.read",
+      "idempotencyRequired": false,
+      "ratePerMinute": 240
+    },
+    {
+      "name": "middleware-v3-cancel-operation",
+      "path": "/platform/v1/operations/{operation_id}/cancel",
+      "methods": ["POST"],
+      "requiredScope": "platform.command",
+      "idempotencyRequired": true,
+      "ratePerMinute": 60
+    },
+    {
+      "name": "middleware-v3-replay-operation",
+      "path": "/platform/v1/operations/{operation_id}/replay",
+      "methods": ["POST"],
+      "requiredScope": "platform.command.replay",
+      "idempotencyRequired": true,
+      "ratePerMinute": 60
+    },
+    {
+      "name": "middleware-v3-read-operation-timeline",
+      "path": "/platform/v1/operations/{operation_id}/timeline",
+      "methods": ["GET"],
+      "requiredScope": "platform.command.read",
+      "idempotencyRequired": false,
+      "ratePerMinute": 240
+    }
+  ]
+}
