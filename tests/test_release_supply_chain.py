@@ -161,7 +161,9 @@ def test_generated_manifest_carries_every_binding_and_verifies(tmp_path, monkeyp
     monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
     monkeypatch.setenv("GITHUB_WORKFLOW_REF", contract.REPOSITORY + "/.github/workflows/release.yml@refs/heads/main")
     head = generator.git("rev-parse", "HEAD")
-    parent = generator.git("rev-parse", "HEAD^1")
+    # CI checks out a shallow head, so the rollback source is synthetic here; the
+    # generator only validates its shape and the workflow supplies the real parent.
+    parent = "d" * 40
     output = tmp_path / "release-manifest.json"
     monkeypatch.setattr(sys, "argv", ["generate", "--output", str(output), "--release-stage", "protected-main-source-candidate",
                                       "--commit-verification-status", "VERIFIED", "--kong-image-digest", "sha256:" + "a" * 64,

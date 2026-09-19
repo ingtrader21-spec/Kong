@@ -1197,8 +1197,8 @@
     },
     {
       "path": "tests/test_release_supply_chain.py",
-      "sha256": "22da77b930cdbb5d3ecf6454519fbc555be71a6ac6b5ce8f7cd7fba1092553a8",
-      "size": 24665
+      "sha256": "308a009c242e2702fc77f919c4af8d3094f17fb39eca059cd9c50cf730bf4f30",
+      "size": 24803
     },
     {
       "path": "tests/test_runtime_integration_preflight.py",
@@ -1287,7 +1287,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "347eb319080bd925a5d1db9db4c8f8317b6dcb524cbf3a02e4edfbca431eb8df",
+  "manifest_generation_id": "65abf5787c6f9e5dfd91f0329943aa2b025ae8c6e6d13909de9c0fce79280c42",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
