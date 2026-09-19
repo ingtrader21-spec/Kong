@@ -1282,12 +1282,12 @@
     },
     {
       "path": "tools/verify_standby_image.py",
-      "sha256": "28bb43f1ade53c01be3b618c3b8534043cc2de47cbdeca09eedc00fd62a6c8fc",
-      "size": 4552
+      "sha256": "cbbafed549c2c9404bcbb4fccb54dad786dfd9bc5eca1ea7a7214298c966467f",
+      "size": 5087
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "42a956b789c07079ad7cf761c2adcc2a4aeb52570bb5f093726bc015c64ee516",
+  "manifest_generation_id": "80966bed827326bba9ab6a13dc5f1b1459c2b01c21ce2e7b0756a5d6921e3df2",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

@@ -64,7 +64,10 @@ def check_config(inspected: dict, expected_revision: str) -> dict:
 
 def docker(*args: str) -> str:
     result = subprocess.run(["docker", *args], capture_output=True, text=True, timeout=300, check=False)
-    require(result.returncode == 0, f"docker_{args[0]}_failed:{result.stderr.strip()[:200]}")
+    if result.returncode != 0:
+        # The full (bounded) diagnostics go to stderr so a failed smoke run is explainable from the CI log.
+        sys.stderr.write((result.stdout + result.stderr)[-4000:])
+        raise ImageError(f"docker_{args[0]}_failed:{result.stderr.strip().splitlines()[-1][:200] if result.stderr.strip() else 'no stderr'}")
     return result.stdout
 
 
@@ -77,8 +80,11 @@ def main() -> int:
         entries = json.loads(docker("inspect", args.image))
         require(isinstance(entries, list) and len(entries) == 1, "inspect_ambiguous")
         summary = check_config(entries[0], args.expected_revision)
-        smoke = docker("run", "--rm", "--network", "none", "--read-only", "--tmpfs", "/tmp:rw,size=1m,uid=65532",
-                       "--entrypoint", "sh", args.image, "-c", SMOKE)
+        # Mirrors deploy/kong-production-standby/compose.standby.yaml: read-only root,
+        # tmpfs /tmp, all capabilities dropped, no new privileges, no network.
+        smoke = docker("run", "--rm", "--network", "none", "--read-only", "--tmpfs", "/tmp:rw,size=4m",
+                       "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true",
+                       "--env", "PYTHONDONTWRITEBYTECODE=1", "--entrypoint", "sh", args.image, "-c", SMOKE)
         require("STANDBY_IMPORT=OK" in smoke, "smoke_import_failed")
     except (ImageError, OSError, ValueError, subprocess.SubprocessError) as error:
         print(f"STANDBY_IMAGE=FAIL {error}")
