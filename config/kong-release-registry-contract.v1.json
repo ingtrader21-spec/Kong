@@ -1,0 +1,58 @@
+{
+  "schema": "codestra.kong.release-registry-contract.v1",
+  "version": "1.0.0",
+  "status": "SOURCE_CANDIDATE_NO_RUNTIME_APPLY",
+  "runtimeApplyAuthorized": false,
+  "providerEffectsEnabled": false,
+  "repository": {
+    "fullName": "ingtrader21-spec/Kong",
+    "id": 1347790742,
+    "owner": "ingtrader21-spec",
+    "ownerType": "User",
+    "formerNames": [
+      {
+        "fullName": "appolon1908-hue/Kong",
+        "status": "transferred; the GitHub API answers HTTP 301 to repository id 1347790742",
+        "effect": "a repository-scoped GITHUB_TOKEN can only write packages in the current owner namespace; the former namespace answers permission_denied: The requested installation does not exist"
+      }
+    ],
+    "bindingRule": "every release workflow proves GITHUB_REPOSITORY == repository.fullName and lower(GITHUB_REPOSITORY_OWNER) == registry.namespace before it authenticates to the registry; a further transfer fails closed instead of publishing to a stale namespace"
+  },
+  "registry": {
+    "host": "ghcr.io",
+    "namespace": "ingtrader21-spec",
+    "namespaceDerivedFrom": "lower-cased repository owner (GITHUB_REPOSITORY_OWNER); never a historical literal",
+    "package": "kong-standby-auth",
+    "image": "ghcr.io/ingtrader21-spec/kong-standby-auth",
+    "packageVisibility": "private (inherits the repository visibility on first publication by the repository workflow; the package is linked to the repository by that publication)",
+    "packageLinkedTo": "ingtrader21-spec/Kong"
+  },
+  "identities": {
+    "writer": "GITHUB_TOKEN of the repository's own workflow runs: .github/workflows/release.yml on push to main (authoritative candidate) and .github/workflows/release-preflight.yml on same-repository pull requests (preflight only); permissions contents: read, packages: write",
+    "reader": "GITHUB_TOKEN of the promotion, certification and drift workflows (packages read through the repository link) and the staging/production deploy identity, which is provisioned outside Git and pulls by digest only",
+    "personalAccessToken": "not used; no shared or universal registry credential exists",
+    "forkPullRequests": "never receive packages: write; the preflight workflow refuses head repositories other than repository.fullName"
+  },
+  "tagPolicy": {
+    "authoritative": "sha-<40 lowercase hex git sha of the protected main commit>",
+    "preflight": "preflight-sha-<40 lowercase hex git sha of the pull-request head>; proves build, publish, digest and attestation capability; never promotable and never a release authority",
+    "mutableTagsAllowed": false,
+    "forbiddenTags": ["latest", "main", "staging", "production", "stable"],
+    "digestAuthority": "the OCI image index digest reported by buildx (containerimage.digest) and re-read from the registry with imagetools inspect; every consumer (release manifest, compose, promotion) references <image>@sha256:<digest>, never a tag"
+  },
+  "attestations": {
+    "provenance": "BuildKit SLSA provenance (--provenance=mode=max) attached to the published image index and extracted into the release evidence as standby-provenance.json",
+    "sbom": "BuildKit SPDX SBOM (--sbom=true) attached to the published image index and extracted into the release evidence as standby-sbom.spdx.json with its sha256 bound in the release manifest",
+    "githubArtifactAttestations": "not used: would require id-token: write and attestations: write; the BuildKit attestations already bind builder, source revision and digest"
+  },
+  "retention": {
+    "releaseEvidenceArtifactDays": 90,
+    "authoritativeImageVersions": "immutable; never deleted or retagged by automation",
+    "preflightImageVersions": "immutable per pull-request head; may be pruned by a repository administrator, never by a workflow token"
+  },
+  "promotion": {
+    "authority": "tools/verify_release_candidate.py: staging and production promote the exact protected-main candidate (run id, artifact digest, manifest sha256, image digests) and never rebuild, re-resolve or retag",
+    "rollbackReference": "release-manifest rollback_source_sha plus the previous candidate's image digest and configuration sha256 recorded by the staging certification",
+    "runtimeApply": "no release evidence authorizes a runtime apply; deployment remains a separately reviewed change with runtimeApplyAuthorized false everywhere in this repository"
+  }
+}

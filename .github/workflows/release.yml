@@ -50,7 +50,6 @@ jobs:
     env:
       EXPECTED_SHA: ${{ github.sha }}
       KONG_IMAGE_REF: kong/kong-gateway:3.14.0.1-ubuntu
-      STANDBY_IMAGE_REPOSITORY: ghcr.io/appolon1908-hue/kong-standby-auth
       STAGING_CERTIFICATION_RUN_ID: ${{ vars.KONG_STAGING_CERTIFICATION_RUN_ID }}
       CERTIFIED_SOURCE_SHA: ${{ vars.KONG_CERTIFIED_SOURCE_SHA }}
       KONG_CANDIDATE_RUN_ID: ${{ vars.KONG_CANDIDATE_RUN_ID }}
@@ -72,6 +71,20 @@ jobs:
             *) echo "release evidence refuses non-environment branch ${GITHUB_REF_NAME}" >&2; exit 1 ;;
           esac
           test -z "$(git status --porcelain)"
+
+      - name: Bind the release registry contract to this repository
+        # The image namespace is derived from the contract and proven against the
+        # repository that is actually running; a stale or transferred owner fails
+        # here, before any registry authentication.
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input PyYAML
+          python3 tools/release_contract.py \
+            --assert-repository "${GITHUB_REPOSITORY}" \
+            --assert-owner "${GITHUB_REPOSITORY_OWNER}"
+          image="$(python3 tools/release_contract.py --assert-repository "${GITHUB_REPOSITORY}" --print image)"
+          test "${image}" = "ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kong-standby-auth"
+          echo "STANDBY_IMAGE_REPOSITORY=${image}" >> "${GITHUB_ENV}"
 
       - name: Verify protected commit identity
         id: commit
@@ -117,24 +130,45 @@ jobs:
             --output-dir "${RUNNER_TEMP}/staging-certification" \
             --github-output "${GITHUB_OUTPUT}"
 
-      - name: Authenticate to GHCR for immutable candidate publication
+      - name: Build the exact standby auth image without publishing
         if: github.ref_name == 'main'
+        id: build
+        run: |
+          set -Eeuo pipefail
+          builder="kong-release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          docker buildx create --name "${builder}" --driver docker-container --use
+          docker buildx inspect --bootstrap
+          echo "builder=${builder}" >> "${GITHUB_OUTPUT}"
+          local_tag="kong-standby-auth:candidate-${EXPECTED_SHA}"
+          docker buildx build \
+            --file deploy/kong-production-standby/auth-middleware/Dockerfile \
+            --platform linux/amd64 \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${EXPECTED_SHA}" \
+            --label "org.opencontainers.image.version=${EXPECTED_SHA}" \
+            --provenance=false \
+            --sbom=false \
+            --tag "${local_tag}" \
+            --load \
+            deploy/kong-production-standby/auth-middleware
+          echo "local_tag=${local_tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify the built image before publication
+        if: github.ref_name == 'main'
+        env:
+          LOCAL_TAG: ${{ steps.build.outputs.local_tag }}
+        run: |
+          set -Eeuo pipefail
+          python3 tools/verify_standby_image.py --image "${LOCAL_TAG}" --expected-revision "${EXPECTED_SHA}"
+
+      - name: Publish the exact immutable candidate with attestations
+        if: github.ref_name == 'main'
+        id: standby
         env:
           GHCR_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
           printf '%s' "${GHCR_TOKEN}" | docker login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
-
-      - name: Build and publish exact standby auth image
-        if: github.ref_name == 'main'
-        id: standby
-        run: |
-          set -Eeuo pipefail
-          builder="kong-release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          docker buildx create --name "${builder}" --driver docker-container --use
-          trap 'docker buildx rm "${builder}" >/dev/null 2>&1 || true' EXIT
-          docker buildx inspect --bootstrap
-
           tag="${STANDBY_IMAGE_REPOSITORY}:sha-${EXPECTED_SHA}"
           docker buildx build \
             --file deploy/kong-production-standby/auth-middleware/Dockerfile \
@@ -148,11 +182,34 @@ jobs:
             --metadata-file "${RUNNER_TEMP}/standby-build-metadata.json" \
             --push \
             deploy/kong-production-standby/auth-middleware
-
           digest="$(jq -r '."containerimage.digest"' "${RUNNER_TEMP}/standby-build-metadata.json")"
           [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
           echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
           printf '%s@%s\n' "${STANDBY_IMAGE_REPOSITORY}" "${digest}" > "${RUNNER_TEMP}/standby-image.txt"
+
+      - name: Verify the registry digest and extract the attestations
+        if: github.ref_name == 'main'
+        id: attest
+        env:
+          LOCAL_DIGEST: ${{ steps.standby.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          docker buildx imagetools inspect "${STANDBY_IMAGE_REPOSITORY}@${LOCAL_DIGEST}" > "${RUNNER_TEMP}/standby-image-inspect.txt"
+          remote="$(awk '$1 == "Digest:" {print $2; exit}' "${RUNNER_TEMP}/standby-image-inspect.txt")"
+          [[ "${remote}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          test "${remote}" = "${LOCAL_DIGEST}"
+          printf '%s\n' "${remote}" > "${RUNNER_TEMP}/standby-remote-digest.txt"
+          docker buildx imagetools inspect "${STANDBY_IMAGE_REPOSITORY}@${LOCAL_DIGEST}" \
+            --format '{{ json .SBOM }}' > "${RUNNER_TEMP}/standby-sbom.attestation.json"
+          docker buildx imagetools inspect "${STANDBY_IMAGE_REPOSITORY}@${LOCAL_DIGEST}" \
+            --format '{{ json .Provenance }}' > "${RUNNER_TEMP}/standby-provenance.json"
+          python3 tools/extract_image_attestations.py \
+            --sbom-attestation "${RUNNER_TEMP}/standby-sbom.attestation.json" \
+            --sbom-output "${RUNNER_TEMP}/standby-sbom.spdx.json" \
+            --provenance "${RUNNER_TEMP}/standby-provenance.json" \
+            --expected-revision "${EXPECTED_SHA}" \
+            --github-output "${GITHUB_OUTPUT}"
 
       - name: Resolve the exact upstream Kong image digest
         if: github.ref_name == 'main'
@@ -187,12 +244,13 @@ jobs:
           ROLLBACK_SOURCE_SHA: ${{ steps.candidate.outputs.rollback_source_sha || steps.commit.outputs.rollback_source_sha }}
           KONG_IMAGE_DIGEST: ${{ steps.candidate.outputs.kong_digest || steps.kong.outputs.digest }}
           STANDBY_AUTH_IMAGE_DIGEST: ${{ steps.candidate.outputs.standby_digest || steps.standby.outputs.digest }}
+          STANDBY_SBOM_SHA256: ${{ steps.attest.outputs.sbom_sha256 }}
+          STANDBY_PROVENANCE_SHA256: ${{ steps.attest.outputs.provenance_sha256 }}
           CANDIDATE_MANIFEST_SHA256: ${{ steps.candidate.outputs.manifest_sha256 }}
           CANDIDATE_ARTIFACT_ID: ${{ steps.candidate.outputs.artifact_id }}
           VERIFIED_STAGING_CERTIFICATION: ${{ steps.runtime_certification.outputs.staging_certification }}
         run: |
           set -Eeuo pipefail
-          python3 -m pip install --disable-pip-version-check --no-input PyYAML
           case "${GITHUB_REF_NAME}" in
             main)
               release_stage=protected-main-source-candidate
@@ -219,6 +277,11 @@ jobs:
               --staging-evidence "${RUNNER_TEMP}/staging-certification/certification.json"
               --staging-receipt "${RUNNER_TEMP}/staging-certification/receipt.json"
             )
+          else
+            promotion_args=(
+              --standby-auth-sbom-sha256 "${STANDBY_SBOM_SHA256}"
+              --standby-auth-provenance-sha256 "${STANDBY_PROVENANCE_SHA256}"
+            )
           fi
           python3 tools/generate_release_manifest.py \
             --output "${RUNNER_TEMP}/release-manifest.json" \
@@ -230,6 +293,23 @@ jobs:
             --rollback-source-sha "${ROLLBACK_SOURCE_SHA}" \
             "${promotion_args[@]}"
 
+      - name: Verify the release evidence against the evidence contract
+        run: |
+          set -Eeuo pipefail
+          if [[ "${GITHUB_REF_NAME}" == main ]]; then
+            python3 tools/verify_release_evidence.py \
+              --manifest "${RUNNER_TEMP}/release-manifest.json" \
+              --expected-source-sha "${EXPECTED_SHA}" \
+              --expected-stage protected-main-source-candidate \
+              --sbom "${RUNNER_TEMP}/standby-sbom.spdx.json" \
+              --provenance "${RUNNER_TEMP}/standby-provenance.json" \
+              --registry-digest "$(cat "${RUNNER_TEMP}/standby-remote-digest.txt")"
+          else
+            python3 tools/verify_release_evidence.py \
+              --manifest "${RUNNER_TEMP}/release-manifest.json" \
+              --expected-source-sha "${CERTIFIED_SOURCE_SHA}"
+          fi
+
       - name: Upload bounded immutable release evidence
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
@@ -238,6 +318,10 @@ jobs:
             ${{ runner.temp }}/release-manifest.json
             ${{ runner.temp }}/standby-build-metadata.json
             ${{ runner.temp }}/standby-image.txt
+            ${{ runner.temp }}/standby-remote-digest.txt
+            ${{ runner.temp }}/standby-image-inspect.txt
+            ${{ runner.temp }}/standby-sbom.spdx.json
+            ${{ runner.temp }}/standby-provenance.json
             ${{ runner.temp }}/kong-image.txt
             ${{ runner.temp }}/kong-image-inspect.txt
             ${{ runner.temp }}/candidate/receipt.json
@@ -246,6 +330,10 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-      - name: Close registry session
+      - name: Close registry session and builder
         if: always()
-        run: docker logout ghcr.io || true
+        env:
+          BUILDER: ${{ steps.build.outputs.builder }}
+        run: |
+          docker logout ghcr.io || true
+          if [[ -n "${BUILDER}" ]]; then docker buildx rm "${BUILDER}" >/dev/null 2>&1 || true; fi

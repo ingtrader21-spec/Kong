@@ -11,6 +11,7 @@ import pytest
 
 from tools import kong_certification as c
 from tools import verify_staging_certification as verifier
+from tools.release_contract import STANDBY_IMAGE
 from tools import package_staging_certification as publisher
 from scripts import run_kong_standby_acceptance as acceptance
 
@@ -247,7 +248,8 @@ def test_rollback_candidate_is_authenticated_from_canonical_signed_release(monke
         'commit_verification_status':'VERIFIED','staging_certification':'NOT_RUN_SOURCE_CANDIDATE',
         'kong_image_digest':'sha256:'+'2'*64,'standby_auth_image_digest':'sha256:'+'8'*64,
         'rollback_source_sha':'0'*40,'kong_declarative_config_sha256':'3'*64,
-        'kong_image':'kong/kong-gateway:3.14.0.1-ubuntu','standby_auth_image':'ghcr.io/appolon1908-hue/kong-standby-auth'}
+        'kong_image':'kong/kong-gateway:3.14.0.1-ubuntu','standby_auth_image':STANDBY_IMAGE,
+        'standby_auth_image_tag':'sha-'+source}
     manifest=json.dumps(candidate).encode()
     buffer=io.BytesIO()
     with zipfile.ZipFile(buffer,'w') as archive:

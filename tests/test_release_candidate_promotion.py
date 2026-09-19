@@ -14,6 +14,8 @@ import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from tools.release_contract import REPOSITORY, STANDBY_IMAGE  # noqa: E402
 
 
 def load(name):
@@ -25,8 +27,8 @@ def load(name):
 def run_fixture():
     return {'id': 123, 'head_sha': 'a'*40, 'head_branch': 'main',
             'path': '.github/workflows/release.yml', 'event': 'push', 'status': 'completed',
-            'conclusion': 'success', 'repository': {'full_name': 'appolon1908-hue/Kong'},
-            'head_repository': {'full_name': 'appolon1908-hue/Kong'}}
+            'conclusion': 'success', 'repository': {'full_name': REPOSITORY},
+            'head_repository': {'full_name': REPOSITORY}}
 
 
 @pytest.mark.parametrize('change', [
@@ -45,7 +47,7 @@ def artifact_fixture():
         'source_tree': 'c'*40, 'commit_verification_status': 'VERIFIED',
         'staging_certification': 'NOT_RUN_SOURCE_CANDIDATE', 'rollback_source_sha': 'd'*40,
         'kong_image': 'kong/kong-gateway:3.14.0.1-ubuntu',
-        'standby_auth_image': 'ghcr.io/appolon1908-hue/kong-standby-auth',
+        'standby_auth_image': STANDBY_IMAGE, 'standby_auth_image_tag': 'sha-'+'a'*40,
         'kong_image_digest': 'sha256:'+'a'*64, 'standby_auth_image_digest': 'sha256:'+'b'*64}
     return manifest
 
@@ -122,6 +124,7 @@ def release_repository(tmp_path, monkeypatch, synthetic_certification):
         monkeypatch.setattr(sys,'argv',['generate','--output',str(output),'--release-stage',stage,
             '--commit-verification-status','VERIFIED','--kong-image-digest','sha256:'+'a'*64,
             '--standby-auth-image-digest','sha256:'+'b'*64,'--rollback-source-sha',base,
+            '--standby-auth-sbom-sha256','5'*64,'--standby-auth-provenance-sha256','6'*64,
             '--staging-certification',cert,*extra])
         return m.main()
     assert invoke(m.SOURCE_RELEASE_STAGE,candidate)==0

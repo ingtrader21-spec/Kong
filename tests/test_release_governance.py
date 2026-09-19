@@ -1,8 +1,10 @@
 import importlib.util
+import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 GENERATOR = ROOT / "tools/generate_release_manifest.py"
 
 
@@ -32,10 +34,12 @@ def test_release_signature_must_be_verified():
 def test_release_stage_is_explicit_and_fail_closed():
     release = module()
     assert release.RELEASE_STAGES == {
+        "pull-request-preflight",
         "protected-main-source-candidate",
         "staging-certified",
         "production",
     }
+    assert release.BUILD_STAGES == {"pull-request-preflight", "protected-main-source-candidate"}
     sha = "a" * 40
     assert release.CERTIFICATION_ID.fullmatch(f"PASS:{sha}:staging-run-123")
     assert not release.CERTIFICATION_ID.fullmatch("PASS:staging-run-123")
@@ -78,7 +82,8 @@ def test_standby_compose_forbids_deploy_time_build_and_floating_tag():
     compose = (ROOT / "deploy/kong-production-standby/compose.standby.yaml").read_text()
     assert "build:" not in compose
     assert "codestra/kong-standby-auth:20260820" not in compose
-    assert (
-        "ghcr.io/appolon1908-hue/kong-standby-auth@"
-        "${KONG_STANDBY_AUTH_IMAGE_DIGEST:?" in compose
-    )
+    from tools.release_contract import STANDBY_IMAGE
+
+    assert STANDBY_IMAGE + "@${KONG_STANDBY_AUTH_IMAGE_DIGEST:?" in compose
+    image_line = compose.split("image:")[1].splitlines()[0]
+    assert "appolon1908-hue" not in image_line

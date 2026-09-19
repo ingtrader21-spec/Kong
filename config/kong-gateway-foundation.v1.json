@@ -1235,6 +1235,14 @@
       {
         "path": "deploy/kong/compose.kong.yaml",
         "reason": "node deployment, validated by validate_node rather than as a route source"
+      },
+      {
+        "path": "config/kong-release-registry-contract.v1.json",
+        "reason": "Mission 3 release registry contract (image namespace, tag and digest policy); validated by scripts/validate_release_supply_chain.py and tools/release_contract.py, not a route source"
+      },
+      {
+        "path": "config/kong-release-evidence-contract.v1.json",
+        "reason": "Mission 3 release evidence contract (bindings every release manifest must carry); validated by tools/verify_release_evidence.py, not a route source"
       }
     ]
   },
