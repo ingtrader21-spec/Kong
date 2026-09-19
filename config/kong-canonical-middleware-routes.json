@@ -8,7 +8,7 @@
     "source": "appolon1908-hue/Middleware-:deploy/public-api-route-contract.json",
     "vendoredCopy": "config/middleware-public-api-route-contract.v1.json",
     "schema": "codestra.middleware.public-api-route-contract.v2",
-    "sha256": "7580123dead97ea342c704a57a3c8eed9f5dce69aab247d4b693db96bc7334d5",
+    "sha256": "c13554ebededa3ba6c39d0408adcd93f33baa941cac905907f6d63d390d93fab",
     "hashRule": "sha256 over json.dumps(contract, sort_keys=True, separators=(',', ':')).encode('utf-8')",
     "generator": "scripts/generate_middleware_routes.py"
   },
@@ -225,7 +225,7 @@
       ]
     },
     {
-      "name": "middleware-ingress-odoo-integration-events-api-v1-odoo-events-post",
+      "name": "middleware-ingress-odoo-event",
       "hosts": [
         "api.codestra.co"
       ],

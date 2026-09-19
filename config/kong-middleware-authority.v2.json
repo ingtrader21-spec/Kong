@@ -4,7 +4,7 @@
   "provider_effects_enabled": false,
   "contract": {
     "path": "config/middleware-public-api-route-contract.v1.json",
-    "sha256": "7580123dead97ea342c704a57a3c8eed9f5dce69aab247d4b693db96bc7334d5"
+    "sha256": "c13554ebededa3ba6c39d0408adcd93f33baa941cac905907f6d63d390d93fab"
   },
   "upstream": {
     "host": "middleware-integration-api",
@@ -152,7 +152,7 @@
       "request_size_limit_mb": 2
     },
     {
-      "operation_id": "ingress_odoo_integration_events_api_v1_odoo_events_post",
+      "operation_id": "ingress_odoo_event",
       "method": "POST",
       "path": "/api/v1/odoo/events",
       "issuer": "https://auth.codestra.co/realms/codestra",

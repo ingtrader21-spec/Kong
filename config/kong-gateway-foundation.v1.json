@@ -5417,23 +5417,23 @@
       "contractExpectedAzp": "odoo-integration"
     },
     {
-      "routeId": "middleware-ingress-odoo-integration-events-api-v1-odoo-events-post",
+      "routeId": "middleware-ingress-odoo-event",
       "serviceId": "middleware-integration-api",
       "environment": "production",
       "bindings": [
         {
           "source": "config/kong-canonical-middleware-routes.json",
-          "route": "middleware-ingress-odoo-integration-events-api-v1-odoo-events-post",
+          "route": "middleware-ingress-odoo-event",
           "role": "DESIRED"
         },
         {
           "source": "config/kong-middleware-routes.production.yml",
-          "route": "middleware-ingress-odoo-integration-events-api-v1-odoo-events-post",
+          "route": "middleware-ingress-odoo-event",
           "role": "DESIRED"
         },
         {
           "source": "config/kong-middleware-authority.v2.json",
-          "route": "middleware-ingress-odoo-integration-events-api-v1-odoo-events-post",
+          "route": "middleware-ingress-odoo-event",
           "role": "DESIRED"
         }
       ],
@@ -5451,18 +5451,18 @@
         "odoo.events.publish"
       ],
       "scopeAuthority": "config/kong-middleware-authority.v2.json",
-      "contractOperation": "ingress_odoo_integration_events_api_v1_odoo_events_post",
+      "contractOperation": "ingress_odoo_event",
       "contractAuthentication": "odoo-service-jwt",
       "contractExpectedAzp": "odoo-integration"
     },
     {
-      "routeId": "middleware-ingress-odoo-integration-events-api-v1-odoo-events-post@staging",
+      "routeId": "middleware-ingress-odoo-event@staging",
       "serviceId": "middleware-integration-api@staging",
       "environment": "staging",
       "bindings": [
         {
           "source": "config/staging/kong-middleware-routes.staging.yml",
-          "route": "middleware-ingress-odoo-integration-events-api-v1-odoo-events-post",
+          "route": "middleware-ingress-odoo-event",
           "role": "DESIRED"
         }
       ],
@@ -5480,7 +5480,7 @@
         "odoo.events.publish"
       ],
       "scopeAuthority": "config/kong-middleware-authority.v2.json",
-      "contractOperation": "ingress_odoo_integration_events_api_v1_odoo_events_post",
+      "contractOperation": "ingress_odoo_event",
       "contractAuthentication": "odoo-service-jwt",
       "contractExpectedAzp": "odoo-integration"
     },
