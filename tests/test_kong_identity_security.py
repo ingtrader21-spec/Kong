@@ -11,7 +11,7 @@ headers treated as authority, arbitrary tenant-header trust, a committed
 client secret, a global authentication plugin and an authentication downgrade.
 
 The Mission 1 reconciliation (PR #105) is merged: the canonical Middleware edge
-is the 80-operation v2 authority (openid-connect per route on
+is the 99-operation v2 authority (openid-connect per route on
 middleware-integration-api:8095), its 10 retired aliases are gateway-terminated
 404s, the retired appolon-middleware-integration-api:8080 alias has no
 activatable route, and every superseded jwt / PR #104 route points at its v2
@@ -310,7 +310,7 @@ def test_v2_shared_edge_routes_are_governed_from_the_authority():
     assert authority["runtime_apply_authorized"] is False and authority["provider_effects_enabled"] is False
     assert canonical["middlewareEdgeContract"]["sha256"] == authority["contract"]["sha256"]
     operations = {validator.authority_route_name(o["operation_id"]): o for o in authority["routes"]}
-    assert len(operations) == 80
+    assert len(operations) == 99
     for name, operation in operations.items():
         for suffix, environment, issuer, sources in (
             ("", "production", PROD_ISSUER, {CANONICAL, PROD_YML, AUTHORITY}),

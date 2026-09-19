@@ -3292,6 +3292,492 @@
       "contractExpectedAzp": "authorized-provisioning-client"
     },
     {
+      "routeId": "middleware-list-contacts-platform-v1-contacts-get",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "list_contacts_platform_v1_contacts_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-list-contacts-platform-v1-contacts-get@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "list_contacts_platform_v1_contacts_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-create-contact-platform-v1-contacts-post",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "create_contact_platform_v1_contacts_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-create-contact-platform-v1-contacts-post@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "create_contact_platform_v1_contacts_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-get-contact-platform-v1-contacts--contact-id--get",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "get_contact_platform_v1_contacts__contact_id__get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-get-contact-platform-v1-contacts--contact-id--get@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "get_contact_platform_v1_contacts__contact_id__get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-update-contact-platform-v1-contacts--contact-id--patch",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "update_contact_platform_v1_contacts__contact_id__patch",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-update-contact-platform-v1-contacts--contact-id--patch@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "update_contact_platform_v1_contacts__contact_id__patch",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-list-notes-platform-v1-contacts--contact-id--notes-get",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "list_notes_platform_v1_contacts__contact_id__notes_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-list-notes-platform-v1-contacts--contact-id--notes-get@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "list_notes_platform_v1_contacts__contact_id__notes_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-create-note-platform-v1-contacts--contact-id--notes-post",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "create_note_platform_v1_contacts__contact_id__notes_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-create-note-platform-v1-contacts--contact-id--notes-post@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "create_note_platform_v1_contacts__contact_id__notes_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-update-note-platform-v1-contacts--contact-id--notes--note-id--patch",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "update_note_platform_v1_contacts__contact_id__notes__note_id__patch",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-update-note-platform-v1-contacts--contact-id--notes--note-id--patch@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "update_note_platform_v1_contacts__contact_id__notes__note_id__patch",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-list-tasks-platform-v1-contacts--contact-id--tasks-get",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "list_tasks_platform_v1_contacts__contact_id__tasks_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-list-tasks-platform-v1-contacts--contact-id--tasks-get@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "list_tasks_platform_v1_contacts__contact_id__tasks_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-create-task-platform-v1-contacts--contact-id--tasks-post",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "create_task_platform_v1_contacts__contact_id__tasks_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-create-task-platform-v1-contacts--contact-id--tasks-post@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "create_task_platform_v1_contacts__contact_id__tasks_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
       "routeId": "middleware-list-email-identities-platform-v1-email-identities-get",
       "environment": "production",
       "accessClass": "AUTHENTICATED",
@@ -3992,6 +4478,222 @@
       "contractOperation": "get_my_presence_platform_v1_me_presence_get",
       "contractAuthentication": "service-or-user-jwt",
       "contractExpectedAzp": "browser-session"
+    },
+    {
+      "routeId": "middleware-list-opportunities-platform-v1-opportunities-get",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "list_opportunities_platform_v1_opportunities_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-list-opportunities-platform-v1-opportunities-get@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "list_opportunities_platform_v1_opportunities_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-create-opportunity-platform-v1-opportunities-post",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "create_opportunity_platform_v1_opportunities_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-create-opportunity-platform-v1-opportunities-post@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "create_opportunity_platform_v1_opportunities_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-get-opportunity-platform-v1-opportunities--opportunity-id--get",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "get_opportunity_platform_v1_opportunities__opportunity_id__get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-get-opportunity-platform-v1-opportunities--opportunity-id--get@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "get_opportunity_platform_v1_opportunities__opportunity_id__get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-update-opportunity-platform-v1-opportunities--opportunity-id--patch",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "update_opportunity_platform_v1_opportunities__opportunity_id__patch",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-update-opportunity-platform-v1-opportunities--opportunity-id--patch@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "update_opportunity_platform_v1_opportunities__opportunity_id__patch",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
     },
     {
       "routeId": "middleware-list-queues-platform-v1-queues-get",
@@ -5020,6 +5722,114 @@
       "contractExpectedAzp": "platform-operator"
     },
     {
+      "routeId": "middleware-update-task-platform-v1-tasks--task-id--patch",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "update_task_platform_v1_tasks__task_id__patch",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-update-task-platform-v1-tasks--task-id--patch@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "update_task_platform_v1_tasks__task_id__patch",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-complete-task-platform-v1-tasks--task-id--complete-post",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "complete_task_platform_v1_tasks__task_id__complete_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-complete-task-platform-v1-tasks--task-id--complete-post@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "complete_task_platform_v1_tasks__task_id__complete_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
       "routeId": "middleware-heartbeat-platform-v1-telemetry-heartbeats-post",
       "environment": "production",
       "accessClass": "AUTHENTICATED",
@@ -5394,6 +6204,222 @@
       ],
       "scopeAuthority": "config/kong-middleware-authority.v2.json",
       "contractOperation": "get_tenant_health_platform_v1_tenants__tenant_id__health_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-list-tickets-platform-v1-tickets-get",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "list_tickets_platform_v1_tickets_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-list-tickets-platform-v1-tickets-get@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "list_tickets_platform_v1_tickets_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-create-ticket-platform-v1-tickets-post",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "create_ticket_platform_v1_tickets_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-create-ticket-platform-v1-tickets-post@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "create_ticket_platform_v1_tickets_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-get-ticket-platform-v1-tickets--ticket-id--get",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "get_ticket_platform_v1_tickets__ticket_id__get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-get-ticket-platform-v1-tickets--ticket-id--get@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "get_ticket_platform_v1_tickets__ticket_id__get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-update-ticket-platform-v1-tickets--ticket-id--patch",
+      "environment": "production",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "update_ticket_platform_v1_tickets__ticket_id__patch",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "authorized-provisioning-client"
+    },
+    {
+      "routeId": "middleware-update-ticket-platform-v1-tickets--ticket-id--patch@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "identity.request"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "update_ticket_platform_v1_tickets__ticket_id__patch",
       "contractAuthentication": "service-or-user-jwt",
       "contractExpectedAzp": "authorized-provisioning-client"
     },
@@ -7322,7 +8348,7 @@
     "mergeCommit": "6afd0bd75ddeb056de97b017539cbc9f3a9a886b",
     "mergedAt": "2026-09-18T17:43:57Z",
     "state": "MERGED",
-    "effect": "the appolon-middleware-integration-api:8080 alias is retired and denied; every Middleware authority binds middleware-integration-api:8095; the canonical Middleware edge is the 80-operation v2 authority with openid-connect per route",
+    "effect": "the appolon-middleware-integration-api:8080 alias is retired and denied; every Middleware authority binds middleware-integration-api:8095; the canonical Middleware edge is the 99-operation v2 authority with openid-connect per route",
     "residue": {
       "liveRetiredAliasRoutes": [
         "codestra-n8n-command-submit",

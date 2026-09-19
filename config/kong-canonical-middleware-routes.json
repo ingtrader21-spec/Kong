@@ -8,7 +8,7 @@
     "source": "appolon1908-hue/Middleware-:deploy/public-api-route-contract.json",
     "vendoredCopy": "config/middleware-public-api-route-contract.v1.json",
     "schema": "codestra.middleware.public-api-route-contract.v2",
-    "sha256": "c13554ebededa3ba6c39d0408adcd93f33baa941cac905907f6d63d390d93fab",
+    "sha256": "be25ea3a15687616fc1a17c451bb731c9e8bb85bbbd970e563d2baedc062b99e",
     "hashRule": "sha256 over json.dumps(contract, sort_keys=True, separators=(',', ':')).encode('utf-8')",
     "generator": "scripts/generate_middleware_routes.py"
   },
@@ -747,6 +747,267 @@
       ]
     },
     {
+      "name": "middleware-list-contacts-platform-v1-contacts-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/contacts$"
+      ],
+      "pathTemplate": "/platform/v1/contacts",
+      "regexPriority": 3,
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-create-contact-platform-v1-contacts-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/contacts$"
+      ],
+      "pathTemplate": "/platform/v1/contacts",
+      "regexPriority": 3,
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-contact-platform-v1-contacts--contact-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/contacts/{contact_id}",
+      "regexPriority": 3,
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-update-contact-platform-v1-contacts--contact-id--patch",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/contacts/{contact_id}",
+      "regexPriority": 3,
+      "methods": [
+        "PATCH"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-notes-platform-v1-contacts--contact-id--notes-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/notes$"
+      ],
+      "pathTemplate": "/platform/v1/contacts/{contact_id}/notes",
+      "regexPriority": 4,
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-create-note-platform-v1-contacts--contact-id--notes-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/notes$"
+      ],
+      "pathTemplate": "/platform/v1/contacts/{contact_id}/notes",
+      "regexPriority": 4,
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-update-note-platform-v1-contacts--contact-id--notes--note-id--patch",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/notes/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/contacts/{contact_id}/notes/{note_id}",
+      "regexPriority": 4,
+      "methods": [
+        "PATCH"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-tasks-platform-v1-contacts--contact-id--tasks-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/tasks$"
+      ],
+      "pathTemplate": "/platform/v1/contacts/{contact_id}/tasks",
+      "regexPriority": 4,
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-create-task-platform-v1-contacts--contact-id--tasks-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/tasks$"
+      ],
+      "pathTemplate": "/platform/v1/contacts/{contact_id}/tasks",
+      "regexPriority": 4,
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
       "name": "middleware-list-email-identities-platform-v1-email-identities-get",
       "hosts": [
         "api.codestra.co"
@@ -1106,6 +1367,122 @@
       "regexPriority": 4,
       "methods": [
         "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-opportunities-platform-v1-opportunities-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/opportunities$"
+      ],
+      "pathTemplate": "/platform/v1/opportunities",
+      "regexPriority": 3,
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-create-opportunity-platform-v1-opportunities-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/opportunities$"
+      ],
+      "pathTemplate": "/platform/v1/opportunities",
+      "regexPriority": 3,
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-opportunity-platform-v1-opportunities--opportunity-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/opportunities/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/opportunities/{opportunity_id}",
+      "regexPriority": 3,
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-update-opportunity-platform-v1-opportunities--opportunity-id--patch",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/opportunities/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/opportunities/{opportunity_id}",
+      "regexPriority": 3,
+      "methods": [
+        "PATCH"
       ],
       "protocols": [
         "http"
@@ -1675,6 +2052,64 @@
       ]
     },
     {
+      "name": "middleware-update-task-platform-v1-tasks--task-id--patch",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/tasks/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/tasks/{task_id}",
+      "regexPriority": 3,
+      "methods": [
+        "PATCH"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-complete-task-platform-v1-tasks--task-id--complete-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/tasks/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/complete$"
+      ],
+      "pathTemplate": "/platform/v1/tasks/{task_id}/complete",
+      "regexPriority": 4,
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
       "name": "middleware-heartbeat-platform-v1-telemetry-heartbeats-post",
       "hosts": [
         "api.codestra.co"
@@ -1860,6 +2295,122 @@
       "regexPriority": 4,
       "methods": [
         "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-list-tickets-platform-v1-tickets-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/tickets$"
+      ],
+      "pathTemplate": "/platform/v1/tickets",
+      "regexPriority": 3,
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-create-ticket-platform-v1-tickets-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/tickets$"
+      ],
+      "pathTemplate": "/platform/v1/tickets",
+      "regexPriority": 3,
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-ticket-platform-v1-tickets--ticket-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/tickets/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/tickets/{ticket_id}",
+      "regexPriority": 3,
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-update-ticket-platform-v1-tickets--ticket-id--patch",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/tickets/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/tickets/{ticket_id}",
+      "regexPriority": 3,
+      "methods": [
+        "PATCH"
       ],
       "protocols": [
         "http"
