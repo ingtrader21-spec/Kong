@@ -675,7 +675,7 @@ files:
   sha256: 8973ca267fca284d529a1280e75e317553d7303105690721323cd1b352166d25
   size: 6400
 - path: tests/test_kong_campaign_edge_certification.py
-  sha256: 4a989d5dfb4fa1b861cc66189032a2fc67bdcf1168c1948ed000fb3a21ea63a7
+  sha256: 73c5b2a5529b88bace7fcbcb2b9a54b8d144c8a559770f2ef08096365b5f14fa
   size: 16616
 - path: tests/test_kong_canonical_route_contract.py
   sha256: 34b9329b0bcd38a849127ab4332b7bc8174b447f0fe54c3b304e01d947647979
@@ -684,8 +684,8 @@ files:
   sha256: 1d05fb6fead3c7ffa66ae6206d1cb49a6dee18f85a9690bedf15fdf020425701
   size: 34519
 - path: tests/test_kong_cross_repo_parity.py
-  sha256: 83f10a6223647faa3feea7b8330500b1ef0a36d216986e84162d606611023f31
-  size: 3711
+  sha256: 8870e3e02d2e3c7d1d62adfa5a8e9ff6292cd2032102ca8472568e20b303bbed
+  size: 3642
 - path: tests/test_kong_database_operations.py
   sha256: b6f3c3cb3ee82c3965e84f3903a3c19c9eaef49aa2a272b8902cb3a77d4833d7
   size: 6784
@@ -813,7 +813,7 @@ files:
   sha256: 8ce9988ecece68671509320205a44ea4db92fbad7db15fa32fe7425b5f447a1f
   size: 5410
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 61fc5302fd8f18deae105441f663e8a8dd1e0eb38e62f268693ca7402b1f7d43
+manifest_generation_id: 42042cee3c17c705e5a2b35428cb65bc9aeb245f7a3c41e53537323695ebd94d
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:

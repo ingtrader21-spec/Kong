@@ -31,13 +31,11 @@ def test_parallel_lane_pins_final_external_authorities_and_stays_source_only() -
     assert CONFIG["live_staging_probe_authorized"] is False
 
 
-def test_frozen_lane_c_base_is_explicitly_pending_lane_a_not_false_final() -> None:
-    with pytest.raises(parity.ParityError, match="Kong Middleware contract not final"):
-        parity.validate_kong(CONFIG, ROOT, allow_pending_lane_a=False)
-
-    report = parity.validate_kong(CONFIG, ROOT, allow_pending_lane_a=True)
-    assert report["pending_lane_a"] is True
-    assert report["observed_contract_sha256"] == CONFIG["sources"]["kong"]["base_contract_sha256"]
+def test_integrated_lane_a_contract_is_final_and_not_pending() -> None:
+    report = parity.validate_kong(CONFIG, ROOT, allow_pending_lane_a=False)
+    assert report["pending_lane_a"] is False
+    assert report["observed_contract_sha256"] == CONFIG["sources"]["kong"]["final_contract_sha256"]
+    assert report["observed_contract_sha256"] == CONFIG["sources"]["middleware"]["contract_sha256"]
     assert report["final_contract_sha256"] == CONFIG["sources"]["kong"]["final_contract_sha256"]
     assert report["upstream"] == "middleware-integration-api:8095"
     assert report["side_effecting_gateway_retries"] == 0
