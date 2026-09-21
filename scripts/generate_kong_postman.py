@@ -291,7 +291,7 @@ def render_environment() -> dict[str, Any]:
         ("wrong_azp_token", ""),
         ("missing_scope_token", ""),
         ("correlation_id", "TEST_SYN-kong-v3-parity"),
-        ("idempotency_key", "TEST_SYN-kong-v3-idem-0001"),
+        ("idempotency_key", ""),
         ("event_id", "EVT-TEST-SYN-0001"),
         ("contact_id", "CONTACT-TEST-SYN"),
         ("note_id", "NOTE-TEST-SYN"),

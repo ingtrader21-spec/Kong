@@ -8531,7 +8531,7 @@
         "private_only": 2
       },
       "keycloakRepository": "ingtrader21-spec/Keycloak",
-      "keycloakCommit": "45a487d71a516ae3039b00c250752897469ffe7a"
+      "identitySourceCommit": "45a487d71a516ae3039b00c250752897469ffe7a"
     },
     "canonicalMiddlewareAudience": "middleware-api",
     "callerSelectorCount": 18,

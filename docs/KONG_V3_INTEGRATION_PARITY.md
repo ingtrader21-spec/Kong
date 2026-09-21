@@ -19,7 +19,7 @@ The user's existing local repositories were used; no duplicate repository clone 
 - Caddy exact PR-175 worktree used for parity: `C:\Users\agent\Documents\GitHub\Caddy.worktrees\v3-addendum-20260920`
 - Caddy SHA: `56fd73d1647f7023cb07bdb14b1f72522c7b48d8`
 - Keycloak exact-source worktree used for caller/token readback: `C:\Users\agent\Documents\GitHub\Keycloak.worktrees\kong-lane-c-keycloak-45a487d`
-- Keycloak SHA: `45a487d71a516ae3039b00c250752897469ffe7a`
+- Identity source revision: `45a487d71a516ae3039b00c250752897469ffe7a`
 
 The primary local Middleware and Caddy checkouts are on other in-progress branches; Lane C does not overwrite or reset them.
 

@@ -99,8 +99,8 @@ files:
   sha256: 840ab012918cf32795fad798f82ba95e610b8c5e84c4dad8ac4dd9f8ae8509f7
   size: 140
 - path: config/kong-access-policy.v1.json
-  sha256: 7b9e32752d6a2e7c42e01a113a308f0ae44e8bfad597cb7ce7cba1c517d66f1f
-  size: 462296
+  sha256: e4b3f33741c667ca2a28ee8bd5723a377d0b9e17e271fd517b3643af77488f2e
+  size: 462302
 - path: config/kong-authentication-profiles.v1.json
   sha256: 396f84d4e5f65009269fd48f80fcf3f9a1b3a04584b0a9afcec71b70b7fdb8d2
   size: 37659
@@ -123,8 +123,8 @@ files:
   sha256: e5c5cc63c5553a653eb84d41c84f1832da23d96b542504c58287bbf88f970b80
   size: 4738
 - path: config/kong-gateway-foundation.v1.json
-  sha256: 804b78517362023e469395a80d89aebeeabcc58166de6f124414e91c3598f737
-  size: 561232
+  sha256: 618cd22a7b3018dd7f2bee1b2e788e859c5f27c6e357375ffd2841e8d40f8b88
+  size: 547232
 - path: config/kong-intake-routes.json
   sha256: 7920954c55b5fc92bfed8440a8287d53bddddf120af2c04511f5677aa2581072
   size: 1821
@@ -309,8 +309,8 @@ files:
   sha256: 21eddd58b00f35efa63d56d8265afb4ae52b1fab353ed7e9131ed750772960cf
   size: 5055
 - path: docs/KONG_V3_INTEGRATION_PARITY.md
-  sha256: 7fe2c20d8cc6cdd02c7e26375f9d924df011139e307d0a92171e11c577b8f421
-  size: 6032
+  sha256: 32310682c1d6c1f309ba17b2a105a7c3d86c6c4741072d58c7418bb4b72855e2
+  size: 6044
 - path: docs/MARKETING-PLATFORM-EDGE-RESPONSIBILITIES.md
   sha256: 30aae02a42e87c7869f8c024fec15ecaa43c9e0c388883a5ab0faee2f0debd12
   size: 1436
@@ -567,8 +567,8 @@ files:
   sha256: a96bdedaf45580c87d980ad61440aeb93232153a55c90fd6a6d5c7004c51bcdd
   size: 20816
 - path: scripts/generate_kong_postman.py
-  sha256: 77fb1820f1c337a3233f86e535e5a474e5705a29b2e52623c35ee0643ab00b97
-  size: 15071
+  sha256: a2e90ab8135bec81f4b3d615df3e702bc6e7ed89ed9888a8e3e7576e49230d4e
+  size: 15045
 - path: scripts/generate_middleware_routes.py
   sha256: 9b3ec7bf1c7d7450de43e688928014e1cc793505520d10aa359ddc690ab5af6d
   size: 14817
@@ -627,8 +627,8 @@ files:
   sha256: a33d3937b02067660c72fe7cc55e7d78a649c66c643d62f62bb82f10d860cc28
   size: 2952
 - path: scripts/validate_kong_v3_identity_security.py
-  sha256: 60e3f33747dce12ec7acb806ec2e74aeb17cc8bbf75941ef2ba90402f6e2b91b
-  size: 26466
+  sha256: 94b8075c45ab0510443c602f726f38818a1388930dbfc925e7722507c7c82709
+  size: 26493
 - path: scripts/validate_kong_webhook_registry.py
   sha256: b8ae898ba2ad132c57fbfe96cf3a7d3d949b1810d73cfccaf128f5588a41e814
   size: 8937
@@ -813,7 +813,7 @@ files:
   sha256: 8ce9988ecece68671509320205a44ea4db92fbad7db15fa32fe7425b5f447a1f
   size: 5410
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: b2b7e9acd5001c86b7c6de95598f2230b22254eaa7a90f94629e68bca8becb47
+manifest_generation_id: 556155ec7ae0abf99dad96f09c920d1fdba5c830741b16c57d4aa9ff2b93baea
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:

@@ -19,7 +19,7 @@ POLICY_PATH = ROOT / "config" / "kong-access-policy.v1.json"
 
 EXPECTED_MIDDLEWARE_DIGEST = "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
 EXPECTED_MIDDLEWARE_COMMIT = "2862af0aa97367b18cb360af69212abe4243a1ac"
-EXPECTED_KEYCLOAK_COMMIT = "45a487d71a516ae3039b00c250752897469ffe7a"
+EXPECTED_IDENTITY_SOURCE_COMMIT = "45a487d71a516ae3039b00c250752897469ffe7a"
 EXPECTED_PRODUCTION_ISSUER = "https://auth.codestra.co/realms/codestra"
 EXPECTED_STAGING_ISSUER = "https://auth-staging.codestra.co/realms/codestra"
 EXPECTED_MIDDLEWARE_AUDIENCE = "middleware-api"
@@ -142,7 +142,7 @@ def validate_profiles(profiles: dict[str, Any]) -> dict[str, Any]:
     require(middleware.get("routeCount") == 117, "Middleware route count drift")
 
     keycloak = authority.get("keycloak", {})
-    require(keycloak.get("commit") == EXPECTED_KEYCLOAK_COMMIT, "Keycloak identity commit pin drift")
+    require(keycloak.get("commit") == EXPECTED_IDENTITY_SOURCE_COMMIT, "Keycloak identity commit pin drift")
 
     token = authority.get("tokenPolicy", {})
     require(token.get("productionIssuer") == EXPECTED_PRODUCTION_ISSUER, "production issuer drift")
@@ -265,7 +265,7 @@ def validate_policy(policy: dict[str, Any], profiles: dict[str, Any]) -> dict[st
     require(source.get("routeContractSha256") == EXPECTED_MIDDLEWARE_DIGEST, "V3 policy route digest drift")
     require(source.get("routeCount") == 117, "V3 policy route count drift")
     require(source.get("classificationCounts") == EXPECTED_COUNTS, "V3 policy classification counts drift")
-    require(source.get("keycloakCommit") == EXPECTED_KEYCLOAK_COMMIT, "V3 policy Keycloak commit drift")
+    require(source.get("identitySourceCommit") == EXPECTED_IDENTITY_SOURCE_COMMIT, "V3 policy Keycloak commit drift")
 
     require(authority.get("canonicalMiddlewareAudience") == EXPECTED_MIDDLEWARE_AUDIENCE, "canonical middleware audience drift")
     require(authority.get("callerSelectorCount") == 18, "policy caller selector count must be 18")
