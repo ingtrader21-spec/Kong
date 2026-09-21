@@ -8177,8 +8177,8 @@
     {
       "routeId": "middleware-v3-submit-command",
       "environment": "production",
-      "accessClass": "SERVICE_AUTHENTICATED",
-      "authenticationProfile": "SERVICE_OIDC_V1",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
       "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
       "audienceProfile": "MIDDLEWARE_API",
       "requiredScopes": [
@@ -8186,6 +8186,7 @@
       ],
       "authorizedParties": "consumer-mapped",
       "principalClasses": [
+        "HUMAN",
         "SERVICE"
       ],
       "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
@@ -8195,18 +8196,16 @@
       "acceptedFindings": [
         "EXPECTED_AZP_ENFORCED_UPSTREAM"
       ],
-      "activationPrerequisites": [
-        "BLOCKED_ON_MIDDLEWARE_V3_FINAL_SHA: freeze the Middleware V3 contract and re-vendor config/middleware-public-api-route-contract.v1.json with the six /platform/v1 kernel operations",
-        "re-derive route names, expected azp allowlists and scopes from that frozen contract through scripts/generate_middleware_routes.py",
-        "provision platform.command / platform.command.read / platform.command.replay as optional client scopes on the calling Keycloak service clients (never realm defaults)"
-      ],
-      "notes": "V3_PENDING_FINAL_MIDDLEWARE_CONTRACT=true; Kong performs authentication and scope policy only, Middleware performs business authorization."
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "submit_command_platform_v1_commands_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "platform-command-client"
     },
     {
       "routeId": "middleware-v3-describe-kernel",
       "environment": "production",
-      "accessClass": "SERVICE_AUTHENTICATED",
-      "authenticationProfile": "SERVICE_OIDC_V1",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
       "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
       "audienceProfile": "MIDDLEWARE_API",
       "requiredScopes": [
@@ -8214,6 +8213,7 @@
       ],
       "authorizedParties": "consumer-mapped",
       "principalClasses": [
+        "HUMAN",
         "SERVICE"
       ],
       "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
@@ -8223,18 +8223,16 @@
       "acceptedFindings": [
         "EXPECTED_AZP_ENFORCED_UPSTREAM"
       ],
-      "activationPrerequisites": [
-        "BLOCKED_ON_MIDDLEWARE_V3_FINAL_SHA: freeze the Middleware V3 contract and re-vendor config/middleware-public-api-route-contract.v1.json with the six /platform/v1 kernel operations",
-        "re-derive route names, expected azp allowlists and scopes from that frozen contract through scripts/generate_middleware_routes.py",
-        "provision platform.command / platform.command.read / platform.command.replay as optional client scopes on the calling Keycloak service clients (never realm defaults)"
-      ],
-      "notes": "V3_PENDING_FINAL_MIDDLEWARE_CONTRACT=true; Kong performs authentication and scope policy only, Middleware performs business authorization."
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "describe_kernel_platform_v1_kernel_describe_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "platform-command-client"
     },
     {
       "routeId": "middleware-v3-read-operation",
       "environment": "production",
-      "accessClass": "SERVICE_AUTHENTICATED",
-      "authenticationProfile": "SERVICE_OIDC_V1",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
       "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
       "audienceProfile": "MIDDLEWARE_API",
       "requiredScopes": [
@@ -8242,6 +8240,7 @@
       ],
       "authorizedParties": "consumer-mapped",
       "principalClasses": [
+        "HUMAN",
         "SERVICE"
       ],
       "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
@@ -8251,18 +8250,16 @@
       "acceptedFindings": [
         "EXPECTED_AZP_ENFORCED_UPSTREAM"
       ],
-      "activationPrerequisites": [
-        "BLOCKED_ON_MIDDLEWARE_V3_FINAL_SHA: freeze the Middleware V3 contract and re-vendor config/middleware-public-api-route-contract.v1.json with the six /platform/v1 kernel operations",
-        "re-derive route names, expected azp allowlists and scopes from that frozen contract through scripts/generate_middleware_routes.py",
-        "provision platform.command / platform.command.read / platform.command.replay as optional client scopes on the calling Keycloak service clients (never realm defaults)"
-      ],
-      "notes": "V3_PENDING_FINAL_MIDDLEWARE_CONTRACT=true; Kong performs authentication and scope policy only, Middleware performs business authorization."
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "get_operation_platform_v1_operations__operation_id__get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "platform-command-client"
     },
     {
       "routeId": "middleware-v3-cancel-operation",
       "environment": "production",
-      "accessClass": "SERVICE_AUTHENTICATED",
-      "authenticationProfile": "SERVICE_OIDC_V1",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
       "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
       "audienceProfile": "MIDDLEWARE_API",
       "requiredScopes": [
@@ -8270,6 +8267,7 @@
       ],
       "authorizedParties": "consumer-mapped",
       "principalClasses": [
+        "HUMAN",
         "SERVICE"
       ],
       "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
@@ -8279,18 +8277,16 @@
       "acceptedFindings": [
         "EXPECTED_AZP_ENFORCED_UPSTREAM"
       ],
-      "activationPrerequisites": [
-        "BLOCKED_ON_MIDDLEWARE_V3_FINAL_SHA: freeze the Middleware V3 contract and re-vendor config/middleware-public-api-route-contract.v1.json with the six /platform/v1 kernel operations",
-        "re-derive route names, expected azp allowlists and scopes from that frozen contract through scripts/generate_middleware_routes.py",
-        "provision platform.command / platform.command.read / platform.command.replay as optional client scopes on the calling Keycloak service clients (never realm defaults)"
-      ],
-      "notes": "V3_PENDING_FINAL_MIDDLEWARE_CONTRACT=true; Kong performs authentication and scope policy only, Middleware performs business authorization."
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "cancel_operation_platform_v1_operations__operation_id__cancel_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "platform-command-client"
     },
     {
       "routeId": "middleware-v3-replay-operation",
       "environment": "production",
-      "accessClass": "SERVICE_AUTHENTICATED",
-      "authenticationProfile": "SERVICE_OIDC_V1",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
       "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
       "audienceProfile": "MIDDLEWARE_API",
       "requiredScopes": [
@@ -8298,6 +8294,7 @@
       ],
       "authorizedParties": "consumer-mapped",
       "principalClasses": [
+        "HUMAN",
         "SERVICE"
       ],
       "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
@@ -8307,18 +8304,16 @@
       "acceptedFindings": [
         "EXPECTED_AZP_ENFORCED_UPSTREAM"
       ],
-      "activationPrerequisites": [
-        "BLOCKED_ON_MIDDLEWARE_V3_FINAL_SHA: freeze the Middleware V3 contract and re-vendor config/middleware-public-api-route-contract.v1.json with the six /platform/v1 kernel operations",
-        "re-derive route names, expected azp allowlists and scopes from that frozen contract through scripts/generate_middleware_routes.py",
-        "provision platform.command / platform.command.read / platform.command.replay as optional client scopes on the calling Keycloak service clients (never realm defaults)"
-      ],
-      "notes": "V3_PENDING_FINAL_MIDDLEWARE_CONTRACT=true; Kong performs authentication and scope policy only, Middleware performs business authorization."
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "replay_operation_platform_v1_operations__operation_id__replay_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "platform-command-client"
     },
     {
       "routeId": "middleware-v3-read-operation-timeline",
       "environment": "production",
-      "accessClass": "SERVICE_AUTHENTICATED",
-      "authenticationProfile": "SERVICE_OIDC_V1",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
       "issuerProfile": "KEYCLOAK_CODESTRA_PRODUCTION",
       "audienceProfile": "MIDDLEWARE_API",
       "requiredScopes": [
@@ -8326,6 +8321,7 @@
       ],
       "authorizedParties": "consumer-mapped",
       "principalClasses": [
+        "HUMAN",
         "SERVICE"
       ],
       "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
@@ -8335,12 +8331,172 @@
       "acceptedFindings": [
         "EXPECTED_AZP_ENFORCED_UPSTREAM"
       ],
-      "activationPrerequisites": [
-        "BLOCKED_ON_MIDDLEWARE_V3_FINAL_SHA: freeze the Middleware V3 contract and re-vendor config/middleware-public-api-route-contract.v1.json with the six /platform/v1 kernel operations",
-        "re-derive route names, expected azp allowlists and scopes from that frozen contract through scripts/generate_middleware_routes.py",
-        "provision platform.command / platform.command.read / platform.command.replay as optional client scopes on the calling Keycloak service clients (never realm defaults)"
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "get_timeline_platform_v1_operations__operation_id__timeline_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "platform-command-client"
+    },
+    {
+      "routeId": "middleware-v3-submit-command@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "platform.command"
       ],
-      "notes": "V3_PENDING_FINAL_MIDDLEWARE_CONTRACT=true; Kong performs authentication and scope policy only, Middleware performs business authorization."
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "submit_command_platform_v1_commands_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "platform-command-client"
+    },
+    {
+      "routeId": "middleware-v3-describe-kernel@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "platform.command.read"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "describe_kernel_platform_v1_kernel_describe_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "platform-command-client"
+    },
+    {
+      "routeId": "middleware-v3-read-operation@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "platform.command.read"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "get_operation_platform_v1_operations__operation_id__get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "platform-command-client"
+    },
+    {
+      "routeId": "middleware-v3-cancel-operation@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "platform.command"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "cancel_operation_platform_v1_operations__operation_id__cancel_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "platform-command-client"
+    },
+    {
+      "routeId": "middleware-v3-replay-operation@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "platform.command.replay"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "replay_operation_platform_v1_operations__operation_id__replay_post",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "platform-command-client"
+    },
+    {
+      "routeId": "middleware-v3-read-operation-timeline@staging",
+      "environment": "staging",
+      "accessClass": "AUTHENTICATED",
+      "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
+      "issuerProfile": "KEYCLOAK_CODESTRA_STAGING",
+      "audienceProfile": "MIDDLEWARE_API",
+      "requiredScopes": [
+        "platform.command.read"
+      ],
+      "authorizedParties": "consumer-mapped",
+      "principalClasses": [
+        "HUMAN",
+        "SERVICE"
+      ],
+      "identityPropagation": "OIDC_STRIP_AND_CONTRACT_METADATA",
+      "tenantPolicy": "CLAIM_ONLY_MIDDLEWARE_VALIDATES",
+      "failurePolicy": "FAIL_CLOSED_V1",
+      "tokenCache": "OIDC_CACHE_V1",
+      "acceptedFindings": [
+        "EXPECTED_AZP_ENFORCED_UPSTREAM"
+      ],
+      "scopeAuthority": "config/kong-middleware-authority.v2.json",
+      "contractOperation": "get_timeline_platform_v1_operations__operation_id__timeline_get",
+      "contractAuthentication": "service-or-user-jwt",
+      "contractExpectedAzp": "platform-command-client"
     }
   ],
   "m1Reconciliation": {
