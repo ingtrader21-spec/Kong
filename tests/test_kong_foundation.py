@@ -12,6 +12,7 @@ an isolated copy of the repository; nothing here touches a Kong node.
 
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 import shutil
@@ -506,3 +507,78 @@ def test_cli_reports_pass_and_source_only(capsys):
     out = capsys.readouterr().out
     assert "KONG_GATEWAY_FOUNDATION=PASS" in out
     assert "RUNTIME_APPLY_AUTHORIZED=NO" in out
+
+
+def test_lane_d_parallel_mode_accepts_an_integrated_candidate_without_downgrade():
+    result = validator.validate_foundation()
+    status = validator.validate_v3_certification(result, "parallel")
+    assert status["phase"] == "INTEGRATED"
+    assert status["middlewareContractSha256"] == validator.FINAL_MIDDLEWARE_CONTRACT_SHA256
+    assert status["classificationCounts"] == validator.FINAL_MIDDLEWARE_ROUTE_COUNTS
+    assert status["missingMiddlewareRoutes"] == 0
+    assert status["staleMiddlewareRoutes"] == 0
+    assert status["active8080Aliases"] == 0
+    assert status["directProviderRoutes"] == 0
+    assert status["directN8nExecutionRoutes"] == 0
+    assert status["directOdooRoutes"] == 0
+    assert status["publicPostgresRedisRoutes"] == 0
+    assert status["undeclaredOverlaps"] == 0
+    assert status["staleKnownDrift"] == 0
+    assert status["secretHits"] == 0
+    assert status["laneCArtifactsIntegrated"] is True
+    assert status["finalAuthorityRendered"] is True
+    assert status["provisionalIndependentAuthority"] is False
+
+
+def test_lane_d_integrated_gate_refuses_a_mocked_preintegration_status(monkeypatch):
+    result = validator.validate_foundation()
+    preintegration = copy.deepcopy(validator.v3_certification_status(result))
+    preintegration["phase"] = "PARALLEL"
+    preintegration["laneCArtifactsIntegrated"] = False
+    preintegration["finalAuthorityRendered"] = False
+    monkeypatch.setattr(
+        validator,
+        "v3_certification_status",
+        lambda _result, root=validator.ROOT: copy.deepcopy(preintegration),
+    )
+    with pytest.raises(validator.FoundationError, match="A/B/C are not fully integrated"):
+        validator.validate_v3_certification(result, "integrated")
+
+
+def test_lane_d_gate_rejects_active_8080_or_direct_provider_routes():
+    result = validator.validate_foundation()
+    route = next(
+        entry for entry in result["routes"].values()
+        if validator._candidate_route_is_active(entry, result["foundation"])
+        and entry.get("serviceId") is not None
+    )
+    service_id = route["serviceId"]
+
+    changed = copy.deepcopy(result)
+    changed["services"][service_id]["upstream"] = {
+        "protocol": "http",
+        "host": "middleware-integration-api",
+        "port": 8080,
+    }
+    with pytest.raises(validator.FoundationError, match="active 8080 aliases remain"):
+        validator.validate_v3_certification(changed, "parallel")
+
+    changed = copy.deepcopy(result)
+    changed["services"][service_id]["upstream"] = {
+        "protocol": "http",
+        "host": "odoo",
+        "port": 8069,
+    }
+    with pytest.raises(validator.FoundationError, match="direct provider routes remain"):
+        validator.validate_v3_certification(changed, "parallel")
+
+
+def test_lane_d_auto_phase_reports_integrated_after_abc_land():
+    result = validator.validate_foundation()
+    status = validator.validate_v3_certification(result, "auto")
+    assert status["phase"] == "INTEGRATED"
+    assert status["missingMiddlewareRoutes"] == 0
+    assert status["staleMiddlewareRoutes"] == 0
+    assert status["laneCArtifactsIntegrated"] is True
+    assert status["finalAuthorityRendered"] is True
+    assert status["provisionalIndependentAuthority"] is False

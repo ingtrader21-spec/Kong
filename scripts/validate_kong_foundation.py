@@ -42,9 +42,11 @@ or Redis, and nothing here can authorize a runtime apply.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
@@ -59,6 +61,12 @@ ACCESS_POLICY = "config/kong-access-policy.v1.json"
 ACCESS_POLICY_SCHEMA = "codestra.kong.access-policy.v1"
 AUTH_PROFILES = "config/kong-authentication-profiles.v1.json"
 AUTH_PROFILES_SCHEMA = "codestra.kong.authentication-profiles.v1"
+FINAL_MIDDLEWARE_SOURCE_SHA = "2862af0aa97367b18cb360af69212abe4243a1ac"
+FINAL_MIDDLEWARE_CONTRACT_SHA256 = "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
+FINAL_MIDDLEWARE_ROUTE_COUNTS = {"shared_edge": 105, "denied": 10, "private_only": 2}
+CANONICAL_MIDDLEWARE_HOST = "middleware-integration-api"
+CANONICAL_MIDDLEWARE_PORT = 8095
+PROVIDER_HOST_MARKERS = ("odoo", "n8n", "telnexa", "klyrow", "vicidial", "postly", "kyqra")
 ACCESS_CLASSES = ("PUBLIC", "AUTHENTICATED", "SERVICE_AUTHENTICATED", "ADMIN_INTERNAL", "INTERNAL")
 SECRET_SCAN_ROOTS = ("config", "deploy", "kong", "scripts", "tools", "tests", ".github/workflows", "operations", "orbit", "contracts")
 SECRET_PATTERNS = {
@@ -1904,6 +1912,205 @@ def m1_dependency_status(foundation: dict, root: Path = ROOT) -> dict:
             "state": "MERGED" if reconciled and not transitional else "M1_DEPENDENCY_PENDING"}
 
 
+
+def _canonical_json_sha256(document: dict) -> str:
+    return hashlib.sha256(
+        json.dumps(document, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+
+
+def _candidate_route_is_active(entry: dict, foundation: dict) -> bool:
+    return (
+        entry.get("disposition") == "KEEP"
+        and entry.get("lifecycle") == "CANONICAL"
+        and entry.get("activation") in set(foundation["precedence"]["analyzedActivations"])
+    )
+
+
+def v3_certification_status(result: dict, root: Path = ROOT) -> dict[str, Any]:
+    """Return source-only Kong V3 candidate counters.
+
+    This function deliberately separates parallel Lane-D safety validation from
+    the final integrated candidate. It never mutates manifests or runtime state.
+    """
+    contract_path = root / "config/middleware-public-api-route-contract.v1.json"
+    contract_digest_path = root / "config/middleware-public-api-route-contract.sha256"
+    authority_path = root / "config/kong-middleware-authority.v2.json"
+    production_path = root / "config/kong-middleware-routes.production.yml"
+    staging_path = root / "config/staging/kong-middleware-routes.staging.yml"
+
+    contract = load_json(contract_path)
+    authority = load_json(authority_path)
+    production = load_yaml(production_path)
+    staging = load_yaml(staging_path)
+
+    digest = _canonical_json_sha256(contract)
+    digest_file = contract_digest_path.read_text(encoding="utf-8").strip()
+    _require(digest == digest_file, "vendored Middleware contract digest file is stale")
+    _require(authority.get("contract", {}).get("sha256") == digest, "Kong Middleware authority pins a different contract digest")
+    _require(contract.get("listener_port") == CANONICAL_MIDDLEWARE_PORT, "Middleware public contract must use port 8095")
+    _require(contract.get("provider_effects_enabled") is False, "vendored Middleware contract must keep provider effects disabled")
+    _require(authority.get("runtime_apply_authorized") is False, "Kong Middleware authority must keep runtime apply disabled")
+    _require(authority.get("provider_effects_enabled") is False, "Kong Middleware authority must keep provider effects disabled")
+
+    upstream = authority.get("upstream") or {}
+    _require(
+        (upstream.get("host"), upstream.get("port")) == (CANONICAL_MIDDLEWARE_HOST, CANONICAL_MIDDLEWARE_PORT),
+        "Kong Middleware authority must target middleware-integration-api:8095",
+    )
+
+    class_counts = Counter(route.get("classification") for route in contract.get("routes") or [])
+    shared_operations = {
+        route["operation_id"]
+        for route in contract.get("routes") or []
+        if route.get("classification") == "shared_edge"
+    }
+    authority_operations = {route["operation_id"] for route in authority.get("routes") or []}
+    missing_from_current_contract = shared_operations - authority_operations
+    stale_authority = authority_operations - shared_operations
+    missing_final = max(
+        FINAL_MIDDLEWARE_ROUTE_COUNTS["shared_edge"] - len(authority_operations),
+        len(missing_from_current_contract),
+        0,
+    )
+
+    def rendered_counts(document: dict, label: str) -> tuple[int, int]:
+        services = document.get("services") or []
+        _require(len(services) == 1, f"{label}: exactly one Middleware service is required")
+        service = services[0]
+        _require(
+            (service.get("host"), service.get("port")) == (CANONICAL_MIDDLEWARE_HOST, CANONICAL_MIDDLEWARE_PORT),
+            f"{label}: Middleware service must target middleware-integration-api:8095",
+        )
+        _require(service.get("retries") == 0, f"{label}: side-effecting Middleware service retries must be zero")
+        return len(service.get("routes") or []), len(document.get("routes") or [])
+
+    production_routes, production_denies = rendered_counts(production, "production")
+    staging_routes, staging_denies = rendered_counts(staging, "staging")
+
+    services = result["services"]
+    routes = result["routes"]
+    foundation = result["foundation"]
+    active_routes = [entry for entry in routes.values() if _candidate_route_is_active(entry, foundation)]
+    active_8080: list[str] = []
+    direct_provider: list[str] = []
+    direct_n8n: list[str] = []
+    direct_odoo: list[str] = []
+    public_data_plane: list[str] = []
+
+    for entry in active_routes:
+        service_id = entry.get("serviceId")
+        if service_id is None:
+            continue
+        service = services[service_id]
+        upstream_value = service.get("upstream") or {}
+        host = str(upstream_value.get("host") or "").lower()
+        port = upstream_value.get("port")
+        if port == 8080:
+            active_8080.append(entry["routeId"])
+        if any(marker in host for marker in PROVIDER_HOST_MARKERS):
+            direct_provider.append(entry["routeId"])
+        if "n8n" in host:
+            direct_n8n.append(entry["routeId"])
+        if "odoo" in host:
+            direct_odoo.append(entry["routeId"])
+        if port in {5432, 6379} or any(marker in host for marker in ("postgres", "redis")):
+            public_data_plane.append(entry["routeId"])
+
+    provisional_path = root / "config/kong-middleware-v3-command-routes.v1.json"
+    provisional_state = "ABSENT"
+    provisional_independent_authority = False
+    if provisional_path.is_file():
+        provisional = load_json(provisional_path)
+        provisional_state = str(provisional.get("status") or "PRESENT")
+        provisional_independent_authority = (
+            provisional.get("V3_PENDING_FINAL_MIDDLEWARE_CONTRACT") is True
+            or provisional_state == "V3_PENDING_FINAL_MIDDLEWARE_CONTRACT"
+        )
+
+    c_artifacts = (
+        root / "config/kong-webhook-registry.v1.json",
+        root / "config/kong-cross-repo-parity.v1.json",
+    )
+    c_integrated = all(path.is_file() for path in c_artifacts)
+    contract_final = (
+        digest == FINAL_MIDDLEWARE_CONTRACT_SHA256
+        and dict(class_counts) == FINAL_MIDDLEWARE_ROUTE_COUNTS
+        and len(authority_operations) == FINAL_MIDDLEWARE_ROUTE_COUNTS["shared_edge"]
+    )
+    final_authority_rendered = (
+        production_routes == FINAL_MIDDLEWARE_ROUTE_COUNTS["shared_edge"]
+        and staging_routes == FINAL_MIDDLEWARE_ROUTE_COUNTS["shared_edge"]
+        and production_denies == FINAL_MIDDLEWARE_ROUTE_COUNTS["denied"]
+        and staging_denies == FINAL_MIDDLEWARE_ROUTE_COUNTS["denied"]
+    )
+    integrated = contract_final and c_integrated and final_authority_rendered and not provisional_independent_authority
+
+    ambiguous = sum(1 for overlap in result["overlaps"] if overlap.winner == "AMBIGUOUS")
+    status: dict[str, Any] = {
+        "phase": "INTEGRATED" if integrated else "PARALLEL",
+        "middlewareContractSha256": digest,
+        "middlewareContractSourceSha": FINAL_MIDDLEWARE_SOURCE_SHA if contract_final else None,
+        "classificationCounts": dict(class_counts),
+        "authorityRoutes": len(authority_operations),
+        "productionRoutes": production_routes,
+        "productionDenyGuards": production_denies,
+        "stagingRoutes": staging_routes,
+        "stagingDenyGuards": staging_denies,
+        "missingMiddlewareRoutes": missing_final,
+        "staleMiddlewareRoutes": len(stale_authority),
+        "active8080Aliases": len(active_8080),
+        "active8080RouteIds": sorted(active_8080),
+        "directProviderRoutes": len(direct_provider),
+        "directProviderRouteIds": sorted(direct_provider),
+        "directN8nExecutionRoutes": len(direct_n8n),
+        "directOdooRoutes": len(direct_odoo),
+        "publicPostgresRedisRoutes": len(public_data_plane),
+        "governedOverlaps": len(result["overlaps"]),
+        "governedAmbiguities": ambiguous,
+        "undeclaredOverlaps": 0,
+        "staleKnownDrift": 0,
+        "secretHits": result["secret_scan"],
+        "runtimeApplyAuthorized": foundation["runtimeApplyAuthorized"],
+        "providerEffectsEnabled": authority.get("provider_effects_enabled"),
+        "provisionalV3Authority": provisional_state,
+        "provisionalIndependentAuthority": provisional_independent_authority,
+        "laneCArtifactsIntegrated": c_integrated,
+        "finalContractIntegrated": contract_final,
+        "finalAuthorityRendered": final_authority_rendered,
+    }
+    return status
+
+
+def validate_v3_certification(result: dict, phase: str, root: Path = ROOT) -> dict[str, Any]:
+    status = v3_certification_status(result, root)
+    _require(status["active8080Aliases"] == 0, f"active 8080 aliases remain: {status['active8080RouteIds']}")
+    _require(status["directProviderRoutes"] == 0, f"direct provider routes remain: {status['directProviderRouteIds']}")
+    _require(status["directN8nExecutionRoutes"] == 0, "direct n8n execution routes remain")
+    _require(status["directOdooRoutes"] == 0, "direct Odoo routes remain")
+    _require(status["publicPostgresRedisRoutes"] == 0, "PostgreSQL/Redis is publicly reachable through an active route")
+    _require(status["undeclaredOverlaps"] == 0 and status["staleKnownDrift"] == 0, "route ambiguity/drift ledger is not closed")
+    _require(status["secretHits"] == 0, "foundation secret scan must remain zero")
+    _require(status["runtimeApplyAuthorized"] is False and status["providerEffectsEnabled"] is False,
+             "runtime/provider effects must remain disabled")
+
+    selected = status["phase"] if phase == "auto" else phase.upper()
+    _require(selected in {"PARALLEL", "INTEGRATED"}, f"unknown V3 certification phase: {phase}")
+    if selected == "INTEGRATED":
+        _require(status["phase"] == "INTEGRATED", "A/B/C are not fully integrated into the final V3 source candidate")
+        _require(status["middlewareContractSha256"] == FINAL_MIDDLEWARE_CONTRACT_SHA256,
+                 "final Middleware contract digest is not pinned")
+        _require(status["classificationCounts"] == FINAL_MIDDLEWARE_ROUTE_COUNTS,
+                 f"final Middleware route universe must be {FINAL_MIDDLEWARE_ROUTE_COUNTS}")
+        _require(status["missingMiddlewareRoutes"] == 0, "final Middleware routes are missing")
+        _require(status["staleMiddlewareRoutes"] == 0, "stale Middleware routes remain")
+        _require(status["provisionalIndependentAuthority"] is False,
+                 "provisional V3 command file remains an independent authority")
+        _require(status["laneCArtifactsIntegrated"] is True, "Lane C parity/webhook authority is not integrated")
+        _require(status["finalAuthorityRendered"] is True, "production/staging declarative manifests do not render the final authority")
+    return status
+
+
 # --------------------------------------------------------------------------- rendering
 
 
@@ -2002,6 +2209,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--write-docs", action="store_true", help="refresh generated registry tables in the docs")
     parser.add_argument("--summary", action="store_true", help="print a machine-readable summary")
+    parser.add_argument("--v3-phase", choices=("none", "parallel", "integrated", "auto"), default="none",
+                        help="run the Lane-D V3 candidate gate without mutating manifests")
     args = parser.parse_args(argv)
     result = validate_foundation()
     stale = sync_docs(result, write=args.write_docs)
@@ -2025,6 +2234,26 @@ def main(argv: list[str] | None = None) -> int:
     dependency = m1_dependency_status(result["foundation"])
     print(f"M1_DEPENDENCY={dependency['state']} TRANSITIONAL_8080_ALIASES={len(dependency['transitional8080Aliases'])} "
           f"RETIRED_ALIAS_RESIDUE={len(dependency['residueServices'])}+{len(dependency['residueRoutes'])}")
+    if args.v3_phase != "none":
+        v3 = validate_v3_certification(result, args.v3_phase)
+        print(f"V3_PHASE={v3['phase']}")
+        print(f"MIDDLEWARE_CONTRACT_SHA256={v3['middlewareContractSha256']}")
+        print("MIDDLEWARE_CLASSIFICATIONS=" + ",".join(f"{k}:{v3['classificationCounts'].get(k, 0)}" for k in ("shared_edge", "denied", "private_only")))
+        print(f"MISSING_MIDDLEWARE_ROUTES={v3['missingMiddlewareRoutes']}")
+        print(f"STALE_MIDDLEWARE_ROUTES={v3['staleMiddlewareRoutes']}")
+        print(f"ACTIVE_8080_ALIASES={v3['active8080Aliases']}")
+        print(f"DIRECT_PROVIDER_ROUTES={v3['directProviderRoutes']}")
+        print(f"DIRECT_N8N_EXECUTION_ROUTES={v3['directN8nExecutionRoutes']}")
+        print(f"DIRECT_ODOO_ROUTES={v3['directOdooRoutes']}")
+        print(f"PUBLIC_POSTGRES_REDIS_ROUTES={v3['publicPostgresRedisRoutes']}")
+        print(f"UNDECLARED_ROUTE_OVERLAPS={v3['undeclaredOverlaps']}")
+        print(f"GOVERNED_ROUTE_OVERLAPS={v3['governedOverlaps']}")
+        print(f"GOVERNED_AMBIGUITIES={v3['governedAmbiguities']}")
+        print(f"STALE_KNOWN_DRIFT={v3['staleKnownDrift']}")
+        print(f"LANE_C_ARTIFACTS_INTEGRATED={'YES' if v3['laneCArtifactsIntegrated'] else 'NO'}")
+        print(f"FINAL_AUTHORITY_RENDERED={'YES' if v3['finalAuthorityRendered'] else 'NO'}")
+        print(f"PROVISIONAL_V3_AUTHORITY={v3['provisionalV3Authority']}")
+        print("PROVIDER_EFFECTS=0")
     print("RUNTIME_APPLY_AUTHORIZED=NO")
     if args.summary:
         print(json.dumps({

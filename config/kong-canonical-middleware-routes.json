@@ -5,10 +5,10 @@
   "legacyHost": "api.codestra.agency",
   "legacyHostEnabled": false,
   "middlewareEdgeContract": {
-    "source": "appolon1908-hue/Middleware-:deploy/public-api-route-contract.json",
+    "source": "ingtrader21-spec/Middleware-:deploy/public-api-route-contract.json",
     "vendoredCopy": "config/middleware-public-api-route-contract.v1.json",
     "schema": "codestra.middleware.public-api-route-contract.v2",
-    "sha256": "be25ea3a15687616fc1a17c451bb731c9e8bb85bbbd970e563d2baedc062b99e",
+    "sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
     "hashRule": "sha256 over json.dumps(contract, sort_keys=True, separators=(',', ':')).encode('utf-8')",
     "generator": "scripts/generate_middleware_routes.py"
   },
@@ -747,6 +747,35 @@
       ]
     },
     {
+      "name": "middleware-submit-command-platform-v1-commands-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/commands$"
+      ],
+      "pathTemplate": "/platform/v1/commands",
+      "regexPriority": 3,
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
       "name": "middleware-list-contacts-platform-v1-contacts-get",
       "hosts": [
         "api.codestra.co"
@@ -1356,6 +1385,35 @@
       ]
     },
     {
+      "name": "middleware-describe-kernel-platform-v1-kernel-describe-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/kernel/describe$"
+      ],
+      "pathTemplate": "/platform/v1/kernel/describe",
+      "regexPriority": 4,
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
       "name": "middleware-get-my-presence-platform-v1-me-presence-get",
       "hosts": [
         "api.codestra.co"
@@ -1364,6 +1422,122 @@
         "~^/platform/v1/me/presence$"
       ],
       "pathTemplate": "/platform/v1/me/presence",
+      "regexPriority": 4,
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-operation-platform-v1-operations--operation-id--get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/operations/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      ],
+      "pathTemplate": "/platform/v1/operations/{operation_id}",
+      "regexPriority": 3,
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-cancel-operation-platform-v1-operations--operation-id--cancel-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/operations/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/cancel$"
+      ],
+      "pathTemplate": "/platform/v1/operations/{operation_id}/cancel",
+      "regexPriority": 4,
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-replay-operation-platform-v1-operations--operation-id--replay-post",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/operations/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/replay$"
+      ],
+      "pathTemplate": "/platform/v1/operations/{operation_id}/replay",
+      "regexPriority": 4,
+      "methods": [
+        "POST"
+      ],
+      "protocols": [
+        "http"
+      ],
+      "stripPath": false,
+      "preserveHost": true,
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "securityAuthority": "config/kong-middleware-authority.v2.json",
+      "requiredPlugins": [
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ]
+    },
+    {
+      "name": "middleware-get-timeline-platform-v1-operations--operation-id--timeline-get",
+      "hosts": [
+        "api.codestra.co"
+      ],
+      "paths": [
+        "~^/platform/v1/operations/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/timeline$"
+      ],
+      "pathTemplate": "/platform/v1/operations/{operation_id}/timeline",
       "regexPriority": 4,
       "methods": [
         "GET"

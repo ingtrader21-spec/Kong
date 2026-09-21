@@ -1,0 +1,614 @@
+{
+  "generated_test_data_only": true,
+  "kind": "codestra.kong.postman-route-cases.v1",
+  "route_family_counts": {
+    "Automation V2": 13,
+    "CRM Contacts": 9,
+    "CRM Opportunities": 4,
+    "CRM Tasks": 2,
+    "CRM Tickets": 4,
+    "Webhook & Event Ingress": 3
+  },
+  "routes": [
+    {
+      "audience": "middleware-api",
+      "auth": "automation-service-jwt",
+      "calling_clients": [
+        "job_family_client_only"
+      ],
+      "classification": "shared_edge",
+      "family": "Automation V2",
+      "idempotency": {
+        "carrier": "body.idempotency_key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "request_automation_approval_v2_automation_approvals_post",
+      "path": "/v2/automation/approvals",
+      "scope": "automation.approval.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "automation-service-jwt",
+      "calling_clients": [
+        "approval_job_family_client_only"
+      ],
+      "classification": "shared_edge",
+      "family": "Automation V2",
+      "idempotency": {
+        "carrier": "none",
+        "required": false
+      },
+      "method": "GET",
+      "operation_id": "read_automation_approval_v2_automation_approvals__approval_id__get",
+      "path": "/v2/automation/approvals/{approval_id}",
+      "scope": "automation.approval.read"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "automation-service-jwt",
+      "calling_clients": [
+        "all_declared_clients"
+      ],
+      "classification": "shared_edge",
+      "family": "Automation V2",
+      "idempotency": {
+        "carrier": "none",
+        "required": false
+      },
+      "method": "GET",
+      "operation_id": "read_automation_capability_v2_automation_capabilities__capability__get",
+      "path": "/v2/automation/capabilities/{capability}",
+      "scope": "automation.capability.read"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "automation-service-jwt",
+      "calling_clients": [
+        "command_prefix_client_only"
+      ],
+      "classification": "shared_edge",
+      "family": "Automation V2",
+      "idempotency": {
+        "carrier": "body.idempotency_key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "submit_automation_command_v2_automation_commands_post",
+      "path": "/v2/automation/commands",
+      "scope": "resolved_from_command_prefix"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "automation-service-jwt",
+      "calling_clients": [
+        "command_family_client_only"
+      ],
+      "classification": "shared_edge",
+      "family": "Automation V2",
+      "idempotency": {
+        "carrier": "none",
+        "required": false
+      },
+      "method": "GET",
+      "operation_id": "read_automation_command_v2_automation_commands__command_id__get",
+      "path": "/v2/automation/commands/{command_id}",
+      "scope": "automation.command.read"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "automation-service-jwt",
+      "calling_clients": [
+        "n8n-operations-automation"
+      ],
+      "classification": "shared_edge",
+      "family": "Automation V2",
+      "idempotency": {
+        "carrier": "body.idempotency_key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "replay_automation_dead_letter_v2_automation_dead_letters__dead_letter_id__replay_post",
+      "path": "/v2/automation/dead-letters/{dead_letter_id}/replay",
+      "scope": "automation.operations.replay.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "automation-service-jwt",
+      "calling_clients": [
+        "all_declared_clients"
+      ],
+      "classification": "shared_edge",
+      "family": "Automation V2",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "claim_automation_job_v2_automation_jobs_claim_post",
+      "path": "/v2/automation/jobs/claim",
+      "scope": "automation.job.claim"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "automation-service-jwt",
+      "calling_clients": [
+        "n8n-operations-automation"
+      ],
+      "classification": "shared_edge",
+      "family": "Automation V2",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "reconcile_automation_jobs_v2_automation_jobs_reconcile_post",
+      "path": "/v2/automation/jobs/reconcile",
+      "scope": "automation.operations.reconcile"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "automation-service-jwt",
+      "calling_clients": [
+        "job_family_client_only"
+      ],
+      "classification": "shared_edge",
+      "family": "Automation V2",
+      "idempotency": {
+        "carrier": "none",
+        "required": false
+      },
+      "method": "GET",
+      "operation_id": "read_automation_job_v2_automation_jobs__job_id__get",
+      "path": "/v2/automation/jobs/{job_id}",
+      "scope": "automation.job.read"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "automation-service-jwt",
+      "calling_clients": [
+        "job_family_client_only"
+      ],
+      "classification": "shared_edge",
+      "family": "Automation V2",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "complete_automation_job_v2_automation_jobs__job_id__complete_post",
+      "path": "/v2/automation/jobs/{job_id}/complete",
+      "scope": "automation.job.complete"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "automation-service-jwt",
+      "calling_clients": [
+        "job_family_client_only"
+      ],
+      "classification": "shared_edge",
+      "family": "Automation V2",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "fail_automation_job_v2_automation_jobs__job_id__fail_post",
+      "path": "/v2/automation/jobs/{job_id}/fail",
+      "scope": "automation.job.fail"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "automation-service-jwt",
+      "calling_clients": [
+        "job_family_client_only"
+      ],
+      "classification": "shared_edge",
+      "family": "Automation V2",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "heartbeat_automation_job_v2_automation_jobs__job_id__heartbeat_post",
+      "path": "/v2/automation/jobs/{job_id}/heartbeat",
+      "scope": "automation.job.heartbeat"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "automation-service-jwt",
+      "calling_clients": [
+        "job_family_client_only"
+      ],
+      "classification": "shared_edge",
+      "family": "Automation V2",
+      "idempotency": {
+        "carrier": "body.idempotency_key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "record_automation_step_v2_automation_jobs__job_id__steps_post",
+      "path": "/v2/automation/jobs/{job_id}/steps",
+      "scope": "automation.job.step.write"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Contacts",
+      "idempotency": {
+        "carrier": "none",
+        "required": false
+      },
+      "method": "GET",
+      "operation_id": "list_contacts_platform_v1_contacts_get",
+      "path": "/platform/v1/contacts",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Contacts",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "create_contact_platform_v1_contacts_post",
+      "path": "/platform/v1/contacts",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Contacts",
+      "idempotency": {
+        "carrier": "none",
+        "required": false
+      },
+      "method": "GET",
+      "operation_id": "get_contact_platform_v1_contacts__contact_id__get",
+      "path": "/platform/v1/contacts/{contact_id}",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Contacts",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "PATCH",
+      "operation_id": "update_contact_platform_v1_contacts__contact_id__patch",
+      "path": "/platform/v1/contacts/{contact_id}",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Contacts",
+      "idempotency": {
+        "carrier": "none",
+        "required": false
+      },
+      "method": "GET",
+      "operation_id": "list_notes_platform_v1_contacts__contact_id__notes_get",
+      "path": "/platform/v1/contacts/{contact_id}/notes",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Contacts",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "create_note_platform_v1_contacts__contact_id__notes_post",
+      "path": "/platform/v1/contacts/{contact_id}/notes",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Contacts",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "PATCH",
+      "operation_id": "update_note_platform_v1_contacts__contact_id__notes__note_id__patch",
+      "path": "/platform/v1/contacts/{contact_id}/notes/{note_id}",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Contacts",
+      "idempotency": {
+        "carrier": "none",
+        "required": false
+      },
+      "method": "GET",
+      "operation_id": "list_tasks_platform_v1_contacts__contact_id__tasks_get",
+      "path": "/platform/v1/contacts/{contact_id}/tasks",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Contacts",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "create_task_platform_v1_contacts__contact_id__tasks_post",
+      "path": "/platform/v1/contacts/{contact_id}/tasks",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Opportunities",
+      "idempotency": {
+        "carrier": "none",
+        "required": false
+      },
+      "method": "GET",
+      "operation_id": "list_opportunities_platform_v1_opportunities_get",
+      "path": "/platform/v1/opportunities",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Opportunities",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "create_opportunity_platform_v1_opportunities_post",
+      "path": "/platform/v1/opportunities",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Opportunities",
+      "idempotency": {
+        "carrier": "none",
+        "required": false
+      },
+      "method": "GET",
+      "operation_id": "get_opportunity_platform_v1_opportunities__opportunity_id__get",
+      "path": "/platform/v1/opportunities/{opportunity_id}",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Opportunities",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "PATCH",
+      "operation_id": "update_opportunity_platform_v1_opportunities__opportunity_id__patch",
+      "path": "/platform/v1/opportunities/{opportunity_id}",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Tasks",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "PATCH",
+      "operation_id": "update_task_platform_v1_tasks__task_id__patch",
+      "path": "/platform/v1/tasks/{task_id}",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Tasks",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "complete_task_platform_v1_tasks__task_id__complete_post",
+      "path": "/platform/v1/tasks/{task_id}/complete",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Tickets",
+      "idempotency": {
+        "carrier": "none",
+        "required": false
+      },
+      "method": "GET",
+      "operation_id": "list_tickets_platform_v1_tickets_get",
+      "path": "/platform/v1/tickets",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Tickets",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "create_ticket_platform_v1_tickets_post",
+      "path": "/platform/v1/tickets",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Tickets",
+      "idempotency": {
+        "carrier": "none",
+        "required": false
+      },
+      "method": "GET",
+      "operation_id": "get_ticket_platform_v1_tickets__ticket_id__get",
+      "path": "/platform/v1/tickets/{ticket_id}",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "authorized-provisioning-client"
+      ],
+      "classification": "shared_edge",
+      "family": "CRM Tickets",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "PATCH",
+      "operation_id": "update_ticket_platform_v1_tickets__ticket_id__patch",
+      "path": "/platform/v1/tickets/{ticket_id}",
+      "scope": "identity.request"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "n8n-service-jwt",
+      "calling_clients": [
+        "n8n-automation"
+      ],
+      "classification": "shared_edge",
+      "family": "Webhook & Event Ingress",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "submit_n8n_result",
+      "path": "/api/v1/integrations/n8n/results",
+      "scope": "n8n.results.submit"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "odoo-service-jwt",
+      "calling_clients": [
+        "odoo-integration"
+      ],
+      "classification": "shared_edge",
+      "family": "Webhook & Event Ingress",
+      "idempotency": {
+        "carrier": "body.event_id",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "ingress_odoo_event",
+      "path": "/api/v1/odoo/events",
+      "scope": "odoo.events.publish"
+    },
+    {
+      "audience": "middleware-api",
+      "auth": "service-or-user-jwt",
+      "calling_clients": [
+        "github-app"
+      ],
+      "classification": "shared_edge",
+      "family": "Webhook & Event Ingress",
+      "idempotency": {
+        "carrier": "Idempotency-Key",
+        "required": true
+      },
+      "method": "POST",
+      "operation_id": "github_event_platform_v1_integrations_github_events_post",
+      "path": "/platform/v1/integrations/github/events",
+      "scope": "github.webhooks.publish"
+    }
+  ],
+  "schema_version": 1,
+  "source_contract_path": "deploy/public-api-route-contract.json",
+  "source_contract_sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
+  "source_repository": "ingtrader21-spec/Middleware-",
+  "source_sha": "2862af0aa97367b18cb360af69212abe4243a1ac"
+}

@@ -1,0 +1,2181 @@
+{
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "if (pm.environment.get('RUN_KONG_V3_PARITY') !== 'true') {",
+          "  throw new Error('Live parity execution is disabled. Use an isolated local/staging gateway and set RUN_KONG_V3_PARITY=true explicitly.');",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "info": {
+    "_postman_id": "f0e2db5d-1490-4d4d-bb3d-kongv3parity",
+    "description": "Generated source-only contract probes for PAS-149. Default target is loopback; no production activation or provider effect is authorized.",
+    "name": "Kong V3 Integration Parity",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "item": [
+        {
+          "name": "POST /v2/automation/approvals",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"idempotency_key\": \"{{idempotency_key}}\"\n}"
+            },
+            "description": "Contract probe only. Source operation=request_automation_approval_v2_automation_approvals_post; caller=job_family_client_only; audience=middleware-api; scope=automation.approval.request; auth=automation-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v2",
+                "automation",
+                "approvals"
+              ],
+              "raw": "{{base_url}}/v2/automation/approvals"
+            }
+          }
+        },
+        {
+          "name": "GET /v2/automation/approvals/{approval_id}",
+          "request": {
+            "description": "Contract probe only. Source operation=read_automation_approval_v2_automation_approvals__approval_id__get; caller=approval_job_family_client_only; audience=middleware-api; scope=automation.approval.read; auth=automation-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v2",
+                "automation",
+                "approvals",
+                "{{approval_id}}"
+              ],
+              "raw": "{{base_url}}/v2/automation/approvals/{{approval_id}}"
+            }
+          }
+        },
+        {
+          "name": "GET /v2/automation/capabilities/{capability}",
+          "request": {
+            "description": "Contract probe only. Source operation=read_automation_capability_v2_automation_capabilities__capability__get; caller=all_declared_clients; audience=middleware-api; scope=automation.capability.read; auth=automation-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v2",
+                "automation",
+                "capabilities",
+                "{{capability}}"
+              ],
+              "raw": "{{base_url}}/v2/automation/capabilities/{{capability}}"
+            }
+          }
+        },
+        {
+          "name": "POST /v2/automation/commands",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"idempotency_key\": \"{{idempotency_key}}\"\n}"
+            },
+            "description": "Contract probe only. Source operation=submit_automation_command_v2_automation_commands_post; caller=command_prefix_client_only; audience=middleware-api; scope=resolved_from_command_prefix; auth=automation-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v2",
+                "automation",
+                "commands"
+              ],
+              "raw": "{{base_url}}/v2/automation/commands"
+            }
+          }
+        },
+        {
+          "name": "GET /v2/automation/commands/{command_id}",
+          "request": {
+            "description": "Contract probe only. Source operation=read_automation_command_v2_automation_commands__command_id__get; caller=command_family_client_only; audience=middleware-api; scope=automation.command.read; auth=automation-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v2",
+                "automation",
+                "commands",
+                "{{command_id}}"
+              ],
+              "raw": "{{base_url}}/v2/automation/commands/{{command_id}}"
+            }
+          }
+        },
+        {
+          "name": "POST /v2/automation/dead-letters/{dead_letter_id}/replay",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"idempotency_key\": \"{{idempotency_key}}\"\n}"
+            },
+            "description": "Contract probe only. Source operation=replay_automation_dead_letter_v2_automation_dead_letters__dead_letter_id__replay_post; caller=n8n-operations-automation; audience=middleware-api; scope=automation.operations.replay.request; auth=automation-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v2",
+                "automation",
+                "dead-letters",
+                "{{dead_letter_id}}",
+                "replay"
+              ],
+              "raw": "{{base_url}}/v2/automation/dead-letters/{{dead_letter_id}}/replay"
+            }
+          }
+        },
+        {
+          "name": "POST /v2/automation/jobs/claim",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=claim_automation_job_v2_automation_jobs_claim_post; caller=all_declared_clients; audience=middleware-api; scope=automation.job.claim; auth=automation-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v2",
+                "automation",
+                "jobs",
+                "claim"
+              ],
+              "raw": "{{base_url}}/v2/automation/jobs/claim"
+            }
+          }
+        },
+        {
+          "name": "POST /v2/automation/jobs/reconcile",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=reconcile_automation_jobs_v2_automation_jobs_reconcile_post; caller=n8n-operations-automation; audience=middleware-api; scope=automation.operations.reconcile; auth=automation-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v2",
+                "automation",
+                "jobs",
+                "reconcile"
+              ],
+              "raw": "{{base_url}}/v2/automation/jobs/reconcile"
+            }
+          }
+        },
+        {
+          "name": "GET /v2/automation/jobs/{job_id}",
+          "request": {
+            "description": "Contract probe only. Source operation=read_automation_job_v2_automation_jobs__job_id__get; caller=job_family_client_only; audience=middleware-api; scope=automation.job.read; auth=automation-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v2",
+                "automation",
+                "jobs",
+                "{{job_id}}"
+              ],
+              "raw": "{{base_url}}/v2/automation/jobs/{{job_id}}"
+            }
+          }
+        },
+        {
+          "name": "POST /v2/automation/jobs/{job_id}/complete",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=complete_automation_job_v2_automation_jobs__job_id__complete_post; caller=job_family_client_only; audience=middleware-api; scope=automation.job.complete; auth=automation-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v2",
+                "automation",
+                "jobs",
+                "{{job_id}}",
+                "complete"
+              ],
+              "raw": "{{base_url}}/v2/automation/jobs/{{job_id}}/complete"
+            }
+          }
+        },
+        {
+          "name": "POST /v2/automation/jobs/{job_id}/fail",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=fail_automation_job_v2_automation_jobs__job_id__fail_post; caller=job_family_client_only; audience=middleware-api; scope=automation.job.fail; auth=automation-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v2",
+                "automation",
+                "jobs",
+                "{{job_id}}",
+                "fail"
+              ],
+              "raw": "{{base_url}}/v2/automation/jobs/{{job_id}}/fail"
+            }
+          }
+        },
+        {
+          "name": "POST /v2/automation/jobs/{job_id}/heartbeat",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=heartbeat_automation_job_v2_automation_jobs__job_id__heartbeat_post; caller=job_family_client_only; audience=middleware-api; scope=automation.job.heartbeat; auth=automation-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v2",
+                "automation",
+                "jobs",
+                "{{job_id}}",
+                "heartbeat"
+              ],
+              "raw": "{{base_url}}/v2/automation/jobs/{{job_id}}/heartbeat"
+            }
+          }
+        },
+        {
+          "name": "POST /v2/automation/jobs/{job_id}/steps",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"idempotency_key\": \"{{idempotency_key}}\"\n}"
+            },
+            "description": "Contract probe only. Source operation=record_automation_step_v2_automation_jobs__job_id__steps_post; caller=job_family_client_only; audience=middleware-api; scope=automation.job.step.write; auth=automation-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v2",
+                "automation",
+                "jobs",
+                "{{job_id}}",
+                "steps"
+              ],
+              "raw": "{{base_url}}/v2/automation/jobs/{{job_id}}/steps"
+            }
+          }
+        }
+      ],
+      "name": "Automation V2"
+    },
+    {
+      "item": [
+        {
+          "name": "GET /platform/v1/contacts",
+          "request": {
+            "description": "Contract probe only. Source operation=list_contacts_platform_v1_contacts_get; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts"
+            }
+          }
+        },
+        {
+          "name": "POST /platform/v1/contacts",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=create_contact_platform_v1_contacts_post; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts"
+            }
+          }
+        },
+        {
+          "name": "GET /platform/v1/contacts/{contact_id}",
+          "request": {
+            "description": "Contract probe only. Source operation=get_contact_platform_v1_contacts__contact_id__get; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts",
+                "{{contact_id}}"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts/{{contact_id}}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /platform/v1/contacts/{contact_id}",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=update_contact_platform_v1_contacts__contact_id__patch; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "PATCH",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts",
+                "{{contact_id}}"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts/{{contact_id}}"
+            }
+          }
+        },
+        {
+          "name": "GET /platform/v1/contacts/{contact_id}/notes",
+          "request": {
+            "description": "Contract probe only. Source operation=list_notes_platform_v1_contacts__contact_id__notes_get; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts",
+                "{{contact_id}}",
+                "notes"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts/{{contact_id}}/notes"
+            }
+          }
+        },
+        {
+          "name": "POST /platform/v1/contacts/{contact_id}/notes",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=create_note_platform_v1_contacts__contact_id__notes_post; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts",
+                "{{contact_id}}",
+                "notes"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts/{{contact_id}}/notes"
+            }
+          }
+        },
+        {
+          "name": "PATCH /platform/v1/contacts/{contact_id}/notes/{note_id}",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=update_note_platform_v1_contacts__contact_id__notes__note_id__patch; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "PATCH",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts",
+                "{{contact_id}}",
+                "notes",
+                "{{note_id}}"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts/{{contact_id}}/notes/{{note_id}}"
+            }
+          }
+        },
+        {
+          "name": "GET /platform/v1/contacts/{contact_id}/tasks",
+          "request": {
+            "description": "Contract probe only. Source operation=list_tasks_platform_v1_contacts__contact_id__tasks_get; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts",
+                "{{contact_id}}",
+                "tasks"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts/{{contact_id}}/tasks"
+            }
+          }
+        },
+        {
+          "name": "POST /platform/v1/contacts/{contact_id}/tasks",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=create_task_platform_v1_contacts__contact_id__tasks_post; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts",
+                "{{contact_id}}",
+                "tasks"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts/{{contact_id}}/tasks"
+            }
+          }
+        }
+      ],
+      "name": "CRM Contacts"
+    },
+    {
+      "item": [
+        {
+          "name": "GET /platform/v1/opportunities",
+          "request": {
+            "description": "Contract probe only. Source operation=list_opportunities_platform_v1_opportunities_get; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "opportunities"
+              ],
+              "raw": "{{base_url}}/platform/v1/opportunities"
+            }
+          }
+        },
+        {
+          "name": "POST /platform/v1/opportunities",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=create_opportunity_platform_v1_opportunities_post; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "opportunities"
+              ],
+              "raw": "{{base_url}}/platform/v1/opportunities"
+            }
+          }
+        },
+        {
+          "name": "GET /platform/v1/opportunities/{opportunity_id}",
+          "request": {
+            "description": "Contract probe only. Source operation=get_opportunity_platform_v1_opportunities__opportunity_id__get; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "opportunities",
+                "{{opportunity_id}}"
+              ],
+              "raw": "{{base_url}}/platform/v1/opportunities/{{opportunity_id}}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /platform/v1/opportunities/{opportunity_id}",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=update_opportunity_platform_v1_opportunities__opportunity_id__patch; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "PATCH",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "opportunities",
+                "{{opportunity_id}}"
+              ],
+              "raw": "{{base_url}}/platform/v1/opportunities/{{opportunity_id}}"
+            }
+          }
+        }
+      ],
+      "name": "CRM Opportunities"
+    },
+    {
+      "item": [
+        {
+          "name": "PATCH /platform/v1/tasks/{task_id}",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=update_task_platform_v1_tasks__task_id__patch; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "PATCH",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "tasks",
+                "{{task_id}}"
+              ],
+              "raw": "{{base_url}}/platform/v1/tasks/{{task_id}}"
+            }
+          }
+        },
+        {
+          "name": "POST /platform/v1/tasks/{task_id}/complete",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=complete_task_platform_v1_tasks__task_id__complete_post; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "tasks",
+                "{{task_id}}",
+                "complete"
+              ],
+              "raw": "{{base_url}}/platform/v1/tasks/{{task_id}}/complete"
+            }
+          }
+        }
+      ],
+      "name": "CRM Tasks"
+    },
+    {
+      "item": [
+        {
+          "name": "GET /platform/v1/tickets",
+          "request": {
+            "description": "Contract probe only. Source operation=list_tickets_platform_v1_tickets_get; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "tickets"
+              ],
+              "raw": "{{base_url}}/platform/v1/tickets"
+            }
+          }
+        },
+        {
+          "name": "POST /platform/v1/tickets",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=create_ticket_platform_v1_tickets_post; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "tickets"
+              ],
+              "raw": "{{base_url}}/platform/v1/tickets"
+            }
+          }
+        },
+        {
+          "name": "GET /platform/v1/tickets/{ticket_id}",
+          "request": {
+            "description": "Contract probe only. Source operation=get_ticket_platform_v1_tickets__ticket_id__get; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "tickets",
+                "{{ticket_id}}"
+              ],
+              "raw": "{{base_url}}/platform/v1/tickets/{{ticket_id}}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /platform/v1/tickets/{ticket_id}",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=update_ticket_platform_v1_tickets__ticket_id__patch; caller=authorized-provisioning-client; audience=middleware-api; scope=identity.request; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "PATCH",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "tickets",
+                "{{ticket_id}}"
+              ],
+              "raw": "{{base_url}}/platform/v1/tickets/{{ticket_id}}"
+            }
+          }
+        }
+      ],
+      "name": "CRM Tickets"
+    },
+    {
+      "item": [
+        {
+          "name": "POST /api/v1/integrations/n8n/results",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=submit_n8n_result; caller=n8n-automation; audience=middleware-api; scope=n8n.results.submit; auth=n8n-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integrations",
+                "n8n",
+                "results"
+              ],
+              "raw": "{{base_url}}/api/v1/integrations/n8n/results"
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/odoo/events",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"event_id\": \"{{event_id}}\"\n}"
+            },
+            "description": "Contract probe only. Source operation=ingress_odoo_event; caller=odoo-integration; audience=middleware-api; scope=odoo.events.publish; auth=odoo-service-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "odoo",
+                "events"
+              ],
+              "raw": "{{base_url}}/api/v1/odoo/events"
+            }
+          }
+        },
+        {
+          "name": "POST /platform/v1/integrations/github/events",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Contract probe only. Source operation=github_event_platform_v1_integrations_github_events_post; caller=github-app; audience=middleware-api; scope=github.webhooks.publish; auth=service-or-user-jwt. Business payload validity/effects remain Middleware-owned.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "integrations",
+                "github",
+                "events"
+              ],
+              "raw": "{{base_url}}/platform/v1/integrations/github/events"
+            }
+          }
+        }
+      ],
+      "name": "Webhook & Event Ingress"
+    },
+    {
+      "item": [
+        {
+          "name": "missing-token",
+          "request": {
+            "description": "Expect 401; no anonymous fallback.",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts"
+            }
+          }
+        },
+        {
+          "name": "wrong-issuer",
+          "request": {
+            "description": "Expect 401 for issuer mismatch.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{wrong_issuer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts"
+            }
+          }
+        },
+        {
+          "name": "wrong-audience",
+          "request": {
+            "description": "Expect 401 for audience mismatch.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{wrong_audience_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts"
+            }
+          }
+        },
+        {
+          "name": "wrong-azp",
+          "request": {
+            "description": "Expect 403/401 for unauthorized caller.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{wrong_azp_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts"
+            }
+          }
+        },
+        {
+          "name": "missing-scope",
+          "request": {
+            "description": "Expect 403 for missing required scope.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{missing_scope_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts"
+            }
+          }
+        },
+        {
+          "name": "missing-idempotency",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Expect fail-closed response because Idempotency-Key is absent.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "commands"
+              ],
+              "raw": "{{base_url}}/platform/v1/commands"
+            }
+          }
+        },
+        {
+          "name": "wrong-method",
+          "request": {
+            "description": "Expect 404/405; no legacy fallback.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts"
+            }
+          }
+        },
+        {
+          "name": "oversize-body",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{{oversize_payload}}"
+            },
+            "description": "Expect gateway request-size rejection before Middleware.",
+            "header": [
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "type": "text",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "platform",
+                "v1",
+                "contacts"
+              ],
+              "raw": "{{base_url}}/platform/v1/contacts"
+            }
+          }
+        },
+        {
+          "name": "private-metrics",
+          "request": {
+            "description": "Expect public 404 before any upstream.",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "metrics"
+              ],
+              "raw": "{{base_url}}/metrics"
+            }
+          }
+        },
+        {
+          "name": "private-internal",
+          "request": {
+            "description": "Expect public 404 before any upstream.",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "internal",
+                "health"
+              ],
+              "raw": "{{base_url}}/internal/health"
+            }
+          }
+        },
+        {
+          "name": "pending-telnexa",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Expect public 404; contract pending.",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                "telnexa"
+              ],
+              "raw": "{{base_url}}/api/v1/events/telnexa"
+            }
+          }
+        },
+        {
+          "name": "pending-vicidial",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Expect public 404; contract pending.",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "webhooks",
+                "vicidial",
+                "call-result",
+                "test"
+              ],
+              "raw": "{{base_url}}/webhooks/vicidial/call-result/test"
+            }
+          }
+        },
+        {
+          "name": "pending-n8n-ack",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Expect public 404; contract pending.",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "n8n",
+                "acknowledgements"
+              ],
+              "raw": "{{base_url}}/api/v1/n8n/acknowledgements"
+            }
+          }
+        },
+        {
+          "name": "pending-observability",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Expect public 404; contract pending.",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "observability",
+                "incidents"
+              ],
+              "raw": "{{base_url}}/v1/observability/incidents"
+            }
+          }
+        },
+        {
+          "name": "pending-sms-inbound",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            },
+            "description": "Expect public 404; contract pending.",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "type": "text",
+                "value": "{{correlation_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "webhooks",
+                "sms",
+                "inbound",
+                "test"
+              ],
+              "raw": "{{base_url}}/webhooks/sms/inbound/test"
+            }
+          }
+        }
+      ],
+      "name": "Negative Security & Edge"
+    }
+  ],
+  "variable": [
+    {
+      "key": "source_contract_sha256",
+      "value": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
+    }
+  ]
+}

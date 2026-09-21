@@ -4,7 +4,7 @@
   "provider_effects_enabled": false,
   "contract": {
     "path": "config/middleware-public-api-route-contract.v1.json",
-    "sha256": "be25ea3a15687616fc1a17c451bb731c9e8bb85bbbd970e563d2baedc062b99e"
+    "sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
   },
   "upstream": {
     "host": "middleware-integration-api",
@@ -512,6 +512,26 @@
       "request_size_limit_mb": 2
     },
     {
+      "operation_id": "submit_command_platform_v1_commands_post",
+      "method": "POST",
+      "path": "/platform/v1/commands",
+      "issuer": "https://auth.codestra.co/realms/codestra",
+      "audience": "middleware-api",
+      "scope": "platform.command",
+      "azp": "platform-command-client",
+      "authentication": "service-or-user-jwt",
+      "correlation_fields": [
+        "X-Correlation-ID",
+        "body.correlation_id"
+      ],
+      "rate_limit": {
+        "minute": 120,
+        "policy": "redis",
+        "fault_tolerant": false
+      },
+      "request_size_limit_mb": 2
+    },
+    {
       "operation_id": "list_contacts_platform_v1_contacts_get",
       "method": "GET",
       "path": "/platform/v1/contacts",
@@ -932,6 +952,26 @@
       "request_size_limit_mb": 2
     },
     {
+      "operation_id": "describe_kernel_platform_v1_kernel_describe_get",
+      "method": "GET",
+      "path": "/platform/v1/kernel/describe",
+      "issuer": "https://auth.codestra.co/realms/codestra",
+      "audience": "middleware-api",
+      "scope": "platform.command.read",
+      "azp": "platform-command-client",
+      "authentication": "service-or-user-jwt",
+      "correlation_fields": [
+        "X-Correlation-ID",
+        "body.correlation_id"
+      ],
+      "rate_limit": {
+        "minute": 120,
+        "policy": "redis",
+        "fault_tolerant": false
+      },
+      "request_size_limit_mb": 2
+    },
+    {
       "operation_id": "get_my_presence_platform_v1_me_presence_get",
       "method": "GET",
       "path": "/platform/v1/me/presence",
@@ -939,6 +979,86 @@
       "audience": "middleware-api",
       "scope": "identity.session",
       "azp": "browser-session",
+      "authentication": "service-or-user-jwt",
+      "correlation_fields": [
+        "X-Correlation-ID",
+        "body.correlation_id"
+      ],
+      "rate_limit": {
+        "minute": 120,
+        "policy": "redis",
+        "fault_tolerant": false
+      },
+      "request_size_limit_mb": 2
+    },
+    {
+      "operation_id": "get_operation_platform_v1_operations__operation_id__get",
+      "method": "GET",
+      "path": "/platform/v1/operations/{operation_id}",
+      "issuer": "https://auth.codestra.co/realms/codestra",
+      "audience": "middleware-api",
+      "scope": "platform.command.read",
+      "azp": "platform-command-client",
+      "authentication": "service-or-user-jwt",
+      "correlation_fields": [
+        "X-Correlation-ID",
+        "body.correlation_id"
+      ],
+      "rate_limit": {
+        "minute": 120,
+        "policy": "redis",
+        "fault_tolerant": false
+      },
+      "request_size_limit_mb": 2
+    },
+    {
+      "operation_id": "cancel_operation_platform_v1_operations__operation_id__cancel_post",
+      "method": "POST",
+      "path": "/platform/v1/operations/{operation_id}/cancel",
+      "issuer": "https://auth.codestra.co/realms/codestra",
+      "audience": "middleware-api",
+      "scope": "platform.command",
+      "azp": "platform-command-client",
+      "authentication": "service-or-user-jwt",
+      "correlation_fields": [
+        "X-Correlation-ID",
+        "body.correlation_id"
+      ],
+      "rate_limit": {
+        "minute": 120,
+        "policy": "redis",
+        "fault_tolerant": false
+      },
+      "request_size_limit_mb": 2
+    },
+    {
+      "operation_id": "replay_operation_platform_v1_operations__operation_id__replay_post",
+      "method": "POST",
+      "path": "/platform/v1/operations/{operation_id}/replay",
+      "issuer": "https://auth.codestra.co/realms/codestra",
+      "audience": "middleware-api",
+      "scope": "platform.command.replay",
+      "azp": "platform-command-client",
+      "authentication": "service-or-user-jwt",
+      "correlation_fields": [
+        "X-Correlation-ID",
+        "body.correlation_id"
+      ],
+      "rate_limit": {
+        "minute": 120,
+        "policy": "redis",
+        "fault_tolerant": false
+      },
+      "request_size_limit_mb": 2
+    },
+    {
+      "operation_id": "get_timeline_platform_v1_operations__operation_id__timeline_get",
+      "method": "GET",
+      "path": "/platform/v1/operations/{operation_id}/timeline",
+      "issuer": "https://auth.codestra.co/realms/codestra",
+      "audience": "middleware-api",
+      "scope": "platform.command.read",
+      "azp": "platform-command-client",
       "authentication": "service-or-user-jwt",
       "correlation_fields": [
         "X-Correlation-ID",
