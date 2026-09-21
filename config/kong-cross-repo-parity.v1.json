@@ -33,8 +33,15 @@
     },
     "caddy": {
       "repository": "ingtrader21-spec/Caddy",
-      "source_sha": "56fd73d1647f7023cb07bdb14b1f72522c7b48d8",
-      "pull_request": 175,
+      "source_sha": "22c6d51ed2f5340139177131fb810e787f0f7550",
+      "source_ref": "main",
+      "merged_pull_requests": [
+        175,
+        177,
+        178,
+        179,
+        180
+      ],
       "public_edge_registry": "config/public-edge-registry.v1.json",
       "webhook_edge_registry": "config/webhook-edge-registry.v1.json",
       "edge_contract_chain": "config/edge-contract-chain.v1.json",
