@@ -167,12 +167,12 @@
     },
     {
       "path": "config/kong-access-policy.v1.json",
-      "sha256": "b22f5668d3a56b05fa7f1628687e8627673921c52fad3e0edddf9be53c566314",
+      "sha256": "3d1739b26a660ce77230dc5bd084f37372a58b2c850675f319c0fba111ba9494",
       "size": 462744
     },
     {
       "path": "config/kong-authentication-profiles.v1.json",
-      "sha256": "396f84d4e5f65009269fd48f80fcf3f9a1b3a04584b0a9afcec71b70b7fdb8d2",
+      "sha256": "6be64c3cd7a3f03bbf1779ca53df2e71f1748186d6a63156cc2949fba064e9c4",
       "size": 37659
     },
     {
@@ -202,8 +202,8 @@
     },
     {
       "path": "config/kong-cross-repo-parity.v1.json",
-      "sha256": "e5c5cc63c5553a653eb84d41c84f1832da23d96b542504c58287bbf88f970b80",
-      "size": 4738
+      "sha256": "84610e858eb3d3ebc00c2986a4a49ed1d28efce0d357b09640c18f33a8cb25b4",
+      "size": 4844
     },
     {
       "path": "config/kong-gateway-foundation.v1.json",
@@ -512,13 +512,13 @@
     },
     {
       "path": "docs/KONG_V3_IDENTITY_SECURITY.md",
-      "sha256": "21eddd58b00f35efa63d56d8265afb4ae52b1fab353ed7e9131ed750772960cf",
+      "sha256": "568b3875ba91f40dd9594e0a43c3c1cb21d8dfba4b5d43df00b4459648680433",
       "size": 5055
     },
     {
       "path": "docs/KONG_V3_INTEGRATION_PARITY.md",
-      "sha256": "32310682c1d6c1f309ba17b2a105a7c3d86c6c4741072d58c7418bb4b72855e2",
-      "size": 6044
+      "sha256": "950b1f59958356b3ac9d6aa9bb4b28f28b72c03c7d08d1141ea766cc2309e139",
+      "size": 6083
     },
     {
       "path": "docs/MARKETING-PLATFORM-EDGE-RESPONSIBILITIES.md",
@@ -947,7 +947,7 @@
     },
     {
       "path": "scripts/generate_kong_postman.py",
-      "sha256": "a2e90ab8135bec81f4b3d615df3e702bc6e7ed89ed9888a8e3e7576e49230d4e",
+      "sha256": "dca8dcabe1b34ef29ef73b2011322d7a8c6402829dbe0a2a5d03261882b3e54f",
       "size": 15045
     },
     {
@@ -1032,7 +1032,7 @@
     },
     {
       "path": "scripts/validate_kong_foundation.py",
-      "sha256": "cc6430ba1d6cf39ee3f6642e470b7b71c64b1cb4685236111ac2def5aafa0986",
+      "sha256": "cdad8fd6225c38b24c69948815b568b7b52db42974d40b53707b35252ccad048",
       "size": 141181
     },
     {
@@ -1047,7 +1047,7 @@
     },
     {
       "path": "scripts/validate_kong_v3_identity_security.py",
-      "sha256": "94b8075c45ab0510443c602f726f38818a1388930dbfc925e7722507c7c82709",
+      "sha256": "9d0c788c107719e012de19c83aca0b3c665b6b38cf07a6cc09942b258c62d768",
       "size": 26493
     },
     {
@@ -1142,7 +1142,7 @@
     },
     {
       "path": "tests/test_kong_cross_repo_parity.py",
-      "sha256": "8870e3e02d2e3c7d1d62adfa5a8e9ff6292cd2032102ca8472568e20b303bbed",
+      "sha256": "df4d1e2f8544021c0dd838c98e8a5ade5183df2ca60a78e8271d5e2860920512",
       "size": 3642
     },
     {
@@ -1357,7 +1357,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "42042cee3c17c705e5a2b35428cb65bc9aeb245f7a3c41e53537323695ebd94d",
+  "manifest_generation_id": "4aba9179efd4df493964a4354c06993cff9905db7cbb7aceeb846c9449aee24d",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
