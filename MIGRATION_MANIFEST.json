@@ -677,8 +677,8 @@
     },
     {
       "path": "docs/route-registry-v1.md",
-      "sha256": "b40292f4f4cd8c812f757311e219aacb326f61db8da8fa784dcb42205dec1043",
-      "size": 163037
+      "sha256": "a5c79205c6cc2489874785ab74c4d3f2ac62cce5616c9f336be6e920a4234b01",
+      "size": 162807
     },
     {
       "path": "docs/service-authentication-contract-v1.md",
@@ -1062,8 +1062,8 @@
     },
     {
       "path": "scripts/validate_middleware_edge_contract.py",
-      "sha256": "1ef25f62da78551a4823a3edc2db014ef4595324f2bb1b71888d3c8f56c2cd21",
-      "size": 7961
+      "sha256": "b3edcc90b6373b04e279d8f0a6928dbc1830bbb86dec578aaecb9ebed2b824f5",
+      "size": 7980
     },
     {
       "path": "scripts/validate_provider_control_routes.py",
@@ -1357,7 +1357,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "2cc642d385a8e840e71964df5c43efdbb44dc1467920aff5a6019665c1895fb4",
+  "manifest_generation_id": "a3d252e46b3b8980957a8a7bea86f4d673159db83c427ba5e2df0ee27946e669",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
