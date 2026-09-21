@@ -12,6 +12,7 @@ an isolated copy of the repository; nothing here touches a Kong node.
 
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 import shutil
@@ -508,13 +509,13 @@ def test_cli_reports_pass_and_source_only(capsys):
     assert "RUNTIME_APPLY_AUTHORIZED=NO" in out
 
 
-def test_lane_d_parallel_v3_certification_reports_the_frozen_abc_gap():
+def test_lane_d_parallel_mode_accepts_an_integrated_candidate_without_downgrade():
     result = validator.validate_foundation()
     status = validator.validate_v3_certification(result, "parallel")
-    assert status["phase"] == "PARALLEL"
-    assert status["middlewareContractSha256"] == "be25ea3a15687616fc1a17c451bb731c9e8bb85bbbd970e563d2baedc062b99e"
-    assert status["classificationCounts"] == {"shared_edge": 99, "denied": 10, "private_only": 2}
-    assert status["missingMiddlewareRoutes"] == 6
+    assert status["phase"] == "INTEGRATED"
+    assert status["middlewareContractSha256"] == validator.FINAL_MIDDLEWARE_CONTRACT_SHA256
+    assert status["classificationCounts"] == validator.FINAL_MIDDLEWARE_ROUTE_COUNTS
+    assert status["missingMiddlewareRoutes"] == 0
     assert status["staleMiddlewareRoutes"] == 0
     assert status["active8080Aliases"] == 0
     assert status["directProviderRoutes"] == 0
@@ -524,13 +525,22 @@ def test_lane_d_parallel_v3_certification_reports_the_frozen_abc_gap():
     assert status["undeclaredOverlaps"] == 0
     assert status["staleKnownDrift"] == 0
     assert status["secretHits"] == 0
-    assert status["laneCArtifactsIntegrated"] is False
-    assert status["finalAuthorityRendered"] is False
-    assert status["provisionalIndependentAuthority"] is True
+    assert status["laneCArtifactsIntegrated"] is True
+    assert status["finalAuthorityRendered"] is True
+    assert status["provisionalIndependentAuthority"] is False
 
 
-def test_lane_d_integrated_gate_refuses_premature_manifest_candidate():
+def test_lane_d_integrated_gate_refuses_a_mocked_preintegration_status(monkeypatch):
     result = validator.validate_foundation()
+    preintegration = copy.deepcopy(validator.v3_certification_status(result))
+    preintegration["phase"] = "PARALLEL"
+    preintegration["laneCArtifactsIntegrated"] = False
+    preintegration["finalAuthorityRendered"] = False
+    monkeypatch.setattr(
+        validator,
+        "v3_certification_status",
+        lambda _result, root=validator.ROOT: copy.deepcopy(preintegration),
+    )
     with pytest.raises(validator.FoundationError, match="A/B/C are not fully integrated"):
         validator.validate_v3_certification(result, "integrated")
 
@@ -545,17 +555,30 @@ def test_lane_d_gate_rejects_active_8080_or_direct_provider_routes():
     service_id = route["serviceId"]
 
     changed = copy.deepcopy(result)
-    changed["services"][service_id]["upstream"] = {"protocol": "http", "host": "middleware-integration-api", "port": 8080}
+    changed["services"][service_id]["upstream"] = {
+        "protocol": "http",
+        "host": "middleware-integration-api",
+        "port": 8080,
+    }
     with pytest.raises(validator.FoundationError, match="active 8080 aliases remain"):
         validator.validate_v3_certification(changed, "parallel")
 
     changed = copy.deepcopy(result)
-    changed["services"][service_id]["upstream"] = {"protocol": "http", "host": "odoo", "port": 8069}
+    changed["services"][service_id]["upstream"] = {
+        "protocol": "http",
+        "host": "odoo",
+        "port": 8069,
+    }
     with pytest.raises(validator.FoundationError, match="direct provider routes remain"):
         validator.validate_v3_certification(changed, "parallel")
 
 
-def test_lane_d_auto_phase_stays_parallel_until_contract_and_lane_c_land():
+def test_lane_d_auto_phase_reports_integrated_after_abc_land():
     result = validator.validate_foundation()
     status = validator.validate_v3_certification(result, "auto")
-    assert status["phase"] == "PARALLEL"
+    assert status["phase"] == "INTEGRATED"
+    assert status["missingMiddlewareRoutes"] == 0
+    assert status["staleMiddlewareRoutes"] == 0
+    assert status["laneCArtifactsIntegrated"] is True
+    assert status["finalAuthorityRendered"] is True
+    assert status["provisionalIndependentAuthority"] is False
