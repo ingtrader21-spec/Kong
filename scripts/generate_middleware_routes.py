@@ -19,6 +19,10 @@ STAGING_PATH = ROOT / "config/staging/kong-middleware-routes.staging.yml"
 
 UPSTREAM_HOST = "middleware-integration-api"
 UPSTREAM_PORT = 8095
+EXPECTED_CONTRACT_SCHEMA = "codestra.middleware.public-api-route-contract.v2"
+EXPECTED_CONTRACT_DIGEST = "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
+EXPECTED_CLASSIFICATION_COUNTS = {"shared_edge": 105, "denied": 10, "private_only": 2}
+EXPECTED_ROUTE_COUNT = 117
 REQUIRED_PLUGINS = [
     "openid-connect",
     "post-function",
@@ -57,6 +61,46 @@ UNTRUSTED_IDENTITY_HEADERS = (
 def canonical_digest(value: dict[str, Any]) -> str:
     encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def validate_final_contract(contract: dict[str, Any], digest: str) -> None:
+    if contract.get("schema") != EXPECTED_CONTRACT_SCHEMA:
+        raise SystemExit(
+            f"unexpected contract schema: {contract.get('schema')!r}; expected={EXPECTED_CONTRACT_SCHEMA}"
+        )
+    if digest != EXPECTED_CONTRACT_DIGEST:
+        raise SystemExit(
+            f"unexpected final Middleware digest: actual={digest} expected={EXPECTED_CONTRACT_DIGEST}"
+        )
+
+    routes = contract.get("routes")
+    if not isinstance(routes, list) or len(routes) != EXPECTED_ROUTE_COUNT:
+        raise SystemExit(
+            f"unexpected final Middleware route count: actual={len(routes) if isinstance(routes, list) else 'invalid'} "
+            f"expected={EXPECTED_ROUTE_COUNT}"
+        )
+
+    counts = {
+        classification: sum(1 for row in routes if row.get("classification") == classification)
+        for classification in EXPECTED_CLASSIFICATION_COUNTS
+    }
+    if counts != EXPECTED_CLASSIFICATION_COUNTS:
+        raise SystemExit(
+            f"unexpected final Middleware classification counts: actual={counts} "
+            f"expected={EXPECTED_CLASSIFICATION_COUNTS}"
+        )
+
+    expected_upstream = f"{UPSTREAM_HOST}:{UPSTREAM_PORT}"
+    wrong_upstream = [
+        (row.get("method"), row.get("path"), row.get("upstream"))
+        for row in routes
+        if row.get("classification") == "shared_edge" and row.get("upstream") != expected_upstream
+    ]
+    if wrong_upstream:
+        raise SystemExit(
+            "shared-edge Middleware upstream drift: "
+            + json.dumps(wrong_upstream, sort_keys=True, separators=(",", ":"))
+        )
 
 
 def route_regex(path_template: str) -> str:
@@ -290,6 +334,7 @@ def main() -> None:
     pinned = PIN_PATH.read_text(encoding="utf-8").strip()
     if pinned != digest:
         raise SystemExit(f"contract digest mismatch: pinned={pinned} actual={digest}")
+    validate_final_contract(contract, digest)
 
     shared = [row for row in contract["routes"] if row["classification"] == "shared_edge"]
     denied = [row for row in contract["routes"] if row["classification"] == "denied"]
@@ -298,7 +343,7 @@ def main() -> None:
     canonical["runtimeApplyAuthorized"] = False
     canonical["providerEffectsEnabled"] = False
     canonical["middlewareEdgeContract"] = {
-        "source": "appolon1908-hue/Middleware-:deploy/public-api-route-contract.json",
+        "source": "ingtrader21-spec/Middleware-:deploy/public-api-route-contract.json",
         "vendoredCopy": "config/middleware-public-api-route-contract.v1.json",
         "schema": contract["schema"],
         "sha256": digest,

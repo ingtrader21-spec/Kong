@@ -22,7 +22,7 @@ CANONICAL = ROOT / "config/kong-canonical-middleware-routes.json"
 PRODUCTION = ROOT / "config/kong-campaign-automation-routes.json"
 STAGING = ROOT / "config/staging/kong-campaign-automation-routes.json"
 VENDORED = ROOT / "config/middleware-public-api-route-contract.v1.json"
-EDGE_CONTRACT_SHA256 = "7580123dead97ea342c704a57a3c8eed9f5dce69aab247d4b693db96bc7334d5"
+EDGE_CONTRACT_SHA256 = "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
 
 CANONICAL_ROUTES = {
     ("POST", "/api/v1/integrations/n8n/results"): ("codestra-campaign-result-submit", "n8n.results.submit"),

@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "kind": "codestra.kong.cross-repo-parity.v1",
+  "status": "PARALLEL_LANE_C_SOURCE_ONLY",
+  "runtime_apply_authorized": false,
+  "provider_effects_enabled": false,
+  "live_staging_probe_authorized": false,
+  "sources": {
+    "kong": {
+      "repository": "ingtrader21-spec/Kong",
+      "frozen_base_sha": "ee86cdf870aebaac550a78a9617321ee48324589",
+      "lane_branch": "mission/kong-v3-integration-parity-20260920",
+      "contract_path": "config/middleware-public-api-route-contract.v1.json",
+      "authority_path": "config/kong-middleware-authority.v2.json",
+      "base_contract_sha256": "be25ea3a15687616fc1a17c451bb731c9e8bb85bbbd970e563d2baedc062b99e",
+      "final_contract_sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
+      "lane_a_dependency": "mission/kong-v3-contract-authority-20260920",
+      "final_repin_required": true
+    },
+    "middleware": {
+      "repository": "ingtrader21-spec/Middleware-",
+      "source_sha": "2862af0aa97367b18cb360af69212abe4243a1ac",
+      "contract_path": "deploy/public-api-route-contract.json",
+      "contract_sha256_path": "deploy/public-api-route-contract.sha256",
+      "contract_sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
+      "route_counts": {
+        "total": 117,
+        "shared_edge": 105,
+        "denied": 10,
+        "private_only": 2
+      },
+      "canonical_upstream": "middleware-integration-api:8095"
+    },
+    "caddy": {
+      "repository": "ingtrader21-spec/Caddy",
+      "source_sha": "56fd73d1647f7023cb07bdb14b1f72522c7b48d8",
+      "pull_request": 175,
+      "public_edge_registry": "config/public-edge-registry.v1.json",
+      "webhook_edge_registry": "config/webhook-edge-registry.v1.json",
+      "edge_contract_chain": "config/edge-contract-chain.v1.json",
+      "required_middleware_contract_sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
+      "required_public_namespaces": [
+        "/platform/v1/*",
+        "/v2/automation/*",
+        "/api/v1/odoo/events",
+        "/api/v1/integrations/n8n/results*"
+      ],
+      "required_private_denials": [
+        "/internal/*",
+        "/metrics*"
+      ]
+    },
+    "keycloak": {
+      "repository": "ingtrader21-spec/Keycloak",
+      "source_sha": "45a487d71a516ae3039b00c250752897469ffe7a",
+      "caller_contract_path": "config/contracts/middleware-caller-classification.v1.json",
+      "token_matrix_path": "config/certification/v3-token-matrix.v1.json",
+      "canonical_audience": "middleware-api"
+    }
+  },
+  "required_route_families": {
+    "contacts": {
+      "path_contains": "/contacts",
+      "minimum_routes": 9
+    },
+    "tasks": {
+      "path_contains": "/tasks",
+      "minimum_routes": 4
+    },
+    "tickets": {
+      "path_contains": "/tickets",
+      "minimum_routes": 4
+    },
+    "opportunities": {
+      "path_contains": "/opportunities",
+      "minimum_routes": 4
+    },
+    "automation_v2": {
+      "path_prefix": "/v2/automation/",
+      "exact_routes": 13
+    }
+  },
+  "transport_invariants": {
+    "canonical_public_chain": "Caddy -> Kong -> middleware-integration-api:8095",
+    "side_effecting_gateway_retries": 0,
+    "preserve_headers": [
+      "Authorization",
+      "X-Correlation-ID",
+      "Idempotency-Key",
+      "traceparent",
+      "tracestate"
+    ],
+    "strip_spoofable_identity_headers": true,
+    "business_authorization_owner": "Middleware",
+    "provider_event_ledger_owner": "Middleware",
+    "direct_provider_routing_allowed": false,
+    "direct_odoo_routing_allowed": false,
+    "direct_n8n_execution_routing_allowed": false
+  },
+  "postman": {
+    "route_cases": "postman/kong-v3-parity-route-cases.v1.json",
+    "collection": "postman/Kong-V3-Integration-Parity.postman_collection.json",
+    "environment": "postman/Kong-V3-Integration-Parity.postman_environment.json",
+    "default_base_url": "http://127.0.0.1:8000",
+    "live_run_flag": "RUN_KONG_V3_PARITY",
+    "live_run_default": false,
+    "required_negative_cases": [
+      "missing-token",
+      "wrong-issuer",
+      "wrong-audience",
+      "wrong-azp",
+      "missing-scope",
+      "missing-idempotency",
+      "wrong-method",
+      "oversize-body",
+      "private-metrics",
+      "private-internal",
+      "pending-telnexa",
+      "pending-vicidial",
+      "pending-n8n-ack",
+      "pending-observability",
+      "pending-sms-inbound"
+    ]
+  },
+  "final_gates": {
+    "CADDY_KONG_MIDDLEWARE_DIGEST_CHAIN": "PASS",
+    "WEBHOOK_REGISTRY_PARITY": "PASS",
+    "CRM_AUTOMATION_ROUTE_PARITY": "PASS",
+    "POSTMAN_GENERATION": "PASS",
+    "DIRECT_PROVIDER_ROUTES": 0,
+    "DIRECT_ODOO_ROUTES": 0,
+    "DIRECT_N8N_EXECUTION_ROUTES": 0,
+    "RUNTIME_APPLY_AUTHORIZED": false
+  }
+}

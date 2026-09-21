@@ -1,0 +1,126 @@
+name: Kong V3 static certification
+
+on:
+  pull_request:
+    branches:
+      - integration/middleware-8095-20260919
+      - main
+  push:
+    branches:
+      - mission/kong-v3-certification-gates-20260920
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kong-v3-certification-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-certification:
+    name: static-certification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      DECK_VERSION: "1.66.0"
+      DECK_SHA256: "33004b03edf84dbd0869acd17f42ad729be44976f33a5477715df5cb11ac9adf"
+      GITLEAKS_VERSION: "8.30.1"
+      GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+    steps:
+      - name: Check out exact reviewed source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ env.EXPECTED_SHA }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prove exact clean source
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          echo "KONG_V3_SOURCE_SHA=$EXPECTED_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.13"
+
+      - name: Install pinned Python validation dependencies
+        run: |
+          set -Eeuo pipefail
+          python -m pip install --disable-pip-version-check --no-input             pytest==8.4.2 PyYAML==6.0.3 -r tools/gateway-test-requirements.txt
+
+      - name: Install checksum-verified decK and Gitleaks
+        run: |
+          set -Eeuo pipefail
+          curl --fail --silent --show-error --location             "https://github.com/Kong/deck/releases/download/v${DECK_VERSION}/deck_${DECK_VERSION}_linux_amd64.tar.gz"             --output /tmp/deck.tar.gz
+          echo "${DECK_SHA256}  /tmp/deck.tar.gz" | sha256sum --check --strict
+          tar -xzf /tmp/deck.tar.gz -C /tmp deck
+          chmod 0755 /tmp/deck
+
+          curl --fail --silent --show-error --location             "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"             --output /tmp/gitleaks.tar.gz
+          echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tar.gz" | sha256sum --check --strict
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          chmod 0755 /tmp/gitleaks
+
+      - name: Run foundation and V3 ambiguity/drift gate
+        run: |
+          set -Eeuo pipefail
+          python scripts/validate_kong_foundation.py --v3-phase auto | tee /tmp/kong-v3-foundation.txt
+          grep -q '^ACTIVE_8080_ALIASES=0$' /tmp/kong-v3-foundation.txt
+          grep -q '^DIRECT_PROVIDER_ROUTES=0$' /tmp/kong-v3-foundation.txt
+          grep -q '^DIRECT_N8N_EXECUTION_ROUTES=0$' /tmp/kong-v3-foundation.txt
+          grep -q '^DIRECT_ODOO_ROUTES=0$' /tmp/kong-v3-foundation.txt
+          grep -q '^PUBLIC_POSTGRES_REDIS_ROUTES=0$' /tmp/kong-v3-foundation.txt
+          grep -q '^UNDECLARED_ROUTE_OVERLAPS=0$' /tmp/kong-v3-foundation.txt
+          grep -q '^STALE_KNOWN_DRIFT=0$' /tmp/kong-v3-foundation.txt
+          grep -q '^PROVIDER_EFFECTS=0$' /tmp/kong-v3-foundation.txt
+          grep -q '^RUNTIME_APPLY_AUTHORIZED=NO$' /tmp/kong-v3-foundation.txt
+
+      - name: Validate production and staging declarative state with decK
+        run: |
+          set -Eeuo pipefail
+          /tmp/deck file validate deploy/kong/control-plane.yml
+          /tmp/deck file validate config/kong-middleware-routes.production.yml
+          /tmp/deck file validate config/staging/kong-middleware-routes.staging.yml
+          echo "DECK_PRODUCTION=PASS"
+          echo "DECK_STAGING=PASS"
+
+      - name: Scan exact source tree for secrets
+        run: |
+          set -Eeuo pipefail
+          /tmp/gitleaks dir --redact --no-banner --exit-code 1 .
+          echo "SECRET_SCAN=PASS"
+
+      - name: Run Lane D tests
+        run: |
+          set -Eeuo pipefail
+          pytest -q             tests/test_kong_foundation.py             tests/test_gateway_foundation_authority.py             tests/test_kong_identity_security.py             tests/test_kong_middleware_contract_v2.py
+          echo "LANE_D_FOCUSED_TESTS=PASS"
+
+      - name: Enforce two-phase migration-manifest rule
+        run: |
+          set -Eeuo pipefail
+          if grep -q '^V3_PHASE=INTEGRATED$' /tmp/kong-v3-foundation.txt; then
+            pytest -q -p no:cacheprovider
+            python tools/generate_migration_manifests.py --check
+            python tools/verify_migration_manifest.py
+            echo "FULL_PYTEST=PASS"
+            echo "FINAL_MANIFEST_REGEN=PASS"
+          else
+            echo "867904618fcdf98ef603e27a5ff9fa8dda0ee1b78c9a030b317ea1391dfafb4a  MIGRATION_MANIFEST.json" | sha256sum --check --strict
+            echo "47d746e8575f3c2b481082ecb6dc90a5b7be809e675f09bb113b0699acd5cb49  MIGRATION_MANIFEST.yaml" | sha256sum --check --strict
+            grep -q '^V3_PHASE=PARALLEL$' /tmp/kong-v3-foundation.txt
+            echo "FULL_PYTEST=DEFERRED_A_B_C_NOT_INTEGRATED"
+            echo "FINAL_MANIFEST_REGEN=DEFERRED_A_B_C_NOT_INTEGRATED"
+          fi
+
+      - name: Require clean source after certification
+        run: |
+          set -Eeuo pipefail
+          git diff --check
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+          echo "LANE_D_STATIC_CERTIFICATION=PASS"

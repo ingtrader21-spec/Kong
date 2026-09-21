@@ -1,6 +1,6 @@
 {
   "schema": "codestra.kong.authentication-profiles.v1",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "status": "SOURCE_CANDIDATE_NO_RUNTIME_APPLY",
   "runtimeApplyAuthorized": false,
   "foundation": "config/kong-gateway-foundation.v1.json",
@@ -255,6 +255,51 @@
       "source": "request-termination",
       "mint": [],
       "requirement": "nothing is forwarded; the gateway answers a constant status"
+    },
+    "V3_MIDDLEWARE_STRIP_AND_PROPAGATE": {
+      "stripsClientIdentity": true,
+      "source": "PAS-148 final security policy; Lane D/runtime reconciliation must prove the active guard clears these headers before trusted propagation",
+      "strip": [
+        "X-User-ID",
+        "X-Username",
+        "X-Email",
+        "X-Roles",
+        "X-Scopes",
+        "X-Consumer-ID",
+        "X-Consumer-Username",
+        "X-Credential-Identifier",
+        "X-Anonymous-Consumer",
+        "X-Authenticated-UserID",
+        "X-Authenticated-User",
+        "X-Authenticated-Client",
+        "X-Authenticated-Subject",
+        "X-Authenticated-Tenant",
+        "X-Authenticated-Campaign",
+        "X-Authenticated-Role",
+        "X-Authenticated-Email",
+        "X-Codestra-Tenant",
+        "X-Codestra-Scopes",
+        "X-Codestra-Gateway-Secret",
+        "X-Internal-Service",
+        "X-Admin",
+        "X-Codestra-Contract-Operation",
+        "X-Codestra-Expected-Azp",
+        "X-Codestra-Required-Scope"
+      ],
+      "mint": [
+        "X-Consumer-ID",
+        "X-Consumer-Username",
+        "X-Credential-Identifier",
+        "X-Codestra-Contract-Operation",
+        "X-Codestra-Expected-Azp",
+        "X-Codestra-Required-Scope"
+      ],
+      "trustedIdentitySource": "verified bearer token + Kong authenticated consumer mapping only",
+      "selectorHeaders": [
+        "X-Tenant-ID"
+      ],
+      "selectorHeadersAreAuthority": false,
+      "clientSuppliedIdentityHeadersTrusted": false
     }
   },
   "tenantPolicies": {
@@ -281,7 +326,14 @@
       "gatewayIdentityUnavailable": 503,
       "forwardedSchemeNotHttps": 426,
       "responseBodiesExposeTokenInternals": false,
-      "downgradeToPublic": false
+      "downgradeToPublic": false,
+      "wrongAuthorizedParty": 403,
+      "callerFamilyDenied": 403,
+      "wrongTenant": 403,
+      "missingRequiredRole": 403,
+      "missingMfaEvidence": 403,
+      "unauthorizedGrantType": 403,
+      "tokenLifetimeExceeded": 401
     },
     "LEGACY_SHARED_KEY": {
       "missingCredential": 401,
@@ -667,7 +719,26 @@
       "failurePolicy": "FAIL_CLOSED_V1",
       "tokenCache": "OIDC_CACHE_V1",
       "strength": 3,
-      "note": "v2 'service-or-user-jwt' operations: Kong validates issuer, audience, expiry and the route scope and maps azp to a registered consumer; the contract's symbolic client family (platform-operator, production-operator, authorized-provisioning-client, observability-collector, browser-session, github-app) is forwarded as X-Codestra-Expected-Azp and enforced by Middleware together with tenant and resource ownership. Strength is that of the weakest admitted principal."
+      "note": "Final Middleware V3 service-or-user-jwt profile. Kong validates exact environment issuer, contracted audience, expiry, reviewed azp/consumer mapping and route scope. Service actors use client_credentials. Human actors use Authorization Code + PKCE; privileged human paths require MFA and any contracted realm role. Client-supplied identity headers are stripped before trusted propagation.",
+      "authModes": [
+        "service-or-user-jwt"
+      ],
+      "actorGrantPolicy": {
+        "service": {
+          "grantType": "client_credentials",
+          "pkceRequired": false,
+          "maximumAccessTokenLifetimeSeconds": 300
+        },
+        "user": {
+          "grantType": "authorization_code",
+          "pkceRequired": true,
+          "maximumAccessTokenLifetimeSeconds": 300
+        }
+      },
+      "privilegedHumanMfaRequired": true,
+      "wildcardAzpAllowed": false,
+      "wildcardScopesAllowed": false,
+      "identityPropagationProfile": "V3_MIDDLEWARE_STRIP_AND_PROPAGATE"
     },
     "DENIED_TERMINATION_V1": {
       "accessClasses": [
@@ -720,6 +791,431 @@
     ],
     "identityHeaderAuthorityAllowed": false,
     "maximumLeewaySeconds": 60,
-    "maximumCacheTtlSeconds": 3600
+    "maximumCacheTtlSeconds": 3600,
+    "wildcardCallerSelectorAllowed": false,
+    "privilegedDefaultGrantAllowed": false,
+    "clientSuppliedIdentityHeadersTrusted": false,
+    "serviceOrUserJwtRequiresTypedActor": true,
+    "humanAuthorizationCodePkceRequired": true,
+    "privilegedHumanMfaRequired": true,
+    "replayRequiresPlatformOperatorAndMfa": true,
+    "maximumAccessTokenLifetimeSeconds": 300
+  },
+  "v3CallerAuthority": {
+    "schema": "codestra.kong.v3-caller-authority.v1",
+    "status": "SOURCE_ONLY_RUNTIME_APPLY_DISABLED",
+    "runtimeApplyAuthorized": false,
+    "middleware": {
+      "repository": "ingtrader21-spec/Middleware-",
+      "commit": "2862af0aa97367b18cb360af69212abe4243a1ac",
+      "routeContractPath": "deploy/public-api-route-contract.json",
+      "routeContractSha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
+      "routeCount": 117
+    },
+    "keycloak": {
+      "repository": "ingtrader21-spec/Keycloak",
+      "commit": "45a487d71a516ae3039b00c250752897469ffe7a",
+      "callerAuthorityPath": "config/contracts/middleware-caller-classification.v1.json",
+      "apiAccessAuthorityPath": "config/contracts/middleware-api-access.v3.json",
+      "tokenMatrixPath": "config/certification/v3-token-matrix.v1.json"
+    },
+    "tokenPolicy": {
+      "stagingIssuer": "https://auth-staging.codestra.co/realms/codestra",
+      "productionIssuer": "https://auth.codestra.co/realms/codestra",
+      "maximumAccessTokenLifetimeSeconds": 300,
+      "serviceGrantType": "client_credentials",
+      "humanGrantType": "authorization_code",
+      "humanPkceRequired": true,
+      "privilegedHumanMfaRequired": true,
+      "wildcardCallerSelectorsAllowed": false,
+      "wildcardScopesAllowed": false,
+      "dirtyDesktopAutoGrantAuthorized": false,
+      "protectedUngrantableClientIds": [
+        "codestra-agent-desktop"
+      ],
+      "privilegedScopes": [
+        "platform.command",
+        "platform.command.read",
+        "platform.command.replay"
+      ],
+      "privilegedRoles": [
+        "platform-operator"
+      ]
+    },
+    "requiredKnownCallers": [
+      "callback-ui",
+      "n8n-operations-automation",
+      "github-app",
+      "observability-collector",
+      "production-operator",
+      "platform-command-client"
+    ],
+    "aliases": {
+      "platform-command-family": "platform-command-client"
+    },
+    "callers": {
+      "none": {
+        "class": "SYMBOLIC_RUNTIME_SELECTOR",
+        "actorKinds": [],
+        "grantTypes": [],
+        "authModes": [
+          "deny"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "wildcardsAllowed": false,
+        "description": "Denied-route sentinel. It never represents an authenticated principal."
+      },
+      "all_declared_clients": {
+        "class": "SYMBOLIC_RUNTIME_SELECTOR",
+        "actorKinds": [
+          "service"
+        ],
+        "grantTypes": [
+          "client_credentials"
+        ],
+        "authModes": [
+          "automation-service-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "familyMembershipRequired": true,
+        "membershipAuthority": "Middleware automation policy declared-client registry",
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300,
+        "description": "Symbolic selector resolved only against the reviewed automation client registry; never a wildcard azp."
+      },
+      "approval_job_family_client_only": {
+        "class": "CLIENT_FAMILY",
+        "actorKinds": [
+          "service"
+        ],
+        "grantTypes": [
+          "client_credentials"
+        ],
+        "authModes": [
+          "automation-service-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "familyMembershipRequired": true,
+        "membershipAuthority": "Middleware automation approval/job family policy",
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300
+      },
+      "authorized-provisioning-client": {
+        "class": "CLIENT_FAMILY",
+        "actorKinds": [
+          "service",
+          "user"
+        ],
+        "grantTypes": [
+          "client_credentials",
+          "authorization_code"
+        ],
+        "authModes": [
+          "service-or-user-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "familyMembershipRequired": true,
+        "membershipAuthority": "Reviewed provisioning client registry",
+        "humanPkceRequired": true,
+        "humanMfaPolicy": "required-for-privileged",
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300,
+        "description": "Logical family. A token azp must resolve to a reviewed concrete member; the selector string is not itself an azp grant."
+      },
+      "browser-session": {
+        "class": "CONCRETE_HUMAN_CLIENT",
+        "actorKinds": [
+          "user"
+        ],
+        "grantTypes": [
+          "authorization_code"
+        ],
+        "authModes": [
+          "service-or-user-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "humanPkceRequired": true,
+        "humanMfaPolicy": "required-for-privileged",
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300,
+        "description": "Browser user session. Authorization Code + PKCE is mandatory; privileged operations additionally require MFA."
+      },
+      "callback-ui": {
+        "class": "CONCRETE_HUMAN_CLIENT",
+        "actorKinds": [
+          "user"
+        ],
+        "grantTypes": [
+          "authorization_code"
+        ],
+        "authModes": [
+          "callback-jwt"
+        ],
+        "audiences": [
+          "codestra-callback-api"
+        ],
+        "humanPkceRequired": true,
+        "humanMfaPolicy": "required-for-privileged",
+        "privilegedScopes": [
+          "callbacks.write"
+        ],
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300,
+        "description": "Callback browser UI logical identity; no service-account grant is authorized by PAS-157."
+      },
+      "command_family_client_only": {
+        "class": "CLIENT_FAMILY",
+        "actorKinds": [
+          "service"
+        ],
+        "grantTypes": [
+          "client_credentials"
+        ],
+        "authModes": [
+          "automation-service-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "familyMembershipRequired": true,
+        "membershipAuthority": "Middleware automation command family policy",
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300
+      },
+      "command_prefix_client_only": {
+        "class": "CLIENT_FAMILY",
+        "actorKinds": [
+          "service"
+        ],
+        "grantTypes": [
+          "client_credentials"
+        ],
+        "authModes": [
+          "automation-service-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "familyMembershipRequired": true,
+        "membershipAuthority": "Middleware automation command-prefix policy",
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300
+      },
+      "github-app": {
+        "class": "CONCRETE_SERVICE_CLIENT",
+        "actorKinds": [
+          "service"
+        ],
+        "grantTypes": [
+          "client_credentials"
+        ],
+        "authModes": [
+          "service-or-user-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300,
+        "description": "Concrete workload identity for GitHub integration events."
+      },
+      "job_family_client_only": {
+        "class": "CLIENT_FAMILY",
+        "actorKinds": [
+          "service"
+        ],
+        "grantTypes": [
+          "client_credentials"
+        ],
+        "authModes": [
+          "automation-service-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "familyMembershipRequired": true,
+        "membershipAuthority": "Middleware automation job family policy",
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300
+      },
+      "middleware-worker": {
+        "class": "CONCRETE_SERVICE_CLIENT",
+        "actorKinds": [
+          "service"
+        ],
+        "grantTypes": [
+          "client_credentials"
+        ],
+        "authModes": [
+          "middleware-service-jwt"
+        ],
+        "audiences": [
+          "codestra-odoo"
+        ],
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300
+      },
+      "n8n-automation": {
+        "class": "CONCRETE_SERVICE_CLIENT",
+        "actorKinds": [
+          "service"
+        ],
+        "grantTypes": [
+          "client_credentials"
+        ],
+        "authModes": [
+          "n8n-service-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300
+      },
+      "n8n-operations-automation": {
+        "class": "CONCRETE_SERVICE_CLIENT",
+        "actorKinds": [
+          "service"
+        ],
+        "grantTypes": [
+          "client_credentials"
+        ],
+        "authModes": [
+          "automation-service-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300,
+        "description": "Dedicated operations automation workload; never a human/browser principal."
+      },
+      "observability-collector": {
+        "class": "CONCRETE_SERVICE_CLIENT",
+        "actorKinds": [
+          "service"
+        ],
+        "grantTypes": [
+          "client_credentials"
+        ],
+        "authModes": [
+          "service-or-user-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300
+      },
+      "odoo-integration": {
+        "class": "CONCRETE_SERVICE_CLIENT",
+        "actorKinds": [
+          "service"
+        ],
+        "grantTypes": [
+          "client_credentials"
+        ],
+        "authModes": [
+          "odoo-service-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300
+      },
+      "platform-command-client": {
+        "class": "CLIENT_FAMILY",
+        "actorKinds": [
+          "service",
+          "user"
+        ],
+        "grantTypes": [
+          "client_credentials",
+          "authorization_code"
+        ],
+        "authModes": [
+          "service-or-user-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "familyMembershipRequired": true,
+        "membershipAuthority": "Middleware config/control-plane-callers.v1.json plus reviewed Keycloak client mapping",
+        "humanPkceRequired": true,
+        "humanMfaPolicy": "required-for-privileged",
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300,
+        "replayRequirements": {
+          "scope": "platform.command.replay",
+          "role": "platform-operator",
+          "mfaRequired": true,
+          "actorKind": "user",
+          "grantType": "authorization_code",
+          "pkceRequired": true
+        },
+        "description": "V3 command-kernel caller family. Workload members use client_credentials; privileged human replay uses Authorization Code + PKCE + MFA."
+      },
+      "platform-operator": {
+        "class": "CONCRETE_HUMAN_CLIENT",
+        "actorKinds": [
+          "user"
+        ],
+        "grantTypes": [
+          "authorization_code"
+        ],
+        "authModes": [
+          "service-or-user-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "humanPkceRequired": true,
+        "humanMfaPolicy": "required",
+        "requiredRoles": [
+          "platform-operator"
+        ],
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300
+      },
+      "production-operator": {
+        "class": "CONCRETE_HUMAN_CLIENT",
+        "actorKinds": [
+          "user"
+        ],
+        "grantTypes": [
+          "authorization_code"
+        ],
+        "authModes": [
+          "service-or-user-jwt"
+        ],
+        "audiences": [
+          "middleware-api"
+        ],
+        "humanPkceRequired": true,
+        "humanMfaPolicy": "required",
+        "wildcardsAllowed": false,
+        "maxAccessTokenLifetimeSeconds": 300,
+        "description": "Privileged production operator identity. No client_credentials grant is authorized."
+      }
+    },
+    "callerSelectorCount": 18,
+    "unknownCallerIdentities": 0,
+    "notes": [
+      "Caller selector strings are policy selectors, not wildcard azp grants.",
+      "Concrete service callers require short-lived client_credentials tokens.",
+      "Human callers require Authorization Code + PKCE; privileged human paths require MFA evidence.",
+      "Kong must fail closed on issuer, audience, azp/family, scope, role, tenant, expiry and replay-boundary violations."
+    ]
   }
 }
