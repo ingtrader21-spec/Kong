@@ -12823,7 +12823,7 @@
       "notes": "PR #104 read-side route superseded by the v2 canonical route middleware-get-queue-metrics-platform-v1-queues--queue-id--metrics-get (PR #105) for the same operation; the v2 route is a regex and wins the router, so the two contracts must never be applied together."
     },
     {
-      "routeId": "middleware-v3-submit-command",
+      "routeId": "middleware-submit-command-platform-v1-commands-post",
       "serviceId": "middleware-integration-api",
       "environment": "production",
       "bindings": [
@@ -12863,7 +12863,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-describe-kernel",
+      "routeId": "middleware-describe-kernel-platform-v1-kernel-describe-get",
       "serviceId": "middleware-integration-api",
       "environment": "production",
       "bindings": [
@@ -12903,7 +12903,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-read-operation",
+      "routeId": "middleware-get-operation-platform-v1-operations--operation-id--get",
       "serviceId": "middleware-integration-api",
       "environment": "production",
       "bindings": [
@@ -12943,7 +12943,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-cancel-operation",
+      "routeId": "middleware-cancel-operation-platform-v1-operations--operation-id--cancel-post",
       "serviceId": "middleware-integration-api",
       "environment": "production",
       "bindings": [
@@ -12983,7 +12983,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-replay-operation",
+      "routeId": "middleware-replay-operation-platform-v1-operations--operation-id--replay-post",
       "serviceId": "middleware-integration-api",
       "environment": "production",
       "bindings": [
@@ -13023,7 +13023,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-read-operation-timeline",
+      "routeId": "middleware-get-timeline-platform-v1-operations--operation-id--timeline-get",
       "serviceId": "middleware-integration-api",
       "environment": "production",
       "bindings": [
@@ -13063,7 +13063,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-submit-command@staging",
+      "routeId": "middleware-submit-command-platform-v1-commands-post@staging",
       "serviceId": "middleware-integration-api@staging",
       "environment": "staging",
       "bindings": [
@@ -13093,7 +13093,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-describe-kernel@staging",
+      "routeId": "middleware-describe-kernel-platform-v1-kernel-describe-get@staging",
       "serviceId": "middleware-integration-api@staging",
       "environment": "staging",
       "bindings": [
@@ -13123,7 +13123,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-read-operation@staging",
+      "routeId": "middleware-get-operation-platform-v1-operations--operation-id--get@staging",
       "serviceId": "middleware-integration-api@staging",
       "environment": "staging",
       "bindings": [
@@ -13153,7 +13153,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-cancel-operation@staging",
+      "routeId": "middleware-cancel-operation-platform-v1-operations--operation-id--cancel-post@staging",
       "serviceId": "middleware-integration-api@staging",
       "environment": "staging",
       "bindings": [
@@ -13183,7 +13183,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-replay-operation@staging",
+      "routeId": "middleware-replay-operation-platform-v1-operations--operation-id--replay-post@staging",
       "serviceId": "middleware-integration-api@staging",
       "environment": "staging",
       "bindings": [
@@ -13213,7 +13213,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-read-operation-timeline@staging",
+      "routeId": "middleware-get-timeline-platform-v1-operations--operation-id--timeline-get@staging",
       "serviceId": "middleware-integration-api@staging",
       "environment": "staging",
       "bindings": [

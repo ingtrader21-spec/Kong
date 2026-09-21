@@ -310,7 +310,7 @@ def test_v2_shared_edge_routes_are_governed_from_the_authority():
     assert authority["runtime_apply_authorized"] is False and authority["provider_effects_enabled"] is False
     assert canonical["middlewareEdgeContract"]["sha256"] == authority["contract"]["sha256"]
     operations = {validator.authority_route_name(o["operation_id"]): o for o in authority["routes"]}
-    assert len(operations) == 99
+    assert len(operations) == validator.FINAL_MIDDLEWARE_ROUTE_COUNTS["shared_edge"]
     for name, operation in operations.items():
         for suffix, environment, issuer, sources in (
             ("", "production", PROD_ISSUER, {CANONICAL, PROD_YML, AUTHORITY}),

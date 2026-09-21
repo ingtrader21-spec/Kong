@@ -8175,7 +8175,7 @@
       "notes": "PR #104 declares serviceTokenOnly/browserTokensForbidden while the v2 authority admits a browser-session principal on the session-context operation; the v2 contract is the authority."
     },
     {
-      "routeId": "middleware-v3-submit-command",
+      "routeId": "middleware-submit-command-platform-v1-commands-post",
       "environment": "production",
       "accessClass": "AUTHENTICATED",
       "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
@@ -8202,7 +8202,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-describe-kernel",
+      "routeId": "middleware-describe-kernel-platform-v1-kernel-describe-get",
       "environment": "production",
       "accessClass": "AUTHENTICATED",
       "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
@@ -8229,7 +8229,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-read-operation",
+      "routeId": "middleware-get-operation-platform-v1-operations--operation-id--get",
       "environment": "production",
       "accessClass": "AUTHENTICATED",
       "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
@@ -8256,7 +8256,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-cancel-operation",
+      "routeId": "middleware-cancel-operation-platform-v1-operations--operation-id--cancel-post",
       "environment": "production",
       "accessClass": "AUTHENTICATED",
       "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
@@ -8283,7 +8283,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-replay-operation",
+      "routeId": "middleware-replay-operation-platform-v1-operations--operation-id--replay-post",
       "environment": "production",
       "accessClass": "AUTHENTICATED",
       "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
@@ -8310,7 +8310,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-read-operation-timeline",
+      "routeId": "middleware-get-timeline-platform-v1-operations--operation-id--timeline-get",
       "environment": "production",
       "accessClass": "AUTHENTICATED",
       "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
@@ -8337,7 +8337,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-submit-command@staging",
+      "routeId": "middleware-submit-command-platform-v1-commands-post@staging",
       "environment": "staging",
       "accessClass": "AUTHENTICATED",
       "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
@@ -8364,7 +8364,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-describe-kernel@staging",
+      "routeId": "middleware-describe-kernel-platform-v1-kernel-describe-get@staging",
       "environment": "staging",
       "accessClass": "AUTHENTICATED",
       "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
@@ -8391,7 +8391,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-read-operation@staging",
+      "routeId": "middleware-get-operation-platform-v1-operations--operation-id--get@staging",
       "environment": "staging",
       "accessClass": "AUTHENTICATED",
       "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
@@ -8418,7 +8418,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-cancel-operation@staging",
+      "routeId": "middleware-cancel-operation-platform-v1-operations--operation-id--cancel-post@staging",
       "environment": "staging",
       "accessClass": "AUTHENTICATED",
       "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
@@ -8445,7 +8445,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-replay-operation@staging",
+      "routeId": "middleware-replay-operation-platform-v1-operations--operation-id--replay-post@staging",
       "environment": "staging",
       "accessClass": "AUTHENTICATED",
       "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
@@ -8472,7 +8472,7 @@
       "contractExpectedAzp": "platform-command-client"
     },
     {
-      "routeId": "middleware-v3-read-operation-timeline@staging",
+      "routeId": "middleware-get-timeline-platform-v1-operations--operation-id--timeline-get@staging",
       "environment": "staging",
       "accessClass": "AUTHENTICATED",
       "authenticationProfile": "HUMAN_OR_SERVICE_OIDC_V1",
