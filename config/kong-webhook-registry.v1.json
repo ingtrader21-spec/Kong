@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "kind": "codestra.kong.webhook-registry.v1",
+  "status": "SOURCE_ONLY_NO_RUNTIME_APPLY",
+  "runtime_apply_authorized": false,
+  "provider_effects_enabled": false,
+  "purpose": "Gateway transport/identity registry only. Signature verification, replay protection, business authorization, event durability and provider-event ledgers remain owned by Middleware or the named downstream application.",
+  "canonical_entries": [
+    {
+      "id": "odoo-events",
+      "method": "POST",
+      "path": "/api/v1/odoo/events",
+      "classification": "CANONICAL_SHARED_EDGE",
+      "calling_client": "odoo-integration",
+      "audience": "middleware-api",
+      "scope": "odoo.events.publish",
+      "auth": "odoo-service-jwt",
+      "idempotency": {
+        "required": true,
+        "carrier": "body.event_id"
+      },
+      "gateway": "Kong",
+      "upstream": "middleware-integration-api:8095",
+      "signature_verification_owner": "Middleware/contract-defined",
+      "replay_protection_owner": "Middleware",
+      "event_ledger_owner": "Middleware",
+      "gateway_retries": 0
+    },
+    {
+      "id": "n8n-results",
+      "method": "POST",
+      "path": "/api/v1/integrations/n8n/results",
+      "classification": "CANONICAL_SHARED_EDGE",
+      "calling_client": "n8n-automation",
+      "audience": "middleware-api",
+      "scope": "n8n.results.submit",
+      "auth": "n8n-service-jwt",
+      "idempotency": {
+        "required": true,
+        "carrier": "Idempotency-Key"
+      },
+      "gateway": "Kong",
+      "upstream": "middleware-integration-api:8095",
+      "signature_verification_owner": "not-applicable/service-jwt",
+      "replay_protection_owner": "Middleware/idempotency",
+      "event_ledger_owner": "Middleware",
+      "gateway_retries": 0
+    },
+    {
+      "id": "github-events",
+      "method": "POST",
+      "path": "/platform/v1/integrations/github/events",
+      "classification": "CANONICAL_SHARED_EDGE",
+      "calling_client": "github-app",
+      "audience": "middleware-api",
+      "scope": "github.webhooks.publish",
+      "auth": "service-or-user-jwt",
+      "idempotency": {
+        "required": true,
+        "carrier": "Idempotency-Key"
+      },
+      "gateway": "Kong",
+      "upstream": "middleware-integration-api:8095",
+      "signature_verification_owner": "Middleware/contract-defined",
+      "replay_protection_owner": "Middleware/idempotency",
+      "event_ledger_owner": "Middleware",
+      "gateway_retries": 0
+    }
+  ],
+  "pending_denied_entries": [
+    {
+      "id": "telnexa",
+      "method": "POST",
+      "path_pattern": "/api/v1/events/telnexa",
+      "classification": "DENIED_PENDING_CONTRACT",
+      "expected_public_status": 404,
+      "reason": "No route in the final Middleware public-edge contract."
+    },
+    {
+      "id": "vicidial-call-result",
+      "method": "POST",
+      "path_pattern": "/webhooks/vicidial/call-result/*",
+      "classification": "DENIED_PENDING_CONTRACT",
+      "expected_public_status": 404,
+      "reason": "No route in the final Middleware public-edge contract."
+    },
+    {
+      "id": "n8n-acknowledgements",
+      "method": "POST",
+      "path_pattern": "/api/v1/n8n/acknowledgements",
+      "classification": "DENIED_PENDING_CONTRACT",
+      "expected_public_status": 404,
+      "reason": "No route in the final Middleware public-edge contract."
+    },
+    {
+      "id": "observability-incidents",
+      "method": "POST",
+      "path_pattern": "/v1/observability/incidents",
+      "classification": "DENIED_PENDING_CONTRACT",
+      "expected_public_status": 404,
+      "reason": "No route in the final Middleware public-edge contract."
+    },
+    {
+      "id": "observability-kpis",
+      "method": "POST",
+      "path_pattern": "/v1/observability/kpis",
+      "classification": "DENIED_PENDING_CONTRACT",
+      "expected_public_status": 404,
+      "reason": "No route in the final Middleware public-edge contract."
+    },
+    {
+      "id": "sms-inbound",
+      "method": "POST",
+      "path_pattern": "/webhooks/sms/inbound/*",
+      "classification": "DENIED_PENDING_CONTRACT",
+      "expected_public_status": 404,
+      "reason": "No route in the final Middleware public-edge contract."
+    }
+  ],
+  "invariants": {
+    "gateway_owns": [
+      "exact host/method/path transport",
+      "issuer/audience/azp/scope enforcement",
+      "rate and request-size policy",
+      "header sanitization and correlation propagation"
+    ],
+    "gateway_does_not_own": [
+      "provider signature business semantics",
+      "business authorization",
+      "provider-event durable ledger",
+      "replay state",
+      "business database writes",
+      "provider retry/reconciliation"
+    ],
+    "direct_provider_routes": 0,
+    "direct_odoo_routes": 0,
+    "direct_n8n_execution_routes": 0
+  }
+}
