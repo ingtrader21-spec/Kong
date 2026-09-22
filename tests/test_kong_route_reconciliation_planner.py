@@ -42,8 +42,8 @@ def test_manifest_is_bounded_and_apply_disabled():
     MOD.validate_manifest(value)
     assert value["runtime_apply_authorized"] is False
     assert len(value["routes"]) == 24
-    assert sum(r["decision"] == "REPOINT" for r in value["routes"]) == 14
-    assert sum(r["decision"] == "RETIRE" for r in value["routes"]) == 6
+    assert sum(r["decision"] == "REPOINT" for r in value["routes"]) == 13
+    assert sum(r["decision"] == "RETIRE" for r in value["routes"]) == 7
     assert sum(r["decision"] == "EXCEPTION" for r in value["routes"]) == 4
 
 
@@ -53,7 +53,7 @@ def test_plan_is_deterministic_and_never_applies():
     second = MOD.build_plan(manifest(), list(reversed(routes)), list(reversed(services)))
     assert first == second
     assert first["runtime_apply_performed"] is False
-    assert first["summary"] == {"DELETE": 6, "KEEP": 18}
+    assert first["summary"] == {"DELETE": 7, "KEEP": 17}
 
 
 def test_repoint_drift_becomes_update():
