@@ -1,0 +1,33 @@
+{
+  "schema": "codestra.kong.route-reconciliation.pas236.v1",
+  "status": "SOURCE_ONLY_NO_RUNTIME_APPLY",
+  "runtime_apply_authorized": false,
+  "source_main_sha": "3e68cb2a4955bd71ddb3e839f4d9e3770465fc08",
+  "canonical_public_upstream": {"host": "codestra-middleware-integration-api-1", "port": 8095},
+  "routes": [
+    {"name":"website-form-sales-contact","decision":"REPOINT","target":{"host":"codestra-middleware-integration-api-1","port":8095}},
+    {"name":"website-form-pricing-request","decision":"REPOINT","target":{"host":"codestra-middleware-integration-api-1","port":8095}},
+    {"name":"website-form-electronic-billing","decision":"REPOINT","target":{"host":"codestra-middleware-integration-api-1","port":8095}},
+    {"name":"website-form-electronic-billing-registration","decision":"REPOINT","target":{"host":"codestra-middleware-integration-api-1","port":8095}},
+    {"name":"website-form-demo-request","decision":"REPOINT","target":{"host":"codestra-middleware-integration-api-1","port":8095}},
+    {"name":"codestra-communication-canonical-read","decision":"REPOINT","target":{"host":"codestra-middleware-integration-api-1","port":8095},"note":"coordinated successor reconciliation required; do not blind-port-swap"},
+    {"name":"codestra-communication-canonical-write","decision":"REPOINT","target":{"host":"codestra-middleware-integration-api-1","port":8095},"note":"coordinated successor reconciliation required; do not blind-port-swap"},
+    {"name":"cod-web-out-email-production","decision":"RETIRE"},
+    {"name":"codestra-communication-oauth-shadow-create","decision":"RETIRE"},
+    {"name":"codestra-n8n-command-submit","decision":"RETIRE","successor":"middleware-deny-deprecated-n8n-commands"},
+    {"name":"codestra-n8n-command-read","decision":"RETIRE","successor":"middleware-deny-deprecated-n8n-operations"},
+    {"name":"sms-dlr-telnexa-route","decision":"REPOINT","target":{"host":"codestra-middleware-integration-api-1","port":8095}},
+    {"name":"sms-route","decision":"REPOINT","target":{"host":"codestra-middleware-integration-api-1","port":8095}},
+    {"name":"email-route","decision":"REPOINT","target":{"host":"codestra-middleware-integration-api-1","port":8095}},
+    {"name":"crm-route","decision":"REPOINT","target":{"host":"codestra-middleware-integration-api-1","port":8095}},
+    {"name":"codestra-token-validation-certification","decision":"RETIRE"},
+    {"name":"codestra-mail-api","decision":"RETIRE","note":"activation-blocked until governed authenticated replacement exists"},
+    {"name":"breero-production-api-route","decision":"REPOINT","target":{"host":"codestra-middleware-integration-api-1","port":8095}},
+    {"name":"codestra-website-api-route","decision":"REPOINT","target":{"host":"codestra-middleware-integration-api-1","port":8095}},
+    {"name":"gateway-test-route","decision":"RETIRE"},
+    {"name":"codestra-sms-standby-route","decision":"EXCEPTION","expected":{"host":"codestra-kong-standby-auth","port":8080}},
+    {"name":"codestra-sms-webhook-standby-route","decision":"EXCEPTION","expected":{"host":"codestra-kong-standby-auth","port":8080}},
+    {"name":"codestra-email-standby-route","decision":"EXCEPTION","expected":{"host":"codestra-kong-standby-auth","port":8080}},
+    {"name":"codestra-email-webhook-standby-route","decision":"EXCEPTION","expected":{"host":"codestra-kong-standby-auth","port":8080}}
+  ]
+}
