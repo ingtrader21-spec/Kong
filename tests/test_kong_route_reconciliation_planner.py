@@ -42,8 +42,8 @@ def test_manifest_is_bounded_and_apply_disabled():
     MOD.validate_manifest(value)
     assert value["runtime_apply_authorized"] is False
     assert len(value["routes"]) == 24
-    assert sum(r["decision"] == "REPOINT" for r in value["routes"]) == 13
-    assert sum(r["decision"] == "RETIRE" for r in value["routes"]) == 7
+    assert sum(r["decision"] == "REPOINT" for r in value["routes"]) == 15
+    assert sum(r["decision"] == "RETIRE" for r in value["routes"]) == 5
     assert sum(r["decision"] == "EXCEPTION" for r in value["routes"]) == 4
 
 
@@ -53,7 +53,7 @@ def test_plan_is_deterministic_and_never_applies():
     second = MOD.build_plan(manifest(), list(reversed(routes)), list(reversed(services)))
     assert first == second
     assert first["runtime_apply_performed"] is False
-    assert first["summary"] == {"DELETE": 7, "KEEP": 17}
+    assert first["summary"] == {"DELETE": 5, "KEEP": 19}
 
 
 def test_repoint_drift_becomes_update():
@@ -77,3 +77,18 @@ def test_exception_drift_is_error_not_update():
     plan = MOD.build_plan(manifest(), routes, services)
     row = next(r for r in plan["plan"] if r["route"] == "codestra-email-standby-route")
     assert row["action"] == "ERROR"
+
+
+def test_retire_with_missing_required_successor_fails_closed():
+    value = manifest()
+    value["routes"][0] = {
+        "name": value["routes"][0]["name"],
+        "decision": "RETIRE",
+        "successor": "required-successor-route",
+    }
+    routes, services = live_rows()
+    plan = MOD.build_plan(value, routes, services)
+    row = next(r for r in plan["plan"] if r["route"] == value["routes"][0]["name"])
+    assert row["action"] == "ERROR"
+    assert row["reason"] == "required_successor_missing"
+    assert row["successor_present"] is False
