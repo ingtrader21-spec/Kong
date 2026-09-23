@@ -16,7 +16,7 @@ defaults:
 jobs:
   source-head:
     name: source-head
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, codestra-ci]
     env:
       EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     steps:
@@ -108,7 +108,7 @@ jobs:
   merge-result:
     name: merge-result
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, codestra-ci]
     env:
       EXPECTED_SHA: ${{ github.sha }}
     steps:
@@ -148,7 +148,7 @@ jobs:
     name: validate
     if: always()
     needs: [source-head, merge-result]
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, codestra-ci]
     steps:
       - name: Require exact head and applicable merge-result validation
         env:
