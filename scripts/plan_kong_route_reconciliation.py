@@ -120,6 +120,9 @@ def build_plan(manifest: dict, routes: list[dict], services: list[dict]) -> dict
             if spec.get("successor"):
                 item["successor"] = spec["successor"]
                 item["successor_present"] = len(by_route.get(spec["successor"], [])) == 1
+                if not item["successor_present"]:
+                    item["action"] = "ERROR"
+                    item["reason"] = "required_successor_missing"
         else:
             expected = spec["expected"]
             item["expected"] = expected
