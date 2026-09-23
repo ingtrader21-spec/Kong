@@ -12,8 +12,8 @@
     },
     {
       "path": ".github/workflows/kong-config.yml",
-      "sha256": "68201716307f7baaf6a36b58e55206c6b15b05d961fd47c57d0aa0aa0130d01e",
-      "size": 2139
+      "sha256": "8908193a7a6b9152aa914d160ee3c2fc6f553e58673f0994e253eb414a024722",
+      "size": 2164
     },
     {
       "path": ".github/workflows/kong-v3-certification.yml",
@@ -47,8 +47,8 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "6f5b172ee32bf6f358bd6ea876eae2c2f1c71b771dc0b5192fd8c6fa9505f6cf",
-      "size": 4569
+      "sha256": "7b27a11187d32e3ec7d233d105dc8ae8fd55d5e4234919a4540c8edcb200c205",
+      "size": 4594
     },
     {
       "path": ".github/workflows/server-drift.yml",
@@ -62,8 +62,8 @@
     },
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "8b9a6c3680f1a975838a70813df0d091c9c5735d96da48e3616bdab09e20b632",
-      "size": 8158
+      "sha256": "136c181085ae6cbb3531905e7111590e9ff28c8a6b716bb4eaab907cc584c20e",
+      "size": 8236
     },
     {
       "path": ".gitignore",
@@ -362,8 +362,8 @@
     },
     {
       "path": "deploy/kong-production-standby/auth-middleware/requirements.txt",
-      "sha256": "058a135d09c80f1152cfdbf734eb9726f27e762db1dd078db0323e2ad46bb9a6",
-      "size": 78
+      "sha256": "382707083450f4da08872d52fcba56347052ee55cc3f5c6f4cc0541cc7a7c57d",
+      "size": 79
     },
     {
       "path": "deploy/kong-production-standby/auth-middleware/test_body_limit.py",
@@ -1357,7 +1357,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "42042cee3c17c705e5a2b35428cb65bc9aeb245f7a3c41e53537323695ebd94d",
+  "manifest_generation_id": "f5b9529652c93b59e9557ff586239a3c4cd5d1bdf59ad5bd745f51383ce1abff",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
