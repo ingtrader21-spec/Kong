@@ -1001,6 +1001,11 @@
       "size": 3053
     },
     {
+      "path": "scripts/render_middleware_jwt_fallback.py",
+      "sha256": "983207713751d8ebb2cb2220d017887e7daf9d8154c1b54d87159db6d335e330",
+      "size": 11320
+    },
+    {
       "path": "scripts/rollback_kong_standby.py",
       "sha256": "6b99ebd16bccec7555fa38493df6ec0f37ed792ec246b90cb779dcd9eb9c5756",
       "size": 1944
@@ -1271,6 +1276,11 @@
       "size": 24803
     },
     {
+      "path": "tests/test_render_middleware_jwt_fallback.py",
+      "sha256": "e615a7c62e1d3b319c88c9da569030fe23318838ad4dd94d1cee4c3fc7c9cd85",
+      "size": 3849
+    },
+    {
       "path": "tests/test_runtime_integration_preflight.py",
       "sha256": "9929f8df0137667177c8a9e3b4a5097ac28ef66f18c62ca2743a88ee1d1e220a",
       "size": 8096
@@ -1357,7 +1367,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "a3d252e46b3b8980957a8a7bea86f4d673159db83c427ba5e2df0ee27946e669",
+  "manifest_generation_id": "35816f36e718068b962abc95c9ff2baf85f19053b2aa952d866a319f314b83d0",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
