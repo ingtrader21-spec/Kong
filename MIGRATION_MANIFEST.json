@@ -47,8 +47,8 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "9e3b945276d68285c0a7e8e6c1f17e8f6ac827fcd7243aeec5d958cb4d7fd11f",
-      "size": 4750
+      "sha256": "5f43d60443a74c324995e1261c6d143aa3a8cb8da1a3d84d1cdbe74edc7428d8",
+      "size": 5477
     },
     {
       "path": ".github/workflows/server-drift.yml",
@@ -1357,7 +1357,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "097c9afe08098a611ba54dfdcaccc4e324e6439f7e8eda84e48736774177e2b2",
+  "manifest_generation_id": "f0b66c6efefd56a4060287840e274364a1868a8f24c0b377d51c4241edc3ad7b",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

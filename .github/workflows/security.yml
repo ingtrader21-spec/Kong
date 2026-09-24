@@ -117,3 +117,17 @@ jobs:
           name: kong-source-sbom
           path: kong-source.spdx.json
           if-no-files-found: error
+
+      - name: Record evidence retention status
+        if: always()
+        shell: bash
+        run: |
+          echo "CODEQL_ARTIFACT_OUTCOME=${{ steps.codeql_evidence.outcome }}"
+          echo "SBOM_ARTIFACT_OUTCOME=${{ steps.sbom_evidence.outcome }}"
+          {
+            echo "### Security evidence retention"
+            echo "- CodeQL artifact: ${{ steps.codeql_evidence.outcome }}"
+            echo "- SBOM artifact: ${{ steps.sbom_evidence.outcome }}"
+            echo
+            echo "Scanner enforcement remains blocking. Artifact retention is best-effort while the GitHub storage quota is exhausted; release certification must treat a failed upload as RETENTION_DEGRADED."
+          } >> "$GITHUB_STEP_SUMMARY"
