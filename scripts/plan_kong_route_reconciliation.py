@@ -2,8 +2,8 @@
 """Read-only PAS-236 Kong route reconciliation planner.
 
 This tool never mutates Kong. It reads the bounded private Admin API, compares
-live route/service bindings with the governed PAS-236 disposition manifest, and
-emits a deterministic plan for later independently gated apply/rollback work.
+live route/service/plugin bindings with governed source authorities, and emits a
+fail-closed plan for later independently gated snapshot/apply/rollback work.
 """
 from __future__ import annotations
 
@@ -20,28 +20,25 @@ from kong_admin_channel import (
     PRIVATE_ADMIN_URL,
     admin_request,
     collect_admin_rows,
-    http_admin_request,
-    http_admin_url,
     normalize_admin_reference,
-    open_admin_request as urlopen,
 )
 
 ALLOWED_DECISIONS = {"REPOINT", "RETIRE", "EXCEPTION"}
+CANONICAL_UPSTREAM = {"host": "middleware-integration-api", "port": 8095}
+REQUIRED_RELEASE_GATES = (
+    "SNAPSHOT",
+    "ROLLBACK_PACKAGE",
+    "GATED_APPLY",
+    "POST_APPLY_VERIFY",
+)
 
 
-def request(base: str, path: str) -> dict:
-    if base == PRIVATE_ADMIN_URL:
-        return admin_request("GET", normalize_admin_reference(path)) or {}
-    return http_admin_request(base, "GET", path, timeout=15, opener=urlopen) or {}
+def request(path: str) -> dict:
+    return admin_request("GET", normalize_admin_reference(path)) or {}
 
 
-def all_rows(base: str, path: str) -> list[dict]:
-    normalize = (
-        normalize_admin_reference
-        if base == PRIVATE_ADMIN_URL
-        else lambda value: http_admin_url(base, value)
-    )
-    return collect_admin_rows(lambda value: request(base, value), path, normalize)
+def all_rows(path: str) -> list[dict]:
+    return collect_admin_rows(request, path, normalize_admin_reference)
 
 
 def upstream_for(route: dict, services: dict[str, dict]) -> dict:
@@ -55,9 +52,25 @@ def upstream_for(route: dict, services: dict[str, dict]) -> dict:
     }
 
 
+def plugin_names_for(route: dict, plugins: list[dict]) -> list[str]:
+    route_id = route.get("id")
+    names = {
+        str(plugin.get("name"))
+        for plugin in plugins
+        if plugin.get("enabled", True)
+        and (plugin.get("route") or {}).get("id") == route_id
+        and plugin.get("name")
+    }
+    return sorted(names)
+
+
 def validate_manifest(manifest: dict) -> None:
     if manifest.get("runtime_apply_authorized") is not False:
         raise RuntimeError("planner manifest must keep runtime_apply_authorized=false")
+    if manifest.get("canonical_public_upstream") != CANONICAL_UPSTREAM:
+        raise RuntimeError(
+            "canonical_public_upstream must match config/kong-middleware-authority.v2.json"
+        )
     rows = manifest.get("routes")
     if not isinstance(rows, list) or len(rows) != 24:
         raise RuntimeError("PAS-236 manifest must contain exactly 24 route dispositions")
@@ -67,18 +80,32 @@ def validate_manifest(manifest: dict) -> None:
     for row in rows:
         decision = row.get("decision")
         if decision not in ALLOWED_DECISIONS:
-            raise RuntimeError(f"unsupported route disposition: {row.get('name')}")
+            raise RuntimeError(f"unsupported route disposition: {row.get("name")}")
         if decision == "REPOINT":
-            target = row.get("target")
-            if not isinstance(target, dict) or target.get("port") != 8095 or not target.get("host"):
-                raise RuntimeError(f"invalid canonical target: {row.get('name')}")
-        if decision == "EXCEPTION":
+            if row.get("target") != CANONICAL_UPSTREAM:
+                raise RuntimeError(f"invalid canonical target: {row.get("name")}")
+        elif decision == "RETIRE":
+            successor = row.get("successor")
+            deny_authority = row.get("deny_authority")
+            if not successor and deny_authority != "activationBlockedRoutes":
+                raise RuntimeError(
+                    f"retirement requires successor or activationBlockedRoutes deny authority: "
+                    f"{row.get("name")}"
+                )
+        elif decision == "EXCEPTION":
             expected = row.get("expected")
             if not isinstance(expected, dict) or not expected.get("host") or not expected.get("port"):
-                raise RuntimeError(f"invalid exception target: {row.get('name')}")
+                raise RuntimeError(f"invalid exception target: {row.get("name")}")
 
 
-def build_plan(manifest: dict, routes: list[dict], services: list[dict]) -> dict:
+def build_plan(
+    manifest: dict,
+    routes: list[dict],
+    services: list[dict],
+    plugins: list[dict],
+    authority_routes: dict[str, dict],
+    activation_blocked_routes: set[str],
+) -> dict:
     validate_manifest(manifest)
     by_route: dict[str, list[dict]] = {}
     for route in routes:
@@ -107,6 +134,20 @@ def build_plan(manifest: dict, routes: list[dict], services: list[dict]) -> dict
             "current": current,
         }
 
+        authority = authority_routes.get(spec["name"])
+        if authority is not None:
+            expected_plugins = sorted(authority.get("plugins") or [])
+            current_plugins = plugin_names_for(route, plugins)
+            item["security_plugins"] = {
+                "expected": expected_plugins,
+                "current": current_plugins,
+            }
+            if current_plugins != expected_plugins:
+                item["action"] = "ERROR"
+                item["reason"] = "plugin_security_drift"
+                plan.append(item)
+                continue
+
         if decision == "REPOINT":
             target = spec["target"]
             item["target"] = target
@@ -123,6 +164,12 @@ def build_plan(manifest: dict, routes: list[dict], services: list[dict]) -> dict
                 if not item["successor_present"]:
                     item["action"] = "ERROR"
                     item["reason"] = "required_successor_missing"
+            else:
+                item["deny_authority"] = spec.get("deny_authority")
+                item["deny_authority_present"] = spec["name"] in activation_blocked_routes
+                if not item["deny_authority_present"]:
+                    item["action"] = "ERROR"
+                    item["reason"] = "required_deny_authority_missing"
         else:
             expected = spec["expected"]
             item["expected"] = expected
@@ -141,10 +188,14 @@ def build_plan(manifest: dict, routes: list[dict], services: list[dict]) -> dict
     for item in plan:
         counts[item["action"]] = counts.get(item["action"], 0) + 1
     return {
-        "schema": "codestra.kong.route-reconciliation-plan.pas236.v1",
+        "schema": "codestra.kong.route-reconciliation-plan.pas236.v2",
         "mode": "dry-run",
+        "admin_channel": PRIVATE_ADMIN_URL,
         "runtime_apply_performed": False,
+        "runtime_apply_authorized": False,
+        "required_release_gates": list(REQUIRED_RELEASE_GATES),
         "source_main_sha": manifest["source_main_sha"],
+        "canonical_public_upstream": CANONICAL_UPSTREAM,
         "summary": dict(sorted(counts.items())),
         "plan": plan,
     }
@@ -152,20 +203,38 @@ def build_plan(manifest: dict, routes: list[dict], services: list[dict]) -> dict
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--admin-url", default=PRIVATE_ADMIN_URL)
     parser.add_argument(
         "--manifest",
         type=Path,
         default=Path("config/kong-route-reconciliation.pas236.json"),
     )
+    parser.add_argument(
+        "--inventory",
+        type=Path,
+        default=Path("config/kong-production-route-inventory.v2.json"),
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
 
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+    inventory = json.loads(args.inventory.read_text(encoding="utf-8"))
+    authority_routes = {
+        row["name"]: row
+        for row in inventory.get("routes", [])
+        if isinstance(row.get("name"), str)
+    }
+    activation_blocked_routes = {
+        row["route"]
+        for row in inventory.get("activationBlockedRoutes", [])
+        if isinstance(row.get("route"), str) and row.get("activationAuthorized") is False
+    }
     result = build_plan(
         manifest,
-        all_rows(args.admin_url, "/routes?size=1000"),
-        all_rows(args.admin_url, "/services?size=1000"),
+        all_rows("/routes?size=1000"),
+        all_rows("/services?size=1000"),
+        all_rows("/plugins?size=1000"),
+        authority_routes,
+        activation_blocked_routes,
     )
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.output:
