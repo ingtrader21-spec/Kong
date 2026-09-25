@@ -91,7 +91,7 @@ def main() -> int:
         # tmpfs /tmp, a writable /data state volume (the application opens its
         # SQLite state at import), all capabilities dropped, no new privileges,
         # no network. The tmpfs stands in for the standby_state volume.
-        with tempfile.TemporaryDirectory(prefix="kong-standby-smoke-") as secret_dir:
+        with tempfile.TemporaryDirectory(prefix=".kong-standby-smoke-", dir=Path.cwd()) as secret_dir:
             secret_root = Path(secret_dir)
             database_secret = secret_root / "database-url"
             webhook_secret = secret_root / "webhook-hmac"
