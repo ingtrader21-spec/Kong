@@ -12,23 +12,23 @@
     },
     {
       "path": ".github/workflows/kong-config.yml",
-      "sha256": "6e9fcc9717a32b3b73e8acbfb3adaeb0ccb57697926b6e19fb727aca14a309fc",
-      "size": 2314
+      "sha256": "e351a750364dd0a8d0875f628e1f46bb13aac0580291c32630379dee96f44bd4",
+      "size": 2428
     },
     {
       "path": ".github/workflows/kong-v3-certification.yml",
-      "sha256": "06d2ba2598d0d937779769dc42f53eb0eddcf9e0eb149559fad8616ab96cd2d3",
-      "size": 5804
+      "sha256": "09ac29678c4fec5e07a5927c2dad71361ae6236d9755800be1faab0c9cab7c39",
+      "size": 5918
     },
     {
       "path": ".github/workflows/manifest-sync.yml",
-      "sha256": "a7c1c886c938b1221254180019543d5969267aa222de1b5a9e13d90fafa69d89",
-      "size": 2897
+      "sha256": "4522efca82cc4e44555d060a1840439db5f91cefcc049a1c7641635a23f836bb",
+      "size": 3011
     },
     {
       "path": ".github/workflows/marketing-stage5-certification.yml",
-      "sha256": "0a133c73946f110e03f88f57214385686cf95e139bc3d2f2387d636d5e04f28d",
-      "size": 1763
+      "sha256": "62cc6befb9f2560b2d03844776f4fd16f4a9b10371390f84641aefc5f4325194",
+      "size": 1877
     },
     {
       "path": ".github/workflows/release-preflight.yml",
@@ -47,8 +47,8 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "8624da75928090160faa29ca10cc9fddcf079cafc1012a9fa171025bce5d02cb",
-      "size": 5727
+      "sha256": "9287f85987d543fc69b0fb581e8080d8ee62bcef2b780b696ee394de9e2c2723",
+      "size": 5841
     },
     {
       "path": ".github/workflows/server-drift.yml",
@@ -62,8 +62,8 @@
     },
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "e567df3e0b4cd202dc7775451819f45a1618650c7166b2a2cdb91bbfa04a2f61",
-      "size": 8548
+      "sha256": "aedc1d9548ecedcc4925c8e7dc2f44f8883c8c8e16ca3f0e8691a5459b5711d1",
+      "size": 8732
     },
     {
       "path": ".gitignore",
@@ -1357,7 +1357,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "4104a105f1fe4a61c8523cdd647989363328c1ab017eea8c045d434c6ac98906",
+  "manifest_generation_id": "2d58592ecf14c59fdbec84e78b279e4e0b98d3c75630d287af84ed507887b296",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
