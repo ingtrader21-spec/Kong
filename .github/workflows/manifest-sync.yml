@@ -61,6 +61,8 @@ jobs:
           python3 tools/verify_migration_manifest.py
 
       - name: Upload deterministic non-secret candidate
+        id: manifest_artifact
+        continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: kong-authority-manifests-${{ env.EXPECTED_SHA }}
@@ -78,6 +80,12 @@ jobs:
 
       - name: Record check-only authority
         run: |
+          echo "MANIFEST_ARTIFACT_OUTCOME=${{ steps.manifest_artifact.outcome }}"
+          if [[ "${{ steps.manifest_artifact.outcome }}" != "success" ]]; then
+            echo "MANIFEST_RETENTION=DEGRADED"
+          else
+            echo "MANIFEST_RETENTION=PASS"
+          fi
           echo "MANIFEST_AUTHORITY=CHECK_ONLY"
           echo "EXACT_HEAD=${EXPECTED_SHA}"
           echo "REPOSITORY_WRITE_PERMISSION=NONE"
