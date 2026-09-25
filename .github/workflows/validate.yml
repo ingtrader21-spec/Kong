@@ -106,7 +106,12 @@ jobs:
           # Every test module in the repository, on Linux, in addition to the
           # enumerated authority suites above: no module can be left out of
           # the gate by omission.
-          pytest -q -p no:cacheprovider
+          PYTEST_BASETEMP="${RUNNER_TEMP}/kong-source-head-pytest"
+          TMPDIR="${RUNNER_TEMP}/kong-source-head-tmp"
+          rm -rf "$PYTEST_BASETEMP" "$TMPDIR"
+          mkdir -p "$TMPDIR"
+          export TMPDIR
+          pytest -q -p no:cacheprovider --basetemp "$PYTEST_BASETEMP"
           git diff --exit-code
           test -z "$(git status --porcelain)"
 

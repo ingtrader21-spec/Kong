@@ -17,8 +17,8 @@
     },
     {
       "path": ".github/workflows/kong-v3-certification.yml",
-      "sha256": "11f6bb24028a641bf3d4c32d88c3d9183e150420e4c01ceb3d56692ae0eb0424",
-      "size": 6069
+      "sha256": "87000e721ee88fc43193cbd75d38b3f13cdc4e59e9d15edd482255064ffc38e2",
+      "size": 6305
     },
     {
       "path": ".github/workflows/manifest-sync.yml",
@@ -62,8 +62,8 @@
     },
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "aedc1d9548ecedcc4925c8e7dc2f44f8883c8c8e16ca3f0e8691a5459b5711d1",
-      "size": 8732
+      "sha256": "9edec52ec8927d8938b08a3fd344670df291e8a826e863247a253675d84f71ea",
+      "size": 8983
     },
     {
       "path": ".gitignore",
@@ -1357,7 +1357,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "c4253c9f327906a0c945625e6451a22e3aae5454144dfed345c3db91039fcb73",
+  "manifest_generation_id": "65be21a21107a70ae3edc79ca0761a2fb90f93c7272d171c07e01e6e874f7e66",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
