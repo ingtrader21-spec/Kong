@@ -94,7 +94,9 @@ jobs:
               raise SystemExit(1)
           PY
       - name: Upload local CodeQL evidence
+        id: codeql_evidence
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: kong-codeql-sarif
@@ -115,6 +117,8 @@ jobs:
           format: spdx-json
           output-file: kong-source.spdx.json
       - name: Upload SBOM
+        id: sbom_evidence
+        continue-on-error: true
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: kong-source-sbom
