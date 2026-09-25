@@ -197,34 +197,16 @@ jobs:
             --provenance "${RUNNER_TEMP}/standby-provenance.json" \
             --registry-digest "$(cat "${RUNNER_TEMP}/standby-remote-digest.txt")"
 
-      - name: Upload bounded preflight evidence
-        id: preflight_evidence
-        continue-on-error: true
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
-        with:
-          name: kong-release-preflight-${{ env.EXPECTED_SHA }}
-          path: |
-            ${{ runner.temp }}/release-manifest.json
-            ${{ runner.temp }}/standby-build-metadata.json
-            ${{ runner.temp }}/standby-image.txt
-            ${{ runner.temp }}/standby-remote-digest.txt
-            ${{ runner.temp }}/standby-image-inspect.txt
-            ${{ runner.temp }}/standby-sbom.spdx.json
-            ${{ runner.temp }}/standby-provenance.json
-            ${{ runner.temp }}/kong-image.txt
-            ${{ runner.temp }}/kong-image-inspect.txt
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Record preflight evidence retention
-        if: always()
+      - name: Record registry-backed preflight evidence
         run: |
-          echo "PREFLIGHT_ARTIFACT_OUTCOME=${{ steps.preflight_evidence.outcome }}"
           {
-            echo "### Release preflight evidence retention"
-            echo "- Artifact upload: ${{ steps.preflight_evidence.outcome }}"
+            echo "### Release preflight evidence"
+            echo "- Release manifest: verified in-job"
+            echo "- Registry digest: verified against pushed image"
+            echo "- SBOM attestation: verified from GHCR"
+            echo "- Provenance attestation: verified from GHCR"
             echo
-            echo "Release manifest, registry digest, SBOM, and provenance verification remain blocking. Artifact upload is best-effort while GitHub storage quota is exhausted; a failed upload is RETENTION_DEGRADED and is not release-certification evidence."
+            echo "GitHub Actions artifact retention is not a release gate while account artifact storage quota is exhausted. This preflight remains non-promotable and runtime apply remains unauthorized."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Close registry session and builder
