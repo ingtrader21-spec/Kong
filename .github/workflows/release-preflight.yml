@@ -138,9 +138,11 @@ jobs:
       - name: Verify the registry digest and extract the attestations
         id: attest
         env:
+          GHCR_TOKEN: ${{ github.token }}
           LOCAL_DIGEST: ${{ steps.standby.outputs.digest }}
         run: |
           set -Eeuo pipefail
+          printf '%s' "${GHCR_TOKEN}" | docker login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
           docker buildx imagetools inspect "${STANDBY_IMAGE_REPOSITORY}@${LOCAL_DIGEST}" > "${RUNNER_TEMP}/standby-image-inspect.txt"
           remote="$(awk '$1 == "Digest:" {print $2; exit}' "${RUNNER_TEMP}/standby-image-inspect.txt")"
           [[ "${remote}" =~ ^sha256:[0-9a-f]{64}$ ]]
