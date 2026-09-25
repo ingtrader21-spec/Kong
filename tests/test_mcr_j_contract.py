@@ -180,9 +180,20 @@ def check_manifest(manifest, environment, docs, contract):
 
 
 def test_mcr_j_frozen_inventory_and_carriers(documents, acceptance):
+    assert acceptance["runtimeApplyAuthorized"] is False
+    assert acceptance["providerEffectsEnabled"] is False
     check_inventory(documents, acceptance)
     check_idempotency(documents, acceptance)
     check_security(documents, acceptance)
+
+
+@pytest.mark.parametrize("field", ["runtimeApplyAuthorized", "providerEffectsEnabled"])
+def test_mcr_j_rejects_activation_flag_drift(documents, acceptance, field):
+    drifted = deepcopy(acceptance)
+    drifted[field] = True
+    with pytest.raises(AssertionError):
+        assert drifted["runtimeApplyAuthorized"] is False
+        assert drifted["providerEffectsEnabled"] is False
 
 
 @pytest.mark.parametrize("environment", ["production", "staging"])
