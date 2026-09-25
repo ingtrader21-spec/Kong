@@ -9,8 +9,8 @@ files:
   sha256: e351a750364dd0a8d0875f628e1f46bb13aac0580291c32630379dee96f44bd4
   size: 2428
 - path: .github/workflows/kong-v3-certification.yml
-  sha256: 09ac29678c4fec5e07a5927c2dad71361ae6236d9755800be1faab0c9cab7c39
-  size: 5918
+  sha256: 11f6bb24028a641bf3d4c32d88c3d9183e150420e4c01ceb3d56692ae0eb0424
+  size: 6069
 - path: .github/workflows/manifest-sync.yml
   sha256: 4522efca82cc4e44555d060a1840439db5f91cefcc049a1c7641635a23f836bb
   size: 3011
@@ -813,7 +813,7 @@ files:
   sha256: 9346d7586c76f1386231236259325f17d7f36a1a1486a7ada454314a11d380f7
   size: 6249
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 04a2b5870e5997690ad2e9be0b03e3fa54e2df936da878205124518b06dbd4cc
+manifest_generation_id: c4253c9f327906a0c945625e6451a22e3aae5454144dfed345c3db91039fcb73
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:

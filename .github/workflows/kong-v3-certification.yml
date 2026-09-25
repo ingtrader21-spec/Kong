@@ -98,7 +98,9 @@ jobs:
       - name: Run Lane D tests
         run: |
           set -Eeuo pipefail
-          pytest -q             tests/test_kong_foundation.py             tests/test_gateway_foundation_authority.py             tests/test_kong_identity_security.py             tests/test_kong_middleware_contract_v2.py
+          PYTEST_BASETEMP="${RUNNER_TEMP}/kong-v3-lane-d-pytest"
+          rm -rf "$PYTEST_BASETEMP"
+          pytest -q -p no:cacheprovider --basetemp "$PYTEST_BASETEMP"             tests/test_kong_foundation.py             tests/test_gateway_foundation_authority.py             tests/test_kong_identity_security.py             tests/test_kong_middleware_contract_v2.py
           echo "LANE_D_FOCUSED_TESTS=PASS"
 
       - name: Enforce two-phase migration-manifest rule
