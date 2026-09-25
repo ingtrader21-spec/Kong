@@ -18,8 +18,8 @@ files:
   sha256: 62cc6befb9f2560b2d03844776f4fd16f4a9b10371390f84641aefc5f4325194
   size: 1877
 - path: .github/workflows/release-preflight.yml
-  sha256: 65a8ad168cf90f19a1c776fc6fa29e0f389e99fe52d5d289c2fb945de6b829c4
-  size: 10566
+  sha256: d476a656902968c4fe468073c44c0c3ff8d3a7ce95db9e5e98796f7dd43c7744
+  size: 11263
 - path: .github/workflows/release.yml
   sha256: 18dc79dec5e1c065d2821979db0014914681c19c312035f18493866d1fb2f230
   size: 15778
@@ -813,7 +813,7 @@ files:
   sha256: 9346d7586c76f1386231236259325f17d7f36a1a1486a7ada454314a11d380f7
   size: 6249
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: adc0683fc80e65530d4b5edd38f76594e89bf8d8247ac9cc2b1c72b54988deff
+manifest_generation_id: ccf46efd2adb4a1b703353897297c998ac91cb138344491dd7694dcabdfdf59d
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:

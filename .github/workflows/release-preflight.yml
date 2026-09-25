@@ -198,6 +198,8 @@ jobs:
             --registry-digest "$(cat "${RUNNER_TEMP}/standby-remote-digest.txt")"
 
       - name: Upload bounded preflight evidence
+        id: preflight_evidence
+        continue-on-error: true
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: kong-release-preflight-${{ env.EXPECTED_SHA }}
@@ -213,6 +215,17 @@ jobs:
             ${{ runner.temp }}/kong-image-inspect.txt
           if-no-files-found: error
           retention-days: 30
+
+      - name: Record preflight evidence retention
+        if: always()
+        run: |
+          echo "PREFLIGHT_ARTIFACT_OUTCOME=${{ steps.preflight_evidence.outcome }}"
+          {
+            echo "### Release preflight evidence retention"
+            echo "- Artifact upload: ${{ steps.preflight_evidence.outcome }}"
+            echo
+            echo "Release manifest, registry digest, SBOM, and provenance verification remain blocking. Artifact upload is best-effort while GitHub storage quota is exhausted; a failed upload is RETENTION_DEGRADED and is not release-certification evidence."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Close registry session and builder
         if: always()
