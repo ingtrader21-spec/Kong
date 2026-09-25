@@ -110,6 +110,7 @@ def main() -> int:
                 "--env", "STATE_DB=/data/state.sqlite3",
                 "--env", "DATABASE_URL_FILE=/run/secrets/database-url",
                 "--env", "WEBHOOK_HMAC_FILE=/run/secrets/webhook-hmac",
+                "--workdir", "/app",
                 "--entrypoint", "python",
                 args.image, "-c", SMOKE_PYTHON,
             )
