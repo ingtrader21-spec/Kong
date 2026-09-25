@@ -17,8 +17,8 @@
     },
     {
       "path": ".github/workflows/kong-v3-certification.yml",
-      "sha256": "fcb898036ffbe0b6e53eba85133c4ca91a67eddf71e7c3f8b262bf9bb4e21366",
-      "size": 6783
+      "sha256": "06d2ba2598d0d937779769dc42f53eb0eddcf9e0eb149559fad8616ab96cd2d3",
+      "size": 5804
     },
     {
       "path": ".github/workflows/manifest-sync.yml",
@@ -47,8 +47,8 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "44345152e7b7704043b8297d56c521588a2025122e6f56c74fe5ae870494c8dd",
-      "size": 5655
+      "sha256": "8624da75928090160faa29ca10cc9fddcf079cafc1012a9fa171025bce5d02cb",
+      "size": 5727
     },
     {
       "path": ".github/workflows/server-drift.yml",
@@ -1352,12 +1352,12 @@
     },
     {
       "path": "tools/verify_standby_image.py",
-      "sha256": "582d0559337d3b689e40e2a06844fc06866becb874261b909af902851d985e5f",
-      "size": 6195
+      "sha256": "7fcf3581af42de186680249a9f35d192a8cc899096fd8c0040cc974b0879b19d",
+      "size": 6212
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "73bec5c6c0984d37565b0a7f47bab85ea386845ac96895bdbe6e80027f376a6b",
+  "manifest_generation_id": "c8b3e74bc5fff6e8e551f11873db6d80a61979b2b66f8e716969084f61361586",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
