@@ -17,23 +17,23 @@
     },
     {
       "path": ".github/workflows/kong-v3-certification.yml",
-      "sha256": "c688e9ed8eb161e2eed7af5757aee735d2f6fb48a0054b9bf5a69b3970b622e8",
-      "size": 5650
+      "sha256": "fcb898036ffbe0b6e53eba85133c4ca91a67eddf71e7c3f8b262bf9bb4e21366",
+      "size": 6783
     },
     {
       "path": ".github/workflows/manifest-sync.yml",
-      "sha256": "4f0dc10e4d8674cff07ebb34c36f25076ea1ccd7881461aad84cf018fa5ae1bf",
-      "size": 2530
+      "sha256": "852690270d21206a4389a978f844a5006aecd5c9e83974eab3579c2b3c6c8d0d",
+      "size": 2556
     },
     {
       "path": ".github/workflows/marketing-stage5-certification.yml",
-      "sha256": "e4b89f1903e190a767f95bf8a6dc0b1e0719c3aa69f382617a12b7d086565e49",
-      "size": 1737
+      "sha256": "0a133c73946f110e03f88f57214385686cf95e139bc3d2f2387d636d5e04f28d",
+      "size": 1763
     },
     {
       "path": ".github/workflows/release-preflight.yml",
-      "sha256": "cb12272ceffa9fb86514139942c47b78da2325efea0821d60fdbb1ef282db489",
-      "size": 10241
+      "sha256": "499c0372335e272e883e6242b03f453f09c28c382e97fab08e88201f0bca6b34",
+      "size": 10267
     },
     {
       "path": ".github/workflows/release.yml",
@@ -47,8 +47,8 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "7cab80f60182adfd31e0a494628bd644851d011d7425dc91f6046800cb40b4c4",
-      "size": 5537
+      "sha256": "44345152e7b7704043b8297d56c521588a2025122e6f56c74fe5ae870494c8dd",
+      "size": 5655
     },
     {
       "path": ".github/workflows/server-drift.yml",
@@ -1357,7 +1357,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "fbd683e43504a9655ae79148d2f1a5c08af85a08b4b2b8bac5303a1aef4dc429",
+  "manifest_generation_id": "650a0969258e5aae8aba207b1825157015512047ee2a828d8e6b429c558aca32",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
