@@ -11,6 +11,9 @@ files:
 - path: .github/workflows/kong-v3-certification.yml
   sha256: c688e9ed8eb161e2eed7af5757aee735d2f6fb48a0054b9bf5a69b3970b622e8
   size: 5650
+- path: .github/workflows/laptop-runner-smoke.yml
+  sha256: 88f581423bc7c417f400c29b828448ce08401e9398ca5deff908dd562db5c18a
+  size: 2371
 - path: .github/workflows/manifest-sync.yml
   sha256: 4f0dc10e4d8674cff07ebb34c36f25076ea1ccd7881461aad84cf018fa5ae1bf
   size: 2530
@@ -813,7 +816,7 @@ files:
   sha256: 8ce9988ecece68671509320205a44ea4db92fbad7db15fa32fe7425b5f447a1f
   size: 5410
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 42042cee3c17c705e5a2b35428cb65bc9aeb245f7a3c41e53537323695ebd94d
+manifest_generation_id: 7280e30d3a354885a297c4950b2d803b676b79bad2b69b457f0e75ff3d955f08
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:

@@ -57,7 +57,7 @@ jobs:
           $ErrorActionPreference = "Stop"
           git --version
           node --version
-          powershell -NoProfile -Command "$PSVersionTable.PSVersion.ToString()"
+          Write-Host $PSVersionTable.PSVersion.ToString()
 
       - name: Confirm protected workflow files are present
         shell: powershell
