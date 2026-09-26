@@ -32,12 +32,12 @@
     },
     {
       "path": ".github/workflows/release-preflight.yml",
-      "sha256": "51d389b3cfae221cfd5ed24f861ab5e1975caa700ed0639368659eefa58b1d4c",
+      "sha256": "04a7317c11b71a6d42fe7e6bd44b3befe05fc1439206c1bc69378fabe27a9c82",
       "size": 10433
     },
     {
       "path": ".github/workflows/release.yml",
-      "sha256": "18dc79dec5e1c065d2821979db0014914681c19c312035f18493866d1fb2f230",
+      "sha256": "88736c97d2d4cce0642f0ab11735e87db6e8569bf91904aab577e24cda28daf7",
       "size": 15778
     },
     {
@@ -47,8 +47,8 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "9287f85987d543fc69b0fb581e8080d8ee62bcef2b780b696ee394de9e2c2723",
-      "size": 5841
+      "sha256": "fe08edbb12edc650b0740ecad2cb2c81880e0621b4f5ee14856bc4eb87b95e4b",
+      "size": 5937
     },
     {
       "path": ".github/workflows/server-drift.yml",
@@ -1271,6 +1271,11 @@
       "size": 24803
     },
     {
+      "path": "tests/test_runner_hardening.py",
+      "sha256": "0d51030f74e337116285ea072a45562dc0220776e94c7f1484a1c526116e6774",
+      "size": 1409
+    },
+    {
       "path": "tests/test_runtime_integration_preflight.py",
       "sha256": "9929f8df0137667177c8a9e3b4a5097ac28ef66f18c62ca2743a88ee1d1e220a",
       "size": 8096
@@ -1357,7 +1362,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "2b3a8d08e7d9c164e8da63df275fca70f1754127c56c40507f62b0986117fc8b",
+  "manifest_generation_id": "6228476cd83c75356c4ce5f2b0a928dda1df24806201c1a8f97dabbfd26b8043",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
